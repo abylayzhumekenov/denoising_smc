@@ -9,14 +9,21 @@ University of Michigan<br>
 Stanford University<br>
 ![DiffusionPDE](docs/architecture.jpg)
 
-## Requirements
+## Setup
 
-Python libraries: See [environment.yml](environment.yml) for library dependencies. The conda environment can be set up using these commands:
+Python dependencies are listed in [requirements.txt](requirements.txt). PyTorch must be installed separately depending on your hardware:
 
-```.bash
-conda env create -f environment.yml -n DiffusionPDE
-conda activate DiffusionPDE
+```bash
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+# CPU only:
+pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
+# GPU (CUDA):
+pip install torch torchvision
 ```
+
+Alternatively, the original conda environment can be recreated from [environment.yml](environment.yml) (if you have it).
 
 ## Data Generation
 

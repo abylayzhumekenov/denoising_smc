@@ -21,7 +21,9 @@ The method works by training a diffusion model on the joint distribution of (coe
 denoising_smc/
   |-- README.md                     # Project README
   |-- LICENSE                       # CC BY-NC-SA 4.0
-  |-- environment.yml                # Conda environment file
+  |-- AGENTS.md                     # Agent instructions (device auto-detect, setup, gotchas)
+  |-- .gitignore                    # Git exclusion rules (large files, images, artifacts)
+  |-- requirements.txt              # Python dependencies (PyTorch installed separately)
   |-- train.py                       # Main training entry point (derived from EDM)
   |-- generate_pde.py                # Main PDE solving entry point
   |-- merge_data.py                  # Utility to merge .mat data into .npy for training
@@ -92,6 +94,11 @@ denoising_smc/
   |       |-- ns-bounded/
   |           |-- 1/ (vx.npy, vy.npy, pressure.npy, cx.npy, cy.npy, r.npy, v.npy, v0.npy)
   |           |-- 2/ (same structure)
+  |
+  |-- AGENTS.md                     # [ADDED] Agent instructions (gotchas, commands, setup)
+  |-- .gitignore                    # [ADDED] Git exclusion rules
+  |-- requirements.txt              # [ADDED] Python dependencies (no torch)
+  |-- map.md, git.md                # [ADDED] Project maps
   |
   |-- dataset_generation/            # PDE data generation code
   |   |-- static/                    # MATLAB codes for static PDEs
@@ -199,7 +206,7 @@ The presence of the `arXiv-0000.00000v/` directory with `paper.md` containing a 
 | **CLI** | `click` for `train.py` |
 | **Config** | YAML (via `pyyaml`) |
 | **Data Handling** | NumPy, SciPy (`.mat` files), PIL/Pillow |
-| **Environment** | Conda (see `environment.yml`) |
+| **Environment** | venv + `requirements.txt` (PyTorch installed separately for CPU or CUDA) |
 | **Additional** | `psutil`, `tqdm`, `requests`, `imageio`, `pyspng` |
 
 ## 6. How the Codebase is Organized
@@ -223,4 +230,4 @@ The repository follows a **modular, two-part architecture**:
 - `dataset_generation/burgers/` (MATLAB) - for Burgers' equation
 - `dataset_generation/non-bounded-ns/` (Python) - for non-bounded Navier-Stokes
 
-**No git history exists** -- the repository was not initialized with git at this location; it was likely cloned as an archive or downloaded directly.
+**Git initialized** on branch `main`. Large files (9.1 GB of datasets/weights/images) excluded via `.gitignore`. See `git.md` for tracking details.

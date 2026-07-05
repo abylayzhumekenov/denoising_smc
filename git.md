@@ -74,7 +74,7 @@ wandb/
 | YAML configs | 16 files in `configs/` |
 | MATLAB source | `dataset_generation/static/`, `dataset_generation/burgers/` |
 | Literature | All `.tex`, `.bib`, `.sty`, `.csv` files in `literature/` (3.5 MB) |
-| Docs | `README.md`, `LICENSE`, `environment.yml`, `map.md`, `git.md` |
+| Docs | `README.md`, `LICENSE`, `AGENTS.md`, `.gitignore`, `requirements.txt`, `map.md`, `git.md` |
 | Total | **~4.8 MB** |
 
 ## How to Reproduce Datasets & Weights
