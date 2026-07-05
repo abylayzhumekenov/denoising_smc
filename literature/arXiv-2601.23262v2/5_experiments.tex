@@ -1,0 +1,121 @@
+\section{Experiments}
+
+\subsection{Benchmark PDEs}
+We first test our results on five common benchmark PDEs. Darcy flow (DF), inhomogeneous Helmholtz equation (IHE), non-bounded Navier--Stokes (NBNS), bounded Navier--Stokes (BNS) and the Poisson Equation. We have provided further details of these in Appendix~\ref{app:pde_details}. Our experimental implementation is based on the open-source code released by \citet{huang2024diffusionpdegenerativepdesolvingpartial}, which we adapted and extended for our specific experimental setting. We used the pretrained models they provided. As a baseline, we used the DiffusionPDE sampling method \citep{huang2024diffusionpdegenerativepdesolvingpartial} with guidance (DiffPDE). We restricted our comparison to this as the original DiffPDE significantly outperformed other baselines such as PINNs, Deep-ONets, PINOs and FNOs; 
+see \citet[][Section 4]{huang2024diffusionpdegenerativepdesolvingpartial}. \looseness=-1
+
+We compare the baselines against three configurations of our SMC method, each using $N=4$ particles and the proposal variant of SOSaG which is the equivalent of $N=1$ in an SMC framework. Note that this is similar to DiffPDE but with stochastic instead of deterministic sampling. We use the GEM proposal with both the TDS and the pBS framework, while the SOSaG proposal requires the pBS weighting. For both $u$ and $a$ our sparse observations consist of 500 pixels for each experiment. Figure~\ref{fig:known_indices} gives examples of these observations. The PDE snapshots each have 128$\times$128 spatial grids which means we only observe $\approx 3.05\%$ of the PDE data information. All results were averaged over 30 independent runs. \looseness=-1
+
+\subsection{Multiphysics PDE Systems with Observation Noise}
+Next, we test the methods on a multiphysics system of interacting PDEs. For this we chose a 2-species and 3-species Reaction-Diffusion \citep{doi:10.1126/science.1179047, b7a37744d27f4959bce204655593c290} (2SRD and 3SRD respectively), where with 2SRD we have to estimate the two scalar fields and two coefficient fields, one for each interacting PDE. For the 3SRD experiment, we aim to recover a solution field ($u$, $v$, $z$) and coefficient field ($D_u$, $D_v$, $D_z$) associated with each interacting PDE. Note that in this experiment, we are solving a \emph{joint} inference problem, where we have observations on each coefficient and solution field, as opposed to the previous problems where we only have observations on either the coefficient or solution field. We have provided more details of this in Appendix~\ref{app:rd_equation_explanation}. We also tested both examples with varying levels of noise $\sigma_O$ added to the observations in order to test the ability of the sampling methods under potentially more realistic scenarios, where the observations may not be perfectly aligned with the underlying equations. Results are given in Table~\ref{tab:results_2srd_3srd_combined}
+
+\begin{table*}[ht]
+\centering
+\caption{Per-channel errors (\%) for Gray-Scott RD (2-species) and 3-Species RD across varying observation noise levels $\sigma_O$.}
+\label{tab:results_2srd_3srd_combined}
+
+\resizebox{0.85\textwidth}{!}{%
+\begin{tabular}{l cccc | cccccc}
+\toprule
+\multirow{2}{*}{\textbf{Method}} &
+\multicolumn{4}{c|}{\textbf{Gray-Scott RD (2-Species)}} &
+\multicolumn{6}{c}{\textbf{3-Species RD}} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-11}
+& \textbf{$D_u$} & \textbf{$D_v$} & \textbf{$u$} & \textbf{$v$}
+& \textbf{$D_u$} & \textbf{$D_v$} & \textbf{$D_w$} & \textbf{$u$} & \textbf{$v$} & \textbf{$w$} \\
+\midrule
+
+\multicolumn{11}{c}{\textbf{$\sigma_O = 0.0$}} \\
+\midrule
+DiffPDE  & 2.29          & 1.43          & 0.03          & 3.18          & 2.92          & 3.64          & 6.45          & \textbf{0.05} & \textbf{0.24} & 0.50          \\
+GEM-TDS & 5.68          & 3.23          & \textbf{0.02} & 2.70          & 3.66          & 4.93          & 7.43          & 0.05          & 0.27          & 0.55          \\
+GEM-pBS   & \textbf{1.72} & \textbf{1.18} & 0.02          & 2.39          & \textbf{2.66} & 2.70          & 4.83          & 0.06          & 0.25          & \textbf{0.48} \\
+SOSaG-pBS  & 1.81          & 1.24          & 0.03          & \textbf{2.36} & 2.77          & \textbf{2.38} & \textbf{3.66} & 0.07          & 0.27          & 0.49          \\
+\midrule
+
+\multicolumn{11}{c}{\textbf{$\sigma_O = 0.005$}} \\
+\midrule
+DiffPDE  & 4.30          & 4.35          & 0.17          & 11.47         & 4.44          & 5.99          & 8.46          & 0.32          & 1.02          & 1.40          \\
+GEM-TDS & 7.23          & 8.04          & \textbf{0.17} & 10.92         & 5.59          & 7.62          & 9.77          & \textbf{0.31} & 1.01          & 1.40          \\
+GEM-pBS   & 4.08          & 4.70          & 0.17          & 13.74         & \textbf{4.25} & 4.95          & 6.86          & 0.31          & \textbf{0.99} & \textbf{1.34} \\
+SOSaG-pBS  & \textbf{3.56} & \textbf{3.47} & 0.17          & \textbf{9.15} & 4.65          & \textbf{4.84} & \textbf{6.00} & 0.32          & 1.03          & 1.34          \\
+\midrule
+
+\multicolumn{11}{c}{\textbf{$\sigma_O = 0.01$}} \\
+\midrule
+DiffPDE  & 6.19          & 6.78          & \textbf{0.24} & 16.05          & \textbf{6.26} & 9.11          & 11.58          & \textbf{0.50} & \textbf{1.56} & 2.08          \\
+GEM-TDS & 10.86         & 10.69         & 0.26          & 16.76          & 8.73          & 11.72         & 15.69          & 0.51          & 1.61          & 2.11          \\
+GEM-pBS   & 7.07          & 8.71          & 0.30          & 22.55          & 6.46          & \textbf{7.36} & 9.25           & 0.51          & 1.60          & \textbf{2.05} \\
+SOSaG-pBS  & \textbf{5.45} & \textbf{5.51} & 0.25          & \textbf{12.77} & 6.57          & 7.43          & \textbf{8.87}  & 0.53          & 1.73          & 2.12          \\
+\midrule
+
+\multicolumn{11}{c}{\textbf{$\sigma_O = 0.02$}} \\
+\midrule
+DiffPDE  & \textbf{8.14} & 9.70          & \textbf{0.32} & 20.64          & \textbf{8.82} & 14.70          & 16.64          & \textbf{0.79} & \textbf{2.65} & \textbf{3.29} \\
+GEM-TDS & 13.82         & 17.37         & 0.39          & 24.88          & 12.31         & 17.89          & 20.68          & 0.87          & 2.69          & 3.36          \\
+GEM-pBS   & 11.52         & 14.34         & 0.47          & 31.90          & 10.68         & 12.90          & 14.60          & 0.89          & 2.80          & 3.34          \\
+SOSaG-pBS  & 8.42          & \textbf{9.06} & 0.32          & \textbf{16.78} & 10.16         & \textbf{12.33} & \textbf{14.43} & 0.89          & 2.90          & 3.56          \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+
+% Table 2: Combined Results (Both Experiments)
+\begin{table}[ht]
+\centering
+\caption{Combined results across all experiments and noise levels (\%).}
+\label{tab:combined_results_srd}
+
+\resizebox{0.5\textwidth}{!}{%
+\begin{tabular}{l l cccc}
+\toprule
+\textbf{Noise} & \textbf{Fields}
+& \textbf{DiffPDE} & \textbf{GEM-TDS} & \textbf{GEM-pBS} & \textbf{SOSaG-pBS} \\
+\midrule
+
+\multicolumn{6}{c}{\textbf{Gray-Scott RD}} \\
+\midrule
+$\sigma_O = 0$          & $D$ fields & 1.86  & 4.46  & \textbf{1.45} & 1.52          \\
+               & $u$ fields & 1.60  & 1.36  & 1.21          & \textbf{1.20} \\[2pt]
+$\sigma_O = 0.005$ & $D$ fields & 4.32  & 7.64  & 4.39          & \textbf{3.52} \\
+               & $u$ fields & 5.82  & 5.54  & 6.96          & \textbf{4.66} \\[2pt]
+$\sigma_O = 0.01$  & $D$ fields & 6.49  & 10.77 & 7.89          & \textbf{5.48} \\
+               & $u$ fields & 8.15  & 8.51  & 11.43         & \textbf{6.51} \\[2pt]
+$\sigma_O = 0.02$  & $D$ fields & 8.92  & 15.59 & 12.93         & \textbf{8.74} \\
+               & $u$ fields & 10.48 & 12.64 & 16.19         & \textbf{8.55} \\
+\midrule
+
+\multicolumn{6}{c}{\textbf{3-Species RD}} \\
+\midrule
+$\sigma_O = 0$          & $D$ fields & 4.34  & 5.34  & 3.40          & \textbf{2.94} \\
+               & $u$ fields & 0.27  & 0.29  & \textbf{0.26} & 0.28          \\[2pt]
+$\sigma_O = 0.005$ & $D$ fields & 6.30  & 7.66  & 5.36          & \textbf{5.17} \\
+               & $u$ fields & 0.91  & 0.91  & \textbf{0.88} & 0.90          \\[2pt]
+$\sigma_O = 0.01$  & $D$ fields & 8.99  & 12.04 & 7.69          & \textbf{7.63} \\
+               & $u$ fields & \textbf{1.38} & 1.41 & 1.39         & 1.46          \\[2pt]
+$\sigma_O = 0.02$  & $D$ fields & 13.39 & 16.96 & 12.73         & \textbf{12.31} \\
+               & $u$ fields & \textbf{2.24} & 2.31 & 2.34         & 2.45          \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\section{Discussion}
+Table~\ref{tab:pde_results} shows the results across the PDE benchmarks. The tables give the relative error in percent compared to the error calculated by finite element methods (FEMs) which are used to generate the data and therefore we assume to be the ground truth, with the standard deviation given in the subscript. We notice that the stochastic methods generally tend to outperform the baselines in both the estimation of $u$ and $a$ with the pBS variants of SMC outperforming the TDS implementation. Figure~\ref{fig:darcy_panels} shows the reconstructed fields and the relative errors for a single run for the DF experiment. We can see that the relative error is visually lower for the SMC methods. We have provided single run plots for all experiments in Appendix~\ref{app:further_results}.  Appendix~\ref{app:clarification-target} gives results for the Darcy, Helmholtz and Poisson problems with varying tempering parameter $\rho$ values. We do notice that higher tempering values generally give better reconstruction error, which lends empirically validity to our pBS approach.  
+
+Tables~\ref{tab:results_2srd_3srd_combined} and \ref{tab:combined_results_srd} show the results for the 2SRD and 3SRD experiments, with the former showing the error for each coefficient and solution field and the latter displaying the average error across all fields. We can see that the performance degrades as the observation noise increases, an intuitive result. However, across nearly all results, the stochastic methods outperform the ODE ones. We also see that under higher noise levels, the SOSaG proposal tends to outperform the GEM proposal. We hypothesize that under noisy observations, the second order correction present in the SOSaG proposal helps account for this and therefore produces superior results which may lead to it being a better choice of sampling method in real-world scenarios. For the 3SRD experiments, we observe that DiffPDE achieves good results on the solution fields. This may indicate that in noisy settings, second-order corrections have a greater effect on reconstruction accuracy. 
+
+%Despite the DiffPDE method occasionally producing better results for some of the relative errors associated with the coefficient fields, they under-perform when trying to approximate the solution fields. Although the relative error is low, the scalar fields seem to be sensitive even to small errors. The recon and error plots provided in Appendix~\ref{app:further_results} demonstrate this visually. Despite the low errors on the scalar fields, we can see that the reconstructed field does not well represent the ground truth. The stochastic methods on the other hand approximate this field much better. 
+% so the trade off between occasionally worse performance on the coefficient fields and better results on the scalar fields may be worth it. 
+
+\section{Limitations and Further Work}
+Appendix~\ref{app:comp_expense} gives the results for a single sample with the stochastic methods and shows that generally the stochastic proposals outperform the deterministic methods with an equal compute budget. However, we acknowledge the extra benefit in performance from the SMC methods incur an increased time cost compared to the baseline as the number of samples increases. An optimal implementation of the SMC methods would limit the extra wall clock time needed. The score model we call sequentially gets the score for each sample. This can be vectorized and will instantly speed up the algorithm. 
+
+Although Appendix~\ref{app:clarification-target} shows increased performance with higher tempering values, there is a drop off in performance as this is increased and in some cases a regression, meaning that the tuning of this hyperparameter is an open question as it cannot simply be set to be arbitrarily high. Also, as the optimal tempering parameter differs from experiment to experiment, it is likely that tuning of this is problem specific and therefore is still an open question. 
+
+The PDE residual intermediate likelihoods (and their gradients) can be computationally demanding to evaluate, especially for high-order and large PDE systems. It would be interesting to explore numerical acceleration techniques for the likelihood computation, and incorporate it within the SMC framework as an (possibly unbiased) estimation of the potential function. 
+Another direction might be assuming a pre-trained PINN and use it as a distilled surrogate for computing the intermediate likelihoods. 
+ 
+
+

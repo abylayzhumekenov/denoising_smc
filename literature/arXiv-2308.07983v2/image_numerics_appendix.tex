@@ -1,0 +1,237 @@
+\subsubsection{Image datasets}
+We now present samples from \algo\ in different image dataset and different kinds of inverse problems.
+\paragraph*{Super Resolution}
+%
+We start by super resolution.
+We set $\sigma_y = 0.05$ for all the datasets
+and $\zeta_{\mathrm{coeff}} = 0.1$ for \dps\ . We use $100$ steps of \ddim\ with $\eta=1$. The results are shown in \Cref{fig:sr}.
+We use a downsampling ratio of $4$ for the CIFAR-10 dataset, $8$ for both Flowers and Cats datasets and $16$ for the others.
+The dimension of the datasets are recalled in \cref{table:image_dataset_description}.
+We display in \cref{fig:sr} samples from \algo, \dps and \ddrm over several different image datasets (\cref{table:image_dataset_description}).
+For each algorithm, we
+generate $1000$ samples and we show the pair of samples that are the furthest apart in $L^2$ norm from each other in the pool of samples.
+For \algo\ we ran several parallel particle filters with $N=64$ to generate $1000$ samples.
+%
+\begin{figure}
+\centering
+\begin{tabular}{@{} l 
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}} 
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}} 
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}} 
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}} 
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}}
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}} @{}}
+ & CIFAR-10 & Flowers & Cats & Bedroom & Church & CelebaHQ
+    \\
+ sample 
+ &\includegraphics[width=\hsize]{images/super_resolution/google_ddpm_cifar10_32/0/images/sample}
+ &\includegraphics[width=\hsize]{images/super_resolution/anton_l_ddpm_ema_flowers_64/2/images/sample}
+ &\includegraphics[width=\hsize]{images/super_resolution/samwit_ddpm_afhq_cats_128/4/images/sample}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_bedroom_256/4/images/sample}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_church_256/5/images/sample}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_celebahq_256/5/images/sample} \\\addlinespace[-1.5ex]
+observation
+ &\includegraphics[width=\hsize]{images/super_resolution/google_ddpm_cifar10_32/0/images/measure}
+ &\includegraphics[width=\hsize]{images/super_resolution/anton_l_ddpm_ema_flowers_64/2/images/measure}
+ &\includegraphics[width=\hsize]{images/super_resolution/samwit_ddpm_afhq_cats_128/4/images/measure}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_bedroom_256/4/images/measure}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_church_256/5/images/measure}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_celebahq_256/5/images/measure} \\\addlinespace[-1.5ex]
+ \dps 
+ &\includegraphics[width=\hsize]{images/super_resolution/google_ddpm_cifar10_32/0/images/furthest_0_dps}
+ &\includegraphics[width=\hsize]{images/super_resolution/anton_l_ddpm_ema_flowers_64/2/images/furthest_0_dps}
+ &\includegraphics[width=\hsize]{images/super_resolution/samwit_ddpm_afhq_cats_128/4/images/furthest_0_dps}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_bedroom_256/4/images/furthest_0_dps}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_church_256/5/images/furthest_0_dps}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_celebahq_256/5/images/furthest_0_dps} \\\addlinespace[-1.5ex]
+ \dps 
+ &\includegraphics[width=\hsize]{images/super_resolution/google_ddpm_cifar10_32/0/images/furthest_1_dps}
+ &\includegraphics[width=\hsize]{images/super_resolution/anton_l_ddpm_ema_flowers_64/2/images/furthest_1_dps}
+ &\includegraphics[width=\hsize]{images/super_resolution/samwit_ddpm_afhq_cats_128/4/images/furthest_1_dps}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_bedroom_256/4/images/furthest_1_dps}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_church_256/5/images/furthest_1_dps}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_celebahq_256/5/images/furthest_1_dps} \\\addlinespace[-1.5ex]
+ \ddrm 
+ &\includegraphics[width=\hsize]{images/super_resolution/google_ddpm_cifar10_32/0/images/furthest_0_ddrm}
+ &\includegraphics[width=\hsize]{images/super_resolution/anton_l_ddpm_ema_flowers_64/2/images/furthest_0_ddrm}
+ &\includegraphics[width=\hsize]{images/super_resolution/samwit_ddpm_afhq_cats_128/4/images/furthest_0_ddrm}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_bedroom_256/4/images/furthest_0_ddrm}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_church_256/5/images/furthest_0_ddrm}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_celebahq_256/5/images/furthest_0_ddrm} \\\addlinespace[-1.5ex]
+ \ddrm 
+ &\includegraphics[width=\hsize]{images/super_resolution/google_ddpm_cifar10_32/0/images/furthest_1_ddrm}
+ &\includegraphics[width=\hsize]{images/super_resolution/anton_l_ddpm_ema_flowers_64/2/images/furthest_1_ddrm}
+ &\includegraphics[width=\hsize]{images/super_resolution/samwit_ddpm_afhq_cats_128/4/images/furthest_1_ddrm}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_bedroom_256/4/images/furthest_1_ddrm}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_church_256/5/images/furthest_1_ddrm}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_celebahq_256/5/images/furthest_1_ddrm} \\\addlinespace[-1.5ex]
+  \algo
+ &\includegraphics[width=\hsize]{images/super_resolution/google_ddpm_cifar10_32/0/images/furthest_0_mcg_diff}
+ &\includegraphics[width=\hsize]{images/super_resolution/anton_l_ddpm_ema_flowers_64/2/images/furthest_0_mcg_diff}
+ &\includegraphics[width=\hsize]{images/super_resolution/samwit_ddpm_afhq_cats_128/4/images/furthest_0_mcg_diff}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_bedroom_256/4/images/furthest_0_mcg_diff}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_church_256/5/images/furthest_0_mcg_diff}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_celebahq_256/5/images/furthest_0_mcg_diff} \\\addlinespace[-1.5ex]
+ \algo
+ &\includegraphics[width=\hsize]{images/super_resolution/google_ddpm_cifar10_32/0/images/furthest_1_mcg_diff}
+ &\includegraphics[width=\hsize]{images/super_resolution/anton_l_ddpm_ema_flowers_64/2/images/furthest_1_mcg_diff}
+ &\includegraphics[width=\hsize]{images/super_resolution/samwit_ddpm_afhq_cats_128/4/images/furthest_1_mcg_diff}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_bedroom_256/4/images/furthest_1_mcg_diff}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_church_256/5/images/furthest_1_mcg_diff}
+ & \includegraphics[width=\hsize]{images/super_resolution/google_ddpm_ema_celebahq_256/5/images/furthest_1_mcg_diff} \\\addlinespace[-1.5ex]
+\end{tabular}
+\caption{Ratio 4 for CIFAR, 8 for flowers and Cats and 16 for CELEB}
+\label{fig:sr}
+\end{figure}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{| c | c | c | c | c | c | c |}
+        \hline
+        & CIFAR-10 & Flowers & Cats & Bedroom & Church & CelebaHQ \\ \hline
+        $(W, H, C)$ & $(32, 32, 3)$ & $(64, 64, 3)$ & $(128, 128, 3)$ & $(256, 256, 3)$ & $(256, 256, 3)$ & $(256, 256, 3)$ \\\hline
+    \end{tabular}
+    \caption{The datasets used for the inverse problems over image datasets.}
+    \label{table:image_dataset_description}
+\end{table}
+\paragraph*{Gaussian 2D debluring}
+We consider a Gaussian 2D square kernel with sizes $(w / 6, h / 6)$ and standard deviation $w / 30$ where $(w, h)$ are the width and height of the image.
+We set $\sigma_y = 0.1$ for all the datasets
+and $\zeta_{\mathrm{coeff}} = 0.1$ for \dps\ . We use $100$ steps of \ddim\ with $\eta=1$.
+We display in \cref{fig:deblur_2d} samples from \algo, \dps and \ddrm over several different image datasets (\cref{table:image_dataset_description}).
+For each algorithm, we
+generate $1000$ samples and we show the pair of samples that are the furthest appart in $L^2$ norm from each other in the pool of samples.
+For \algo\ we ran several parallel particle filters with $N=64$ to generate $1000$ samples.
+\begin{figure}
+\centering
+\begin{tabular}{@{} l
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}}
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}}
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}}
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}}
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}}
+    M{0.13\linewidth}@{\hspace{0\tabcolsep}} @{}}
+ & CIFAR 10 & Flowers & Cats & Bedroom & Church & CelebaHQ
+    \\
+ sample
+ &\includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_cifar10_32/3/images/sample}
+ &\includegraphics[width=\hsize]{images/deblur_2d/anton_l_ddpm_ema_flowers_64/3/images/sample}
+ &\includegraphics[width=\hsize]{images/deblur_2d/samwit_ddpm_afhq_cats_128/2/images/sample}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_bedroom_256/1/images/sample}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_church_256/1/images/sample}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_celebahq_256/1/images/sample} \\\addlinespace[-1.5ex]
+observation
+ &\includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_cifar10_32/3/images/measure}
+ &\includegraphics[width=\hsize]{images/deblur_2d/anton_l_ddpm_ema_flowers_64/3/images/measure}
+ &\includegraphics[width=\hsize]{images/deblur_2d/samwit_ddpm_afhq_cats_128/2/images/measure}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_bedroom_256/1/images/measure}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_church_256/1/images/measure}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_celebahq_256/1/images/measure} \\\addlinespace[-1.5ex]
+ \dps
+ &\includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_cifar10_32/3/images/furthest_0_dps}
+ &\includegraphics[width=\hsize]{images/deblur_2d/anton_l_ddpm_ema_flowers_64/3/images/furthest_0_dps}
+ &\includegraphics[width=\hsize]{images/deblur_2d/samwit_ddpm_afhq_cats_128/2/images/furthest_0_dps}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_bedroom_256/1/images/furthest_0_dps}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_church_256/1/images/furthest_0_dps}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_celebahq_256/1/images/furthest_0_dps} \\\addlinespace[-1.5ex]
+ \dps
+ &\includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_cifar10_32/3/images/furthest_1_dps}
+ &\includegraphics[width=\hsize]{images/deblur_2d/anton_l_ddpm_ema_flowers_64/3/images/furthest_1_dps}
+ &\includegraphics[width=\hsize]{images/deblur_2d/samwit_ddpm_afhq_cats_128/2/images/furthest_1_dps}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_bedroom_256/1/images/furthest_1_dps}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_church_256/1/images/furthest_1_dps}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_celebahq_256/1/images/furthest_1_dps} \\\addlinespace[-1.5ex]
+ \ddrm
+ &\includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_cifar10_32/3/images/furthest_0_ddrm}
+ &\includegraphics[width=\hsize]{images/deblur_2d/anton_l_ddpm_ema_flowers_64/3/images/furthest_0_ddrm}
+ &\includegraphics[width=\hsize]{images/deblur_2d/samwit_ddpm_afhq_cats_128/2/images/furthest_0_ddrm}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_bedroom_256/1/images/furthest_0_ddrm}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_church_256/1/images/furthest_0_ddrm}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_celebahq_256/1/images/furthest_0_ddrm} \\\addlinespace[-1.5ex]
+ \ddrm
+ &\includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_cifar10_32/3/images/furthest_1_ddrm}
+ &\includegraphics[width=\hsize]{images/deblur_2d/anton_l_ddpm_ema_flowers_64/3/images/furthest_1_ddrm}
+ &\includegraphics[width=\hsize]{images/deblur_2d/samwit_ddpm_afhq_cats_128/2/images/furthest_1_ddrm}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_bedroom_256/1/images/furthest_1_ddrm}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_church_256/1/images/furthest_1_ddrm}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_celebahq_256/1/images/furthest_1_ddrm} \\\addlinespace[-1.5ex]
+  \algo
+ &\includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_cifar10_32/3/images/furthest_0_mcg_diff}
+ &\includegraphics[width=\hsize]{images/deblur_2d/anton_l_ddpm_ema_flowers_64/3/images/furthest_0_mcg_diff}
+ &\includegraphics[width=\hsize]{images/deblur_2d/samwit_ddpm_afhq_cats_128/2/images/furthest_0_mcg_diff}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_bedroom_256/1/images/furthest_0_mcg_diff}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_church_256/1/images/furthest_0_mcg_diff}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_celebahq_256/1/images/furthest_0_mcg_diff} \\\addlinespace[-1.5ex]
+ \algo
+ &\includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_cifar10_32/3/images/furthest_1_mcg_diff}
+ &\includegraphics[width=\hsize]{images/deblur_2d/anton_l_ddpm_ema_flowers_64/3/images/furthest_1_mcg_diff}
+ &\includegraphics[width=\hsize]{images/deblur_2d/samwit_ddpm_afhq_cats_128/2/images/furthest_1_mcg_diff}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_bedroom_256/1/images/furthest_1_mcg_diff}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_church_256/1/images/furthest_1_mcg_diff}
+ & \includegraphics[width=\hsize]{images/deblur_2d/google_ddpm_ema_celebahq_256/1/images/furthest_1_mcg_diff} \\\addlinespace[-1.5ex]
+
+\end{tabular}
+\caption{}
+\label{fig:deblur_2d}
+\end{figure}
+\paragraph{Inpainting on CelebA}
+\begin{figure}
+\centering
+\begin{tabular}{@{} r M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}}
+M{0.12\linewidth}@{\hspace{0\tabcolsep}}
+ M{0.12\linewidth}@{\hspace{0\tabcolsep}}@{}}
+& Original & \algo & \algo & \algo & \algo & \dps & \ddrm & \smcdiff \\
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250/img_1013_inv_square_0.0.png}
+  &  \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250/fotor_2023-5-15_11_55_18.jpg}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250/fotor_2023-5-15_12_13_49.jpg}
+  &\includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250/fotor_2023-5-15_12_6_19.jpg}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250/fotor_2023-5-15_12_2_58.jpg}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250/1_1_dps}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250/img_1013_inv_square_ddrm}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250/smc_diff_0}\\[-1ex]
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_half/img_1545_half_0.0.png}
+  &  \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_half/1}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_half/2}
+  &\includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_half/5}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_half/7}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_half/0_4_dps}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_half/img_1545_half_ddrm}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_half/smc_diff_0}\\[-1ex]
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_lorem/img_2056_lorem3_0.0.png}
+  &  \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_lorem/0}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_lorem/1}
+  &\includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_lorem/2}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_lorem/3}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_lorem/0_0_dps}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_lorem/img_2056_lorem3_0_ddrm}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/inpainting_250_lorem/0_2_smc_diff}
+\end{tabular}
+\caption{Inpainting with different masks on the CelebA test set.}
+\label{fig:celeb}
+\end{figure}
+We consider the inpainting problem on the CelebA dataset with several different masks in \cref{fig:celeb}.
+We show in \cref{fig:celeb:evolution:particle_cloud} the evolution of the particle cloud with $s$.
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{}
+                M{0.15\linewidth}@{\hspace{0\tabcolsep}}
+                M{0.15\linewidth}@{\hspace{0\tabcolsep}}
+                M{0.15\linewidth}@{\hspace{0\tabcolsep}}
+                M{0.15\linewidth}@{\hspace{0\tabcolsep}} M{0.15\linewidth}@{\hspace{0\tabcolsep}} M{0.15\linewidth}@{\hspace{0\tabcolsep}} @{}}
+$1000$ & $900$ & $800$ & $700$ & $600$ & $500$\\
+  \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_999}
+  &  \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_902}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_802}
+  &\includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_702}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_601}
+  & \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_501}\\\addlinespace[-1.5pt]
+    \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_401} &
+    \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_300} &
+    \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_200} &
+    \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_100} &
+    \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_52} &
+    \includegraphics[width=\hsize]{images/optimal/inpaiting_denoising/celeb/evolution_example/example_particle_cloud_4} \\
+    $400$ & $300$ & $200$ & $100$ & $50$ & $4$
+\end{tabular}
+\caption{Evolution of the particle cloud for one of the masks. The numbers on top and bottom indicate the step $s$ of the approximation.}
+\label{fig:celeb:evolution:particle_cloud}
+\end{figure}

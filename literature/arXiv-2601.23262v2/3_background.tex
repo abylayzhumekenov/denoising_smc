@@ -1,0 +1,97 @@
+\section{Problem Formulation and Background}
+
+\begin{figure*}[!tb]
+    \centering
+    \includegraphics[width=.95\linewidth]{figures/all_pdes_known_pixels_grid.pdf}
+    \caption{Contour plot of the ground truth parameters overlayed with the observed values (highlighted pixels) for each PDE. The top row shows the coefficient field and the bottom row shows the solution field.}
+    \label{fig:known_indices}
+\end{figure*}
+
+\subsection{Partial Differential Equations}
+We consider the case for both static and time dependent PDEs. In the static case, for a spatial domain $\Omega$ a PDE can be written as
+\begin{equation}
+    \begin{split}
+        &f(c, a, u) = 0, \quad c \in \Omega, \\
+        &u(c) = g(c), \quad c \in \partial \Omega,
+    \end{split}
+\end{equation}
+where $c$ is a spatial coordinate, $u\in \mathcal{U}$ is the solution field of the PDE, and $a \in \mathcal{A}$ is a coefficient field that describes some properties of the system which influence the PDE. For example, in Darcy flow, one solves for the pressure field $u(c)$ given the permeability field $a(c)$ of a specific medium $-\nabla \cdot (a(c)\nabla u(c)) = s(c)$ 
+and $s(c)$ is a source term such as a forcing function. For a time-dependent PDE defined over a time horizon $[0,\mathcal{T}]$, we write
+\begin{equation}
+    \begin{split}
+        f(c,\tau, a,u) &= 0,  \quad c \in \Omega, \quad \tau \in [0,\mathcal{T}], \\
+        u(c,\tau) &= g(c,\tau),  \quad c \in \partial \Omega, \quad \tau \in [0,\mathcal{T}], \\
+        u(c,0) &= a(c),
+    \end{split}
+\end{equation}
+where $\tau$ denotes PDE time (to be distinguished from the denosing diffusion time $t$). Here,
+$u$ is the solution field and $a$ specifies the initial condition and/or PDE coefficients. 
+As an example of such a dynamic system, we consider the incompressible Navier--Stokes (INS) equations, where the solution field is the velocity $u(c,\tau)=v(c,\tau)$, together with a pressure field $p(c,\tau)$, viscosity $\nu$, and external forcing $q(c,\tau)$. In this setting, the initial condition is given by $a(c)=v(c,0)$, and our goal is to recover $a$ and/or the solution at a later time $u_{\mathcal{T}} = u(\cdot,\mathcal{T})$ from sparse observations.
+
+\subsection{Sampling for Generative Diffusion Models}
+Generative diffusion models \citep{sohl2015deep, song2021scorebasedgenerativemodelingstochastic, ho2020denoising, cao2024survey, karras2022elucidatingdesignspacediffusionbased} provide a probabilistic framework for sampling from complex, high-dimensional data distributions $p_{\text{data}}(x)$.\footnote{For consistency, we follow the EDM formulation \citep{karras2022elucidatingdesignspacediffusionbased}, but our methodology can be generalized to other flow-based generative models \citep{JMLR:v26:23-1605, lipman2023flow}.} Over many time steps, $p_{\text{data}}(x)$ is gradually corrupted by adding Gaussian noise with standard deviation $\sigma$, where $\sigma$ is obtained from a predetermined noise schedule such that $\sigma_t \in [0, \sigma_{\text{max}}]$ and $t \in [0, T]$. Therefore, $p(x , \sigma_{\text{max}}) = p_{\text{ref}}(x) \approx \mathcal{N}(0, \sigma_{\text{max}}^2 I)$. In order to generate samples that approximate $p_{\text{data}}(x)$, we draw a sample $x_T \sim \mathcal{N}(0, \sigma_{\text{max}}^2 I)$ and gradually denoise the samples with $\sigma_t$ so that $x_t \sim p_t(x_t , \sigma_t)$ and $x_0 \sim p_{\text{data}}(x)$. 
+
+The probability flow ordinary differential equation (ODE) describes how a sample can be denoised~\citep{song2021scorebasedgenerativemodelingstochastic, karras2022elucidatingdesignspacediffusionbased} in reverse-time according to
+\begin{equation}
+    d x_t = -\Dot{\sigma}_t \sigma_t \nabla_{x_t} \log p_t(x_t, \sigma_t)dt, \quad t\in[0, T], 
+    \label{eq:prob_ODE_noise}
+\end{equation}
+%
+where $\nabla_x \log p_t(x_t, \sigma_t)$ is the score function, and the forward noising process is considered a Brownian motion as in~\citet{karras2022elucidatingdesignspacediffusionbased}. It has previously been proposed \citep{karras2022elucidatingdesignspacediffusionbased} to learn the denoising function $D_{\theta}(x; \sigma)$ such that the score function can be estimated by: 
+\begin{equation}
+    \nabla_{x} \log p_t(x_t, \sigma_t) = \frac{x_t - D_\theta(x_t,\sigma_t)}{\sigma_t^2}. 
+\end{equation}
+%
+Here, $D_{\theta}$ is a neural network trained to predict the denoised version of a noisy sample at a given noise level. Consequently, the score is proportional to the difference between the noisy sample and its denoised estimate, yielding an implicit estimate of the added noise. 
+ 
+An alternative to ODE sampling is to simulate the reverse-time stochastic differential equation (SDE), described by  
+\begin{equation}
+    d x_t = -2\Dot{\sigma}_t \sigma_t \nabla_x \log p_t(x_t, \sigma_t)dt + \sqrt{2 \Dot{\sigma}_t \sigma_t} \, dW_t,  
+    \label{eq:reverse_sde_noise_form}
+\end{equation}
+where $W_t$ is a Brownian motion. 
+The derivation of the ODE and SDE equivalence follows from matching the path distribution. 
+Again, a denoising neural network $D_\theta$ is trained which in turn is used to approximate the score $\nabla_x \log p_t(x, \sigma_t)$, enabling approximate inversion of the original noising process through a reverse-time SDE. 
+
+\subsection{Stochastic Guided Sampling for Solving PDEs}
+In this work we propose to solve PDE equations by using a diffusion model, pretrained on the joint distribution of coefficients $a$ and solutions $u$, similar to \citet{huang2024diffusionpdegenerativepdesolvingpartial}. This model acts as a prior distribution and we then use PDE residuals as guidance during inference. Thus, the samples generated by the diffusion model are the tuples $x = (a,u)$ where
+\begin{equation}
+x \in \mathcal{X}, \qquad \mathcal{X} = \mathcal{A} \times \mathcal{U},
+\end{equation}
+i.e., concatenating the PDE coefficients and solution, and we denote the prior distribution over these tuples by $p_{\mathrm{data}}$.  
+
+However, naively solving a PDE using this approach is fundamentally no different compared to just generating an image~\citep[see, e.g.,][]{yang2023denoising}, ignoring two crucial information: the governing PDE equation, and often times, sparse observations $a_{obs}, u_{obs}$ of the coefficients and solution. 
+We thus propose to incorporate these information as a condition $y$ and aim to sample from a conditional/posterior diffusion model. 
+The sampling can be achieved by simulating the conditional diffusion model
+\begin{equation}
+    \begin{split}
+        dx_t 
+        &= \underbrace{-2\Dot{\sigma}_t \sigma_t \nabla_{x_t} \log p_t^\theta(x_t, \sigma_t)dt}_{\text{Score term}} \\
+        &\underbrace{-2\Dot{\sigma}_t \sigma_t \nabla_{x_t} \log p_t^\theta(y \mid x_t, \sigma_t))dt}_{\text{Guidance term}} + \sqrt{2 \Dot{\sigma}_t \sigma_t} \, dW_t.
+        \label{eq:guidance_sde_noise}
+    \end{split}
+\end{equation}
+
+In addition to the score term, we note that \eqref{eq:guidance_sde_noise} now has a gradient term based on the conditional information which we call the \emph{guidance} term. This extra term will tilt the unconditional diffusion model at time $t=0$, to the posterior distribution
+\begin{equation}
+    p_\theta(x \mid y) \propto p(y\mid x) p_{\theta}(x), 
+    \label{eq:cond_posterior}
+\end{equation} 
+where $p_\theta(x)\approx p_{\text{data}}$ is given by a pre-trained diffusion model prior. However, exactly targeting this posterior would require computing the intermediate likelihood 
+\(
+    p_t^\theta(y \mid x_t, \sigma_t) = \int p(y \mid x_0) p_\theta(x_0 \mid x_t) dx_t
+\)
+which is in general intractable. Different guidance methods \cite{dou2024diffusion, zhao2025conditional, daras2024surveydiffusionmodelsinverse, chung2025diffusionmodelsinverseproblems} \emph{approximate} this intermediate likelihood in different ways. In the next section we introduce Sequential Monte carlo (SMC) which leverages interacting particles as a way to correct the approximation and to form the posterior distribution.  
+
+\subsection{Sequential Monte Carlo}
+SMC methods~\citep[e.g.,][]{chopin2020introduction,NaessethLS:2019a} provide a principled particle-based framework for sampling from a sequence of distributions, and naturally align with the sequential denoising procedure of generative diffusion models. Previous works have used the SMC framework as a conditional sampling algorithm for diffusion models \citep{wu2023-TDS, cardoso2024monte, stevens2025sequential, dou2024diffusion, pmlr-v267-ekstrom-kelvinius25b, zhao2025conditional}. In the previous sections $t$ was used when discussing continuous time processes. In reality, when simulating these processes we approximate them in discrete time $k$ and therefore we shall be using $k$ in the following sections. 
+
+SMC evolves a population of $N$ particles $\{x_k^{(i)}\}_{i=1}^N$ across $k=0,2,\ldots, K$ time steps. The key components of SMC are the proposal distributions/Markov kernels $M_K(x_K)$, $\{M_{k-1}(x_{k-1} \mid x_{k})\}_{k=1}^{K}$ and the weighting/potential functions $G_K(x_K)$, $\{G_{k-1}(x_k, x_{k-1})\}_{k=1}^{K}$. Initially, we draw $N$ samples from our initial proposal $x^{(i)}_K \sim M_K = \mathcal{N}(0, I)$ and then weight them according to an initial potential function $w^{(i)}_K \propto G_K(x^{(i)}_K)$. For $K$ iterations, we then sequentially propose $x^{(i)}_{k-1} \sim M_{k-1}(x^{(i)}_{k-1} \mid x^{(i)}_{k})$, weight samples $w^{(i)}_{k-1} \propto w^{(i)}_{k} G_{k-1}(x^{(i)}_k, x^{(i)}_{k-1})$, and resample \citep{douc2005comparison} if our effective sample size (ESS) drops below a certain threshold $N_{eff}$. An overview of this process is given in Appendix~\ref{app:smc_psuedocode}.
+At each iteration $k$ the SMC algorithm generates a weighted particle population $\{(x_k^{(i)}, w_k^{(i)} \}_{i=1}^N$ that provides an empirical approximation of the target distribution
+\begin{align}
+    \nu_k(x_{k:K}) &\propto G_K(x_K) M_K(x_K) \nonumber \\
+    &\times\prod_{j={k+1}}^K G_{j-1}(x_j, x_{j-1}) M_{j-1}(x_{j-1} \mid x_{j}).
+    \label{eq:FK_formula}
+\end{align}
+
+We apply the SMC framework to sample the posterior distribution in Equation~\eqref{eq:cond_posterior} by choosing the proposals and weight functions $\{M_k, G_k \}_{k=0}^K$ in such a way that the final \textit{marginal} $\nu_0(x_0) = p_\theta(x_0 \mid y)$. As long as this requirement is fulfilled, the algorithm will provide a consistent (as $N\rightarrow \infty$) Monte Carlo estimate of the target at the final time point regardless of the intermediate marginals. In practice, however, these design choices influence the statistical efficiency of the algorithm (e.g., the weight variance).

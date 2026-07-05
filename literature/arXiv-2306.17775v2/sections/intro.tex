@@ -1,0 +1,51 @@
+\section{Introduction}\label{sec:intro} 
+
+Conditional sampling is an essential primitive in the machine learning toolkit.
+%When combined with a likelihood $p(y\mid x)$, generative models imply conditional distributions $\pmodel(x \mid y) \propto \pmodel(x) p(y\mid x)$ given conditioning information $y$.
+One begins with a generative model that parameterizes a distribution $\pmodel(x)$ on data $x$, and then augments the model to include information $y$ in a joint distribution $\pmodel(x, y)=\pmodel(x)p(y\mid x).$
+This joint distribution then implies a conditional distribution $\pmodel (x\mid y),$ from which desired outputs are sampled.
+
+For example, in protein design, $\pmodel(x)$ can represent a distribution of physically realizable protein structures, 
+$y$ a substructure that imparts a desired biochemical function, 
+and samples from $\pmodel(x \mid y)$ are then physically realizable structures that contain the substructure of interest \citep[e.g.][]{trippe2022diffusion,watson2022broadly}.
+%In computer vision, $\pmodel(x)$ can be a distribution of images, $y$ a class label,and samples from $\pmodel (x\mid y)$ are then images likely to be classified as label $y$ \citep{ho2022classifier}.  
+
+Diffusion models are a class of generative models that have demonstrated success in conditional generation tasks \citep{ho2020denoising,ramesh2022hierarchical,song2020score,watson2022broadly}.
+%Diffusion models approximate sampling from complicated data distributions $\pmodel (x)$ through an iterative refinement process that builds up data from noise \citep{ho2020denoising, song2020score}.
+They parameterize distributions $\pmodel (x)$ through an iterative refinement process that builds up data from noise.
+When a diffusion model is used for conditional generation, this refinement process is modified to account for conditioning at each step \citep{dhariwal2021diffusion,hovideo,ramesh2022hierarchical,song2020score}.
+%Moreover, diffusion models apply not only to Euclidean data, but also to data better described as living on a Riemannian manifold \citep{deriemannian}.
+%This type of controllable generation can be formalized as a conditional sampling problem, i.e.\ sample from $\pmodel(x \mid y)$ where $y$ is some conditioning information.
+
+One approach is to incorporate the conditioning information into training \citep[e.g.][]{dhariwal2021diffusion,ramesh2022hierarchical};
+one either modifies the unconditional model to take $y$ as input or trains a separate conditional model to predict $y$ from partially noised inputs.
+%This approach has provided most of the major successes of diffusion models to date.
+However, conditional training requires 
+(i) assembling a large set of paired examples of the data and conditioning information $(x, y)$, and (ii) designing and training a task-specific model when adapting to new conditioning tasks.
+For example, image inpainting and class-conditional image generation can be both formalized as conditional sampling problems based on the same (unconditional) image distribution $\pmodel(x)$; however, the conditional training approach requires training separate models on two curated sets of conditioning inputs. 
+
+To avoid conditional training, a separate line of work uses heuristic approximations that directly operate on unconditional diffusion models: once an unconditional model $\pmodel(x)$ is trained, it can be flexibly combined with various conditioning criteria to generate customized outputs. These approaches have been applied to \emph{inpainting} problems \citep{meng2021sdedit,song2020score,trippe2022diffusion}, and other inverse problems \citep{bansal2023universal,chung2022diffusion,hovideo, song2023pseudoinverse}.
+But it is unclear how well these heuristics approximate the exact conditional distributions they are designed to mimic; for example on inpainting tasks they often fail to return outputs consistent with both the conditioning information and unconditional model \citep{zhang2023towards}.
+These concerns are critical in domains that require accurate conditionals. 
+In molecular design, for example, even a small approximation error could result in atomic structures with chemically implausible bond distances.
+
+% SMC is revelant. cite smcdiff.  Naive SMC does not work 
+This paper develops a practical and asymptotically exact method for conditional sampling from an unconditional diffusion model.
+We use sequential Monte Carlo (SMC), a general tool for asymptotically exact inference in sequential probabilistic models  \citep{chopin2020introduction,doucet2001sequential,naesseth2019elements}.
+SMC simulates an ensemble of weighted trajectories, or \emph{particles}, through a sequence of proposals and weighting mechanisms. 
+These weighted particles then form an asymptotically exact approximation to a desired target distribution. 
+
+The premise of this work is to recognize that the sequential structure of diffusion models permits the application of SMC for sampling from conditional distributions $\pmodel(x \mid y)$.
+We design an SMC algorithm that leverages \emph{twisting},
+an SMC technique that modifies proposals and weighting schemes to approach the optimal choices \citep{ guarniero2017iterated,whiteley2014twisted}.
+While optimal twisting is intractable, we effectively approximate it with recent heuristic approaches to conditional sampling \citep[eg.][]{hovideo},
+and correct the errors by the weighting mechanisms. 
+The resulting algorithm maintains asymptotic exactness to $\pmodel (x \mid y)$, and empirically it can outperform heuristics alone even with just two particles.
+
+We summarize our contributions: 
+(i) We propose a practical SMC algorithm, \emph{Twisted Diffusion Sampler} or TDS,  for asymptotically exact conditional sampling from diffusion models; 
+(ii) We show that TDS applies to a range of conditional generation problems, and extends to Riemannian manifold diffusion models; 
+(iii) On MNIST inpainting and class-conditional generation tasks we demonstrate TDS's empirical improvements beyond heuristic approaches; and  
+(iv) On protein motif-scaffolding problems with short scaffolds TDS provides greater flexibility and achieves higher success rates than the state-of-the-art conditionally trained model. 
+
+%The paper is organized as follows. \Cref{sec:background} gives background materials on diffusion models and sequential Monte Carlo. \Cref{sec:method}  introduces the main methodology, Twisted Diffusion Sampler, and its applications to various conditioning criteria and Riemannian diffusion models. \Cref{sec:related-works} describes the related works. We evaluate our method on synthetic settings and conditional MNIST image generation in \Cref{sec:results}, and benchmark protein motif-scaffolding problems in \Cref{sec:exp-protein}. Finally, \Cref{sec:discussion} summarizes and discusses the limitation of the proposed method. 

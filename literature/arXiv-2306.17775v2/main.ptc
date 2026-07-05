@@ -1,0 +1,62 @@
+\providecommand \autonum@processReference [2]{}
+\contentsline {section}{\numberline {1}Introduction}{1}{section.1}%
+\contentsline {section}{\numberline {2}Background: Diffusion models and sequential Monte Carlo}{2}{section.2}%
+\contentsline {section}{\numberline {3}Twisted Diffusion Sampler{}: SMC sampling for diffusion model conditionals }{3}{section.3}%
+\contentsline {subsection}{\numberline {3.1}Conditional diffusion sampling as an SMC procedure}{3}{subsection.3.1}%
+\contentsline {subsection}{\numberline {3.2}Twisted diffusion sampler}{4}{subsection.3.2}%
+\contentsline {paragraph}{Twisted targets and weighting functions.}{5}{section*.3}%
+\contentsline {subsection}{\numberline {3.3}TDS for inpainting, additional degrees of freedom}{6}{subsection.3.3}%
+\contentsline {subsection}{\numberline {3.4}TDS on Riemannian manifolds}{6}{subsection.3.4}%
+\contentsline {section}{\numberline {4}Related work}{6}{section.4}%
+\contentsline {section}{\numberline {5}Simulation study and conditional image generation}{7}{section.5}%
+\contentsline {paragraph}{Compute Cost:}{7}{section*.5}%
+\contentsline {subsection}{\numberline {5.1}Applicability and precision of TDS in two dimensional simulations}{8}{subsection.5.1}%
+\contentsline {subsection}{\numberline {5.2}Class-conditional image generation}{8}{subsection.5.2}%
+\contentsline {section}{\numberline {6}Case study in computational protein design: the motif-scaffolding problem}{9}{section.6}%
+\contentsline {section}{\numberline {7}Discussion}{10}{section.7}%
+\contentsline {section}{Appendix}{14}{section*.10}%
+\ttl@starttoc {appendixtoc@1}
+\contentsline {section}{\numberline {A}Twisted Diffusion Sampler{} additional details}{14}{appendix.A}%
+\contentsline {subsection}{\numberline {A.1}Diffusion models with non-constant noise variance and variance-preserving scaling}{14}{subsection.A.1}%
+\contentsline {paragraph}{TDS algorithm for variance exploding diffusion models.}{14}{section*.11}%
+\contentsline {paragraph}{Extension to variance preserving diffusion models.}{14}{section*.12}%
+\contentsline {subsection}{\numberline {A.2}TDS parameters}{15}{subsection.A.2}%
+\contentsline {paragraph}{Proposal variance.}{15}{section*.13}%
+\contentsline {paragraph}{Resampling strategy.}{15}{section*.14}%
+\contentsline {subsection}{\numberline {A.3}Derivation of \Cref {eq:twisted-intermediates}}{15}{subsection.A.3}%
+\contentsline {subsection}{\numberline {A.4}Inpainting and degrees of freedom final steps for asymptotically exact target }{15}{subsection.A.4}%
+\contentsline {subsection}{\numberline {A.5}Asymptotic accuracy of TDS -- additional details and full theorem statement}{16}{subsection.A.5}%
+\contentsline {paragraph}{Proof of \Cref {thm:twisted_SMC_complete}:}{17}{section*.15}%
+\contentsline {section}{\numberline {B}Riemannian Twisted Diffusion Sampler{}}{18}{appendix.B}%
+\contentsline {paragraph}{The tangent normal distribution.}{18}{section*.16}%
+\contentsline {paragraph}{Riemannian diffusion models and the tangent normal distribution.}{19}{section*.17}%
+\contentsline {paragraph}{TDS for Riemannian diffusion models.}{19}{section*.18}%
+\contentsline {paragraph}{Adapting the TDS algorithm to the Riemannian setting.}{20}{section*.19}%
+\contentsline {section}{\numberline {C}Additional Related Work}{20}{appendix.C}%
+\contentsline {section}{\numberline {D}Empirical results additional details}{20}{appendix.D}%
+\contentsline {subsection}{\numberline {D.1}Synthetic diffusion models on two dimensional problems}{20}{subsection.D.1}%
+\contentsline {paragraph}{Forward process.}{20}{section*.21}%
+\contentsline {paragraph}{Unconditional target distributions and likelihood.}{20}{section*.22}%
+\contentsline {subsection}{\numberline {D.2}Image conditional generation experiments}{21}{subsection.D.2}%
+\contentsline {subsubsection}{\numberline {D.2.1}Class-conditional generation on MNIST}{21}{subsubsection.D.2.1}%
+\contentsline {paragraph}{Set-up.}{21}{section*.23}%
+\contentsline {paragraph}{Sample plots.}{21}{section*.24}%
+\contentsline {paragraph}{Ablation study on twist scales.}{21}{section*.28}%
+\contentsline {paragraph}{Effective sample size.}{25}{section*.29}%
+\contentsline {subsubsection}{\numberline {D.2.2}Image inpainting on MNIST}{25}{subsubsection.D.2.2}%
+\contentsline {paragraph}{Twisting function variance schedule.}{25}{section*.31}%
+\contentsline {paragraph}{Metrics.}{26}{section*.32}%
+\contentsline {paragraph}{Comparison results of different methods.}{26}{section*.34}%
+\contentsline {paragraph}{Ablation study on twisting function variance schedule.}{26}{section*.36}%
+\contentsline {subsubsection}{\numberline {D.2.3}Class-conditional generation on ImageNet and CIFAR-10}{26}{subsubsection.D.2.3}%
+\contentsline {paragraph}{ImageNet.}{26}{section*.37}%
+\contentsline {paragraph}{CIFAR-10.}{27}{section*.41}%
+\contentsline {section}{\numberline {E}Motif-scaffolding application details}{28}{appendix.E}%
+\contentsline {paragraph}{Twisting functions for motif scaffolding.}{29}{section*.44}%
+\contentsline {paragraph}{Evaluation details.}{30}{section*.45}%
+\contentsline {paragraph}{Resampling.}{30}{section*.46}%
+\contentsline {subsection}{\numberline {E.1}Additional Results}{31}{subsection.E.1}%
+\contentsline {paragraph}{Impact of twist scale on additional motifs.}{31}{section*.48}%
+\contentsline {paragraph}{Effective sample size varies by problem.}{31}{section*.50}%
+\contentsline {paragraph}{Application of TDS to RFdiffusion:}{31}{section*.52}%
+\contentsfinish 

@@ -1,0 +1,202 @@
+\subsection{Asymptotic accuracy of TDS -- additional details and full theorem statement}\label{sec:theorem_statement_and_proof}
+In this section we (i) characterize sufficient conditions on the model and twisting functions under which TDS provides arbitrarily accurate estimates as the number of particles is increased and 
+(ii) discuss when these conditions will hold in practice for the twisting function $\pTwist(y\mid \xt)$ introduced in \Cref{sec:method}.
+
+We begin with a theorem providing sufficient conditions for asymptotic accuracy of TDS.
+\begin{theorem}\label{thm:twisted_SMC_complete}
+Let $\pmodel(\dt{x}{0:T})$ be a diffusion generative model
+(defined by \cref{eqn:diffusion_marginal,eq:unconditional-diffusion-transition})
+with 
+$$
+\pmodel(\xt \mid \xtpo) = \mathcal{N}\left(\xt \mid \xtpo + \sigma_{t+1}^2 \scoremodel(\xtpo), \sigma_{t+1}^2 I
+\right),$$
+with variances $\sigma_1^2, \dots, \sigma_T^2.$ 
+Let $\pTwist(y \mid \xt)$ be twisting functions,
+and 
+$$
+\proposal_t(\xt \mid \xtpo) = 
+\mathcal{N}\left(
+\xt \mid \xtpo + \sigma_{t+1}^2 [\scoremodel(\xtpo) + \nabla_{\xtpo}\log \pTwist(y\mid \xtpo)], 
+\tilde \sigma_{t+1}^2 \right)
+$$
+be proposals distributions for $t=0,\dots, T-1,$
+and let $\mathbb{P}_{K}=\sum_{k=1}^K \dt{w_k}{0}\delta_{\dt{x_k}{0}}$ for weighted particles $\{(\dt{x_k}{0}, \dt{w_k}{0})\}_{k=1}^K$ returned by \Cref{alg:TDS} with $K$ particles.
+Assume
+\begin{enumerate}[label=(\alph*)]
+    \item{the final twisting function is the likelihood, $\pTwist(y\mid \xzero)=\plikelihood{y}{\xzero},$} \label{item:final_twist}
+    \item{the first twisting function $\pTwist(y \mid \xT),$ and the ratios of subsequent twisting functions $\pTwist(y \mid \xt) / \pTwist(y \mid \xtpo) $ are positive and bounded,}\label{item:twist_assumption}
+    %\item{each $\nabla_{\xt} \log \pTwist(y\mid \xt)$ with $t>0$ is continuous and has bounded gradients, and}\label{item:twist_gradient}
+    \item{each $\log \pTwist(y\mid \xt)$ with $t>0$ is continuous and has bounded gradients in $\xt$, and}\label{item:twist_gradient}
+    \item{the proposal variances are larger than the model variances, i.e.\ for each $t,\ \tilde \sigma_t^2 >\sigma_t^2.$} \label{item:proposal_var}
+\end{enumerate}
+Then $\mathbb{P}_{K}$ converges setwise to $\pmodel(\xzero\mid y)$ with probability one,
+that is 
+for every set $A,$ 
+$\lim_{K\rightarrow\infty} \mathbb{P}_{K}(A) = \int_A \pmodel(\xzero\mid y) d\xzero.$
+\end{theorem}
+
+The assumptions of \Cref{thm:twisted_SMC_complete} are readily satisfied in common applications.
+\begin{itemize}
+\item {Assumption \ref{item:final_twist} may be satisfied by construction by choosing $\pTwist(y\mid \xzero)=\plikelihood{y}{\xzero}$
+by defining $\denoiser(\xzero, t=0)=\xzero.$
+}
+\item{Assumption \ref{item:twist_assumption} is satisfied if (i) $\plikelihood{y}{x}$ is smooth in $x$ and everywhere positive and (ii) $\pTwist(y\mid \xt) = \plikelihood{y}{\denoiser(\xt)}$ where $\denoiser(\xt)$ takes values in some compact domain.
+An alternative sufficient condition for Assumption \ref{item:twist_assumption} is for $\plikelihood{y}{x}$ to be positive and bounded away from zero; 
+this latter condition will hold when, for example, $\plikelihood{y}{x}$ is a classifier fit with regularization.}
+\item{Assumption \ref{item:twist_gradient} is the strongest assumption.
+It will be satisfied, for example, if (i) $\pTwist(y\mid \xt) = \plikelihood{y}{\denoiser(\xt)},$ and (ii) $\plikelihood{y}{x}$ and $\denoiser(\xt)$ are smooth in $x$ and $\xt,$ with uniformly bounded gradients.
+While smoothness of $\denoiser(\cdot, t)$ can be encouraged by the use of skip-connections and regularization,
+$\denoiser(\cdot, t)$ may present sharp transitions,
+particularly for $t$ close to zero.}
+\item{Assumption \ref{item:proposal_var}, that the proposal variances satisfy $\tilde \sigma_{t}^2 > \sigma_t^2$ is likely not needed for the result to hold.
+However, this assumption permits usage of existing SMC theoretical results in the proof;
+in practice, our experiments use $\tilde \sigma_t^2 = \sigma_t^2,$
+but alternatively the assumption could be met by inflating each $\tilde \sigma_t^2$ by some arbitrarily small $\delta$ without markedly impacting the behavior of the sampler.}
+\end{itemize}
+
+%\paragraph{\BLT{Cut this paragraph for NeurIPS appendix submission} Inpainting and inpaiting with degrees of freedom.}
+
+%\begin{cor}
+%The inpainting and DOF cases are consistent for their conditionals.
+%\end{cor}
+%\begin{proof}
+%We can see that early truncation at step $t=1$ forms a special case.
+%By reindexing $t$ we find we are consistent for $\pmodel(\dt{x}{1} \mid y).$
+%Then those final samplers sample $\xzero \sim \pmodel(\xzero \mid \dt{x}{1}, y)$ in the last step.
+%So by the law of total probability and chain rule of probability they give exact samples in the limit as desired.
+%\end{proof}
+%
+%Why is bounded assumption reasonable in the inpainting case?
+%It's because each $\sigma_t^2>0$ and so with 
+%$\pTwist(y\mid \xt; \mask) = \mathcal{N}(y; \denoiser(\xt)_\mask, \bar \sigma_t^2)=p(y\mid \dt{x}{1})$
+%with $\bar \sigma_t^2 = \sum_{t^\prime=1}^t\sigma_{t^\prime}^2,$
+%the twisting variance are a decreasing sequence.
+%And since the denoiser is also bounded and each $\bar \sigma_t^2>0$, there is some $0 <c <C< \infty$ such that 
+%$c<\pTwist(y\mid \xt) <C$ and so the ratio is bounded.
+
+\paragraph{Proof of \Cref{thm:twisted_SMC_complete}:}
+\Cref{thm:twisted_SMC_complete} characterizes a set of conditions under which SMC algorithms converge.
+We restate this result below in our own notation.
+\begin{theorem}[\citet{chopin2020introduction} -- Proposition 11.4]\label{thm:chopin_theorem}
+Let $\{(\dt{x_k}{0}, \dt{w_k}{0})\}_{k=1}^K$ be the particles and weights returned at the last iteration of a sequential Monte Carlo algorithm with $K$ particles using multinomial resampling.
+If each weighting function $\weight_t(\xt, \xtpo)$ is positive and bounded, 
+then for every bounded, $\target_0$-measurable function $\phi$ of $\xt$
+$$
+\lim_{K\rightarrow \infty} \sum_{k=1}^K \dt{w_k}{0} \phi(\dt{x_k}{0})
+=
+\int \phi(\xzero)\target_0(\xzero)d\xzero.
+$$
+with probability one.
+\end{theorem}
+
+
+An immediate consequence of \Cref{thm:chopin_theorem} is the setwise convergence of the discrete measures, $\hat P_K = \sum_{k=1}^K \dt{w_k}{0} \delta_{\dt{x_k}{0}}.$
+This can be seen by taking for each $\phi(x) = \I[x \in A]$ for any $\target_0$-measurable set $A$.
+The theorem applies both in the Euclidean setting, where each $\dt{x_k}{t}\in \R^D,$ as well as the Riemannian setting.
+
+We now proceed to prove \Cref{thm:twisted_SMC_complete}.
+\begin{proof}
+To prove the theorem we show
+(i) the $\xzero$ marginal final target $\target_0$ is $\pmodel(\xzero \mid y)$ and then
+(ii) $\mathbb{P}_K$ converges setwise to $\target_0.$
+
+We first show (i) by manipulating $\target_0$ in \Cref{eq:final-target} to obtain $\pmodel(\dt{x}{0:T} \mid y).$
+From \Cref{eq:final-target} we first have
+\begin{align}
+\begin{split}
+   \target_0(\dt{x}{0:T}) &= \frac{1}{\mathcal{L}_0} 
+        \left[ \proposal(\dt{x}{T})  \prod_{t=0}^{T-1} \proposal_{t}(\dt{x}{t}\mid  \dt{x}{t+1})  \right] 
+        \left[ \weight_T(\dt{x}{T})
+        \prod_{t=0}^{T-1} \weight_{t^\prime}(\dt{x}{t}, \dt{x}{t+1}) \right]   \\
+    &\mathrm{Substitute\ in\ weights\ from\ \cref{eq:diffusion-twisted-weigthing-functions}.} \\
+    &= \frac{1}{\mathcal{L}_0} 
+        \left[ p(\dt{x}{T}) \prod_{t=0}^{T-1} r_t (\xt \mid \xtpo)
+        \right] 
+        \left[ \pTwist(y\mid \dt{x}{T})
+        \prod_{t=0}^{T-1} 
+        \frac{\pmodel(\xt \mid \xtpo)\pTwist(y\mid \xt)}{\pTwist(y \mid \xtpo)r_t(\xt \mid \xtpo)}
+        \right] \\
+    &\mathrm{Rearrange\ }\pmodel\mathrm{\ and \ } r_t\ \mathrm{\ terms, \ and\ cancel\ out\ }r_t \mathrm{\ terms.} \\
+    &= \frac{1}{\mathcal{L}_0} 
+        \left[ p(\dt{x}{T}) \prod_{t=0}^{T-1} \pmodel(\xt \mid \xtpo)
+        \right] 
+        \left[ \pTwist(y\mid \dt{x}{T})
+        \prod_{t =0}^{T-1} 
+        \frac{\cancel{r_t(\xt \mid \xtpo)}\pTwist(y\mid \xt)}{\pTwist(y \mid \xtpo)\cancel{r_t(\xt \mid \xtpo)}}
+        \right] \\
+    &\mathrm{Collapse\ }\pmodel\mathrm{\ terms.}\\ %,\ rearrange\ and\ cancel\ }\pTwist \mathrm{\ terms.} \\
+    &= \frac{1}{\mathcal{L}_0} 
+        \pmodel(\dt{x}{0:T})
+        \left[ 
+        \prod_{t=0}^{T-1} 
+        \frac{\pTwist(y\mid \xt)}{\pTwist(y \mid \xtpo)}\right]\pTwist(y \mid \dt{x}{T})\\
+    &\mathrm{Cancel \ out \ } \pTwist \mathrm{\ terms.}\\
+    &= \frac{1}{\mathcal{L}_0} 
+        \pmodel(\dt{x}{0:T}) \pTwist (y \mid \xzero) \\ 
+    &\mathrm{Recognize\ }\pTwist(y\mid \dt{x}{0})=\plikelihood{y}{\xzero}\mathrm{\ by \ Assm. \ref{item:final_twist}\ \ and\  apply\  Bayes'\  rule\  with\  }\mathcal{L}_0=\pmodel(y). \\
+    &= \pmodel(\dt{x}{0:T}\mid y).
+\end{split}
+\end{align}
+The final line reveals that once we marginalize out $\dt{x}{1:T}$
+we obtain $\target_0(\xzero)=p(\xzero \mid y)$ as desired.
+
+We next show that $\mathbb{P}_K$ converges to $\target_0$ with probability one by applying \Cref{thm:chopin_theorem}.
+To apply \Cref{thm:chopin_theorem} it is sufficient to show that the weights at each step are upper bounded, as they are defined through (ratios of) probabilities and hence are positive. 
+Since there are a finite number of steps $T,$
+it is enough to show that each $w_t$ is bounded.
+The inital weight is the initial twisting function, $w_T(\xT)=\pTwist(y\mid \xT),$ which is bounded by Assumption \ref{item:twist_assumption}.
+So we proceed to intermediate weights.
+
+To show that the weighting functions at subsequent steps are bounded,
+we decompose the log-weighting functions as 
+$$
+\log \weight_t(\xt, \xtpo) = \log \frac{\pTwist(y\mid \xt)}{\pTwist(y\mid \xtpo)} + \log \frac{\pmodel(\xt\mid \xtpo)}{r_t(\xt \mid \xtpo)} ,
+$$
+and show independently that $\log \pTwist(y\mid \xt)/\pTwist(y\mid \xtpo)$ and
+$\log \pmodel(\xt\mid \xtpo)/r_t(\xt \mid \xtpo)$ are bounded.
+The first term $\log \pTwist(y\mid \xt)/\pTwist(y\mid \xtpo)$ is again bounded by Assumption \ref{item:twist_assumption},
+and we proceed to the second.
+
+That $\log \pmodel(\xt\mid \xtpo)/r_t(\xt \mid \xtpo)$ is bounded follows from Assumptions \ref{item:twist_gradient} and \ref{item:proposal_var}.
+First write
+$$
+%\pmodel(\xt \mid \xtpo) = \mathcal{N}\left(\xt \mid \xtpo + \sigma_{t+1}^2 \scoremodel(\xtpo), \sigma_{t+1}^2 I
+\pmodel(\xt \mid \xtpo) = \mathcal{N}\left(\xt \mid \hat \mu, \sigma_{t+1}^2 I
+\right)$$
+with $\hat \mu=\xtpo + \sigma_{t+1}^2 \scoremodel(\xtpo),$
+and 
+$$
+\proposal_t(\xt \mid \xtpo) = 
+\mathcal{N}\left(
+\xt \mid  \hat \mu_\psi, \tilde \sigma_{t+1}^2 I \right),
+$$
+for $\hat \mu_\psi = \hat \mu + \sigma_{t+1}^2 \nabla_{\xtpo}\log \pTwist(y\mid \xtpo)$.
+The log-ratio then simplifies as 
+\begin{align}
+\log \frac{\pmodel(\xt\mid \xtpo)}{r_t(\xt \mid \xtpo)} &= 
+\log \frac{| 2\pi \sigma_{t+1}^2 I|^{-1/2} \exp\{-(2\sigma_{t+1}^2)^{-1}\|\hat \mu - \xt \|^2 \}}
+{ | 2\pi \tilde \sigma_{t+1}^2 I|^{-1/2} \exp\{-(2\tilde \sigma_{t+1}^2)^{-1}\|\hat \mu_\psi- \xt \|^2 \}} \\
+&\textrm{Rearrange \ and\  let  \ } C=\log | 2\pi \sigma_{t+1}^2 I|^{-1/2} /  | 2\pi \tilde \sigma_{t+1}^2 I|^{-1/2}\\
+&= \frac{-1}{2}\left[ 
+\sigma_{t+1}^{-2}\|\hat \mu - \xt \|^2    -
+\tilde \sigma_{t+1}^{-2}\|\hat \mu_\psi - \xt \|^2 \right]  +C \\
+&\textrm{Expand and rearrange \ } \|\hat \mu_\psi - \xt \|^2 = \| \hat \mu  - \xt \|^2 + 2 \langle \hat\mu_\psi - \hat \mu, \hat \mu - \xt  \rangle + \|\hat \mu_\psi - \hat \mu\|^2 \\
+&= \frac{-1}{2}\left[ ( \sigma_{t+1}^{-2} - \tilde \sigma_{t+1}^{-2})\|\hat \mu - \xt \|^2  
+- 2 \tilde \sigma_{t+1}^{-2}\langle \hat\mu_\psi - \hat \mu, \hat \mu - \xt  \rangle - \tilde \sigma_{t+1}^2 \|\hat \mu_\psi - \hat \mu\|^2 
+\right]+ C\\
+&\textrm{Let \ } C^\prime {=} C - \frac{1}{2}\tilde \sigma_{t+1}^2 \|\hat \mu_\psi - \hat \mu\|^2 \textrm{\ and rearrange.  Note that $\|\hat \mu_\psi {-} \hat \mu\|^2{<}\infty$ by Assm. \ref{item:twist_gradient}.}\\
+&= \frac{-1}{2}(\sigma_{t+1}^{-2} - \tilde \sigma_{t+1}^{-2})\|\hat \mu - \xt \|^2 +
+\tilde \sigma_{t+1}^{-2}\langle \hat\mu_\psi - \hat \mu, \hat \mu - \xt  \rangle + C^\prime\\
+&\textrm{Apply Cauchy-Schwarz}\\
+&\le  \frac{-1}{2} (\sigma_{t+1}^{-2} - \tilde \sigma_{t+1}^{-2})\|\hat \mu - \xt \|^2
++ \tilde \sigma_{t+1}^{-2}\| \hat\mu_\psi - \hat \mu\|\cdot \| \hat \mu - \xt  \| + C^\prime\\
+&\textrm{Upper-bounding using that $\mathrm{max}_{x}\frac{-a}{2}x^2 + bx =\frac{b^2}{2a}$ for $a = \sigma_{t+1}^{-2} - \tilde \sigma_{t+1}^{-2}>0$ by Assm. (d).}\\
+&\le  \frac{1}{2} \frac{(\tilde \sigma_{t+1}^{-2}\| \hat\mu_\psi - \hat \mu\|)^2}{\sigma_{t+1}^{-2} - \tilde \sigma_{t+1}^{-2}} + C^\prime \\
+&= \frac{\tilde \sigma_{t+1}^{-4}}{2( \sigma_{t+1}^{-2} - \tilde \sigma_{t+1}^{-2})}\| \hat\mu_\psi - \hat \mu\|^2  + C^\prime \\
+& \textrm{Note that } \hat \mu_\psi = \hat \mu + \sigma_{t+1}^2 \nabla_{\xtpo}\log \pTwist(y\mid \xtpo). \\ 
+&= \frac{\tilde \sigma_{t+1}^{-4}}{2( \sigma_{t+1}^{-2} - \tilde \sigma_{t+1}^{-2})}\sigma_{t+1}^4 \| \nabla_{\xtpo} \log \pTwist(y \mid \xtpo) \|^2  + C^\prime \\
+&\le C^{\prime\prime}.
+\end{align}
+The final line follows from Assumption \ref{item:twist_gradient}, that the gradients of the twisting functions are bounded.
+The above derivation therefore provides that each $\weight_t$ is bounded, concluding the proof.
+\end{proof}

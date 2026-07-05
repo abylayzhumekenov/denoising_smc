@@ -1,0 +1,320 @@
+\begin{thebibliography}{}
+
+\bibitem[Andrieu et~al., 2018]{andrieu2018uniform}
+Andrieu, C., Lee, A., and Vihola, M. (2018).
+\newblock {Uniform ergodicity of the iterated conditional SMC and geometric
+  ergodicity of particle Gibbs samplers}.
+\newblock {\em Bernoulli}, 24(2):842 -- 872.
+
+\bibitem[Arjomand~Bigdeli et~al., 2017]{arjomand2017deep}
+Arjomand~Bigdeli, S., Zwicker, M., Favaro, P., and Jin, M. (2017).
+\newblock Deep mean-shift priors for image restoration.
+\newblock {\em Advances in Neural Information Processing Systems}, 30.
+
+\bibitem[Benton et~al., 2022]{benton2022denoising}
+Benton, J., Shi, Y., De~Bortoli, V., Deligiannidis, G., and Doucet, A. (2022).
+\newblock From denoising diffusions to denoising markov models.
+\newblock {\em arXiv preprint arXiv:2211.03595}.
+
+\bibitem[Besag et~al., 1991]{besag1991bayesian}
+Besag, J., York, J., and Molli{\'e}, A. (1991).
+\newblock Bayesian image restoration, with two applications in spatial
+  statistics.
+\newblock {\em Annals of the institute of statistical mathematics}, 43:1--20.
+
+\bibitem[Capp\'{e} et~al., 2005]{infhidden}
+Capp\'{e}, O., Moulines, E., and Ryden, T. (2005).
+\newblock {\em Inference in Hidden Markov Models (Springer Series in
+  Statistics)}.
+\newblock Springer-Verlag, Berlin, Heidelberg.
+
+\bibitem[Cheney and Borden, 2009]{cheney2009fundamentals}
+Cheney, M. and Borden, B. (2009).
+\newblock {\em Fundamentals of radar imaging}.
+\newblock SIAM.
+
+\bibitem[Chopin et~al., 2020]{chopin2020introduction}
+Chopin, N., Papaspiliopoulos, O., et~al. (2020).
+\newblock {\em An introduction to sequential Monte Carlo}, volume~4.
+\newblock Springer.
+
+\bibitem[Chung et~al., 2023]{chung2023diffusion}
+Chung, H., Kim, J., Mccann, M.~T., Klasky, M.~L., and Ye, J.~C. (2023).
+\newblock Diffusion posterior sampling for general noisy inverse problems.
+\newblock In {\em The Eleventh International Conference on Learning
+  Representations}.
+
+\bibitem[Dai et~al., 2022]{dai2022invitation}
+Dai, C., Heng, J., Jacob, P.~E., and Whiteley, N. (2022).
+\newblock An invitation to sequential monte carlo samplers.
+\newblock {\em Journal of the American Statistical Association},
+  117(539):1587--1600.
+
+\bibitem[Dashti and Stuart, 2017]{dashti2017bayesian}
+Dashti, M. and Stuart, A.~M. (2017).
+\newblock The bayesian approach to inverse problems.
+\newblock In {\em Handbook of uncertainty quantification}, pages 311--428.
+  Springer.
+
+\bibitem[Dinh et~al., 2017]{Dinh:2017}
+Dinh, L., Sohl{-}Dickstein, J., and Bengio, S. (2017).
+\newblock Density estimation using real {NVP}.
+\newblock In {\em 5th International Conference on Learning Representations,
+  {ICLR} 2017, Toulon, France, April 24-26, 2017, Conference Track
+  Proceedings}. OpenReview.net.
+
+\bibitem[Douc et~al., 2014]{douc2014nonlinear}
+Douc, R., Moulines, E., and Stoffer, D. (2014).
+\newblock {\em Nonlinear time series: Theory, methods and applications with R
+  examples}.
+\newblock CRC press.
+
+\bibitem[Doucet et~al., 2001]{doucet2001sequential}
+Doucet, A., De~Freitas, N., Gordon, N.~J., et~al. (2001).
+\newblock {\em Sequential Monte Carlo methods in practice}, volume~1.
+\newblock Springer.
+
+\bibitem[Elbakri and Fessler, 2002]{elbakri2002statistical}
+Elbakri, I.~A. and Fessler, J.~A. (2002).
+\newblock Statistical image reconstruction for polyenergetic x-ray computed
+  tomography.
+\newblock {\em IEEE transactions on medical imaging}, 21(2):89--99.
+
+\bibitem[Fergus et~al., 2006]{fergus2006removing}
+Fergus, R., Singh, B., Hertzmann, A., Roweis, S.~T., and Freeman, W.~T. (2006).
+\newblock Removing camera shake from a single photograph.
+\newblock In {\em Acm Siggraph 2006 Papers}, pages 787--794.
+
+\bibitem[Figueiredo et~al., 2007]{figueiredo2007majorization}
+Figueiredo, M.~A., Bioucas-Dias, J.~M., and Nowak, R.~D. (2007).
+\newblock Majorization--minimization algorithms for wavelet-based image
+  restoration.
+\newblock {\em IEEE Transactions on Image processing}, 16(12):2980--2991.
+
+\bibitem[Gonz{\'a}lez et~al., 2009]{gonzalez2009digitalIP}
+Gonz{\'a}lez, R.~C., Woods, R.~E., and Masters, B.~R. (2009).
+\newblock Digital image processing, third edition.
+\newblock {\em Journal of Biomedical Optics}, 14:029901.
+
+\bibitem[Gui et~al., 2021]{gui2021review}
+Gui, J., Sun, Z., Wen, Y., Tao, D., and Ye, J. (2021).
+\newblock A review on generative adversarial networks: Algorithms, theory, and
+  applications.
+\newblock {\em IEEE transactions on knowledge and data engineering}.
+
+\bibitem[Ho et~al., 2020]{ho2020denoising}
+Ho, J., Jain, A., and Abbeel, P. (2020).
+\newblock Denoising diffusion probabilistic models.
+\newblock {\em Advances in Neural Information Processing Systems},
+  33:6840--6851.
+
+\bibitem[Hoffman and Gelman, 2011]{Hoffman2011}
+Hoffman, M. and Gelman, A. (2011).
+\newblock The no-u-turn sampler: Adaptively setting path lengths in hamiltonian
+  monte carlo.
+\newblock {\em Journal of Machine Learning Research}, 15.
+
+\bibitem[Huggins and Roy, 2019]{huggins2019sequential}
+Huggins, J.~H. and Roy, D.~M. (2019).
+\newblock {Sequential Monte Carlo as approximate sampling: bounds, adaptive
+  resampling via $\infty$-ESS, and an application to particle Gibbs}.
+\newblock {\em Bernoulli}, 25(1):584 -- 622.
+
+\bibitem[Idier, 2013]{idier2013bayesian}
+Idier, J. (2013).
+\newblock {\em Bayesian approach to inverse problems}.
+\newblock John Wiley \& Sons.
+
+\bibitem[Ivanov et~al., 2018]{ivanov2018variational}
+Ivanov, O., Figurnov, M., and Vetrov, D. (2018).
+\newblock Variational autoencoder with arbitrary conditioning.
+\newblock {\em arXiv preprint arXiv:1806.02382}.
+
+\bibitem[Kaipio et~al., 2000]{kaipio2000statistical}
+Kaipio, J.~P., Kolehmainen, V., Somersalo, E., and Vauhkonen, M. (2000).
+\newblock Statistical inversion and monte carlo sampling methods in electrical
+  impedance tomography.
+\newblock {\em Inverse problems}, 16(5):1487.
+
+\bibitem[Kaltenbach et~al., 2023]{kaltenbach2023semi}
+Kaltenbach, S., Perdikaris, P., and Koutsourelakis, P.-S. (2023).
+\newblock Semi-supervised invertible neural operators for bayesian inverse
+  problems.
+\newblock {\em Computational Mechanics}, pages 1--20.
+
+\bibitem[Kawar et~al., ]{kawar2022denoising}
+Kawar, B., Elad, M., Ermon, S., and Song, J.
+\newblock Denoising diffusion restoration models.
+\newblock In {\em Advances in Neural Information Processing Systems}.
+
+\bibitem[Kingma and Ba, 2015]{Kingma:2015}
+Kingma, D.~P. and Ba, J. (2015).
+\newblock Adam: {A} method for stochastic optimization.
+\newblock In Bengio, Y. and LeCun, Y., editors, {\em 3rd International
+  Conference on Learning Representations, {ICLR} 2015, San Diego, CA, USA, May
+  7-9, 2015, Conference Track Proceedings}.
+
+\bibitem[Kingma et~al., 2019]{kingma2019introduction}
+Kingma, D.~P., Welling, M., et~al. (2019).
+\newblock An introduction to variational autoencoders.
+\newblock {\em Foundations and Trends{\textregistered} in Machine Learning},
+  12(4):307--392.
+
+\bibitem[Kobyzev et~al., 2020]{kobyzev2020normalizing}
+Kobyzev, I., Prince, S.~J., and Brubaker, M.~A. (2020).
+\newblock Normalizing flows: An introduction and review of current methods.
+\newblock {\em IEEE transactions on pattern analysis and machine intelligence},
+  43(11):3964--3979.
+
+\bibitem[Lugmayr et~al., 2022]{lugmayr2022repaint}
+Lugmayr, A., Danelljan, M., Romero, A., Yu, F., Timofte, R., and Van~Gool, L.
+  (2022).
+\newblock Repaint: Inpainting using denoising diffusion probabilistic models.
+\newblock In {\em Proceedings of the IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition}, pages 11461--11471.
+
+\bibitem[Marnissi et~al., 2017]{marnissi2017variational}
+Marnissi, Y., Zheng, Y., Chouzenoux, E., and Pesquet, J.-C. (2017).
+\newblock A variational bayesian approach for image restoration—application
+  to image deblurring with poisson--gaussian noise.
+\newblock {\em IEEE Transactions on Computational Imaging}, 3(4):722--737.
+
+\bibitem[Peng et~al., 2021]{peng2021generating}
+Peng, J., Liu, D., Xu, S., and Li, H. (2021).
+\newblock Generating diverse structure for image inpainting with hierarchical
+  vq-vae.
+\newblock In {\em Proceedings of the IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition}, pages 10775--10784.
+
+\bibitem[Pitt and Shephard, 1999]{pitt1999filtering}
+Pitt, M.~K. and Shephard, N. (1999).
+\newblock Filtering via simulation: Auxiliary particle filters.
+\newblock {\em Journal of the American statistical association},
+  94(446):590--599.
+
+\bibitem[Sahlstr{\"o}m and Tarvainen, 2023]{sahlstrom2023utilizing}
+Sahlstr{\"o}m, T. and Tarvainen, T. (2023).
+\newblock Utilizing variational autoencoders in the bayesian inverse problem of
+  photoacoustic tomography.
+\newblock {\em SIAM Journal on Imaging Sciences}, 16(1):89--110.
+
+\bibitem[Shin and Choi, 2023]{shin2023physics}
+Shin, H. and Choi, M. (2023).
+\newblock Physics-informed variational inference for uncertainty quantification
+  of stochastic differential equations.
+\newblock {\em Journal of Computational Physics}, page 112183.
+
+\bibitem[Sohl-Dickstein et~al., 2015]{sohl2015deep}
+Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., and Ganguli, S. (2015).
+\newblock Deep unsupervised learning using nonequilibrium thermodynamics.
+\newblock In {\em International Conference on Machine Learning}, pages
+  2256--2265. PMLR.
+
+\bibitem[Song et~al., 2021a]{song2021denoising}
+Song, J., Meng, C., and Ermon, S. (2021a).
+\newblock Denoising diffusion implicit models.
+\newblock In {\em International Conference on Learning Representations}.
+
+\bibitem[Song et~al., 2021b]{song2021maximum}
+Song, Y., Durkan, C., Murray, I., and Ermon, S. (2021b).
+\newblock Maximum likelihood training of score-based diffusion models.
+\newblock {\em Advances in Neural Information Processing Systems},
+  34:1415--1428.
+
+\bibitem[Song et~al., 2022]{song2022solving}
+Song, Y., Shen, L., Xing, L., and Ermon, S. (2022).
+\newblock Solving inverse problems in medical imaging with score-based
+  generative models.
+\newblock In {\em International Conference on Learning Representations}.
+
+\bibitem[Song et~al., 2021c]{song2020score}
+Song, Y., Sohl-Dickstein, J., Kingma, D.~P., Kumar, A., Ermon, S., and Poole,
+  B. (2021c).
+\newblock Score-based generative modeling through stochastic differential
+  equations.
+\newblock In {\em International Conference on Learning Representations}.
+
+\bibitem[Stuart, 2010]{stuart2010inverse}
+Stuart, A.~M. (2010).
+\newblock Inverse problems: a bayesian perspective.
+\newblock {\em Acta numerica}, 19:451--559.
+
+\bibitem[Su et~al., 2022]{su2022survey}
+Su, J., Xu, B., and Yin, H. (2022).
+\newblock A survey of deep learning approaches to image restoration.
+\newblock {\em Neurocomputing}, 487:46--65.
+
+\bibitem[Trippe et~al., 2023]{trippe2023diffusion}
+Trippe, B.~L., Yim, J., Tischer, D., Baker, D., Broderick, T., Barzilay, R.,
+  and Jaakkola, T.~S. (2023).
+\newblock Diffusion probabilistic modeling of protein backbones in 3d for the
+  motif-scaffolding problem.
+\newblock In {\em The Eleventh International Conference on Learning
+  Representations}.
+
+\bibitem[Vlaardingerbroek and Boer, 2013]{vlaardingerbroek2013magnetic}
+Vlaardingerbroek, M.~T. and Boer, J.~A. (2013).
+\newblock {\em Magnetic resonance imaging: theory and practice}.
+\newblock Springer Science \& Business Media.
+
+\bibitem[Wan et~al., 2021]{wan2021high}
+Wan, Z., Zhang, J., Chen, D., and Liao, J. (2021).
+\newblock High-fidelity pluralistic image completion with transformers.
+\newblock In {\em Proceedings of the IEEE/CVF International Conference on
+  Computer Vision}, pages 4692--4701.
+
+\bibitem[Wei et~al., 2022]{wei2022deep}
+Wei, X., van Gorp, H., Gonzalez-Carabarin, L., Freedman, D., Eldar, Y.~C., and
+  van Sloun, R.~J. (2022).
+\newblock Deep unfolding with normalizing flow priors for inverse problems.
+\newblock {\em IEEE Transactions on Signal Processing}, 70:2962--2971.
+
+\bibitem[Wu et~al., 2023]{wu2023practical}
+Wu, L., Trippe, B.~L., Naesseth, C.~A., Blei, D.~M., and Cunningham, J.~P.
+  (2023).
+\newblock Practical and asymptotically exact conditional sampling in diffusion
+  models.
+\newblock {\em arXiv preprint arXiv:2306.17775}.
+
+\bibitem[Xiang et~al., 2023]{xiang2023deep}
+Xiang, H., Zou, Q., Nawaz, M.~A., Huang, X., Zhang, F., and Yu, H. (2023).
+\newblock Deep learning for image inpainting: A survey.
+\newblock {\em Pattern Recognition}, 134:109046.
+
+\bibitem[Yeh et~al., 2018]{yeh2018image}
+Yeh, R.~A., Lim, T.~Y., Chen, C., Schwing, A.~G., Hasegawa-Johnson, M., and Do,
+  M.~N. (2018).
+\newblock Image restoration with deep generative models.
+\newblock In {\em 2018 IEEE International Conference on Acoustics, Speech and
+  Signal Processing (ICASSP)}, pages 6772--6776. IEEE.
+
+\bibitem[Yu et~al., 2018]{yu2018generative}
+Yu, J., Lin, Z., Yang, J., Shen, X., Lu, X., and Huang, T.~S. (2018).
+\newblock Generative image inpainting with contextual attention.
+\newblock In {\em Proceedings of the IEEE conference on computer vision and
+  pattern recognition}, pages 5505--5514.
+
+\bibitem[Zeng et~al., 2022]{zeng2022aggregated}
+Zeng, Y., Fu, J., Chao, H., and Guo, B. (2022).
+\newblock Aggregated contextual transformations for high-resolution image
+  inpainting.
+\newblock {\em IEEE Transactions on Visualization and Computer Graphics}.
+
+\bibitem[Zhang et~al., 2023]{zhang2023towards}
+Zhang, G., Ji, J., Zhang, Y., Yu, M., Jaakkola, T., and Chang, S. (2023).
+\newblock Towards coherent image inpainting using denoising diffusion implicit
+  models.
+\newblock {\em arXiv preprint arXiv:2304.03322}.
+
+\bibitem[Zheng et~al., 2019]{zheng2019pluralistic}
+Zheng, C., Cham, T.-J., and Cai, J. (2019).
+\newblock Pluralistic image completion.
+\newblock In {\em Proceedings of the IEEE/CVF Conference on Computer Vision and
+  Pattern Recognition}, pages 1438--1447.
+
+\bibitem[Zhihang et~al., 2023]{zhihang2023domain}
+Zhihang, X., Yingzhi, X., and Qifeng, L. (2023).
+\newblock A domain-decomposed vae method for bayesian inverse problems.
+\newblock {\em arXiv preprint arXiv:2301.05708}.
+
+\end{thebibliography}

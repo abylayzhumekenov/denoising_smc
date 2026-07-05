@@ -1,0 +1,92 @@
+This paper is concerned with  linear inverse problems $\lmeas =\m{A} \lstate+ \noisestd \noise$, where $\lmeas \in \rset^\dimorig$ is a vector of indirect observations, $\lstate \in \rset^{\dimx}$ is the vector of unknowns,  $\m{A} \in \rset^{\dimorig \times \dimx}$ is the linear forward operator and $\noise \in \rset^{\dimorig}$ is an unknown noise vector. This general model is used throughout computational imaging, including various tomographic imaging applications such as common types of magnetic resonance imaging \cite{vlaardingerbroek2013magnetic}, X-ray computed tomography \cite{elbakri2002statistical}, radar imaging \cite{cheney2009fundamentals}, and basic image restoration tasks such as deblurring, superresolution, and image inpainting \cite{gonzalez2009digitalIP}.
+The classical approach to solving linear inverse problems relies on prior knowledge about $\lstate$, such as its smoothness, sparseness in a dictionary, or its geometric properties.
+These approaches attempt to estimate a $\widehat{\lstate}$ by minimizing a regularized inverse problem, $\hat{\lstate}= \operatorname{argmin}_{\lstate} \{ \| \lmeas - \m{A} \lstate \|^2 + \operatorname{Reg}(\lstate) \}$, where $\operatorname{Reg}$ is a regularization term that balances data fidelity and noise while enabling efficient computations. 
+However, a common difficulty in the regularized inverse problem is the selection of an appropriate regularizer, which has a decisive influence on the quality of the reconstruction.
+
+Whereas regularized inverse problems continue to dominate the field, many alternative statistical formulations have been proposed; see \cite{besag1991bayesian,idier2013bayesian,marnissi2017variational} and the references therein - see \cite{stuart2010inverse} for a mathematical perspective. A main advantage of statistical approaches is that they allow for \textbf{uncertainty quantification} in the reconstructed solution; see \cite{dashti2017bayesian}.
+The \textbf{Bayes' formulation} of the regularized inverse problem is based on considering the indirect measurement $\ormeas$, the state $\state$ and the noise $\noise$ as random variables, and to specify $p(\lmeas |\lstate)$ the \emph{likelihood} (the conditional distribution of $\ormeas$ at $\state$)  and the prior $p(\lstate)$ (the distribution of the state). One can use Bayes' theorem to obtain the \textbf{posterior distribution} $p(\lstate|\lmeas) \propto p(\lmeas|\lstate) p(\lstate)$, where "$\propto$" means that the two sides are equal to each other up to a multiplicative constant that does not depend on $\lstate$.
+Moreover, the use of an appropriate method for Bayesian inference allows the quantification of the uncertainty in the reconstructed solution $\lstate$. A variety of priors are available, including but not limited to Laplace \cite{figueiredo2007majorization}, total variation (TV) \cite{kaipio2000statistical} and mixture-of-Gaussians \cite{fergus2006removing}.
+In the last decade, a variety of techniques have been proposed to design and train generative models capable of producing perceptually realistic samples from the original data, even in challenging high-dimensional data such as images or audio \cite{kingma2019introduction,kobyzev2020normalizing,gui2021review}.
+Denoising diffusion models have been shown to be particularly effective generative models in this context \cite{sohl2015deep,song2020score,song2021denoising,song2021maximum,benton2022denoising}.
+These models convert noise into the original data domain through a series of denoising steps.
+A popular approach is to use a generic diffusion model that has been pre-trained, eliminating the need for re-training and making the process more efficient and versatile \cite{trippe2023diffusion,zhang2023towards}.
+Although this was not the main motivation for developing these models, they can of course be used as prior distributions in Bayesian inverse problems.
+This simple observation has led to a new, fast-growing line of research on how linear inverse problems can benefit from the flexibility and expressive power of the recently introduced deep generative models; see \cite{arjomand2017deep,wei2022deep,su2022survey,kaltenbach2023semi,shin2023physics,zhihang2023domain,sahlstrom2023utilizing}.
+\subsection*{Contributions} \begin{itemize}[wide, labelwidth=!, labelindent=0pt]
+    \item We propose \algo, a novel algorithm for sampling from the Bayesian posterior of Gaussian linear inverse problems with denoising diffusion model priors. \algo\ specifically exploits the structure of both the linear inverse problem and the denoising diffusion generative model to design an efficient SMC sampler.
+    \vspace{-.15cm}
+    \item We establish under sensible assumptions that the empirical distribution of the samples produced by \algo\ converges to the target posterior when the number of particles goes to infinity. To the best of our knowledge, \algo\ is the first provably consistent algorithm for conditional sampling from the denoising diffusion posteriors. 
+    \vspace{-.15cm}
+    \item
+    To evaluate the performance of \algo, we perform numerical simulations on several examples for which the target posterior distribution is known. Simulation results support our theoretical results, i.e. the empirical distribution of samples from \algo\ converges to the target posterior distribution. This is \textbf{not} the case for the competing methods (using the same denoising diffusion generative priors) which are shown, when run with random initialization of the denoising diffusion, to generate a significant number of samples outside the support of the target posterior.
+    We also illustrate samples from \algo\ in imaging inverse problems.
+\end{itemize}
+% \cite{lugmayr2022repaint, wang2023zeroshot, song2022solving, ddrm, chung2023diffusion, trippe2023diffusion}. \yazid{dire pourquoi on se compare à eux}
+\paragraph{Background and notations. } 
+This section provides a concise overview of the diffusion model framework and notations used in this paper. We cover the elements that are important for understanding  our approach, and we recommend that readers refer to the original papers for complete details and derivations \cite{sohl2015deep, ho2020denoising,song2020score,song2021denoising}.
+A denoising diffusion model is a generative model consisting of a forward and a backward process.
+The forward process involves sampling $\state_0 \sim \fwmarg{\mathrm{data}}{}$ from the data distribution, which is then converted to a sequence $\chunk{\state{}}{1}{n}$ of recursively corrupted versions of $\state_0$.
+The backward process involves sampling $\state_n$ according to an easy-to-sample reference distribution on $\rset^{\dimx}$ and generating $\state_0 \in \rset^{\dimx}$ by a sequence of denoising steps.
+  % The basic idea is to design the forward process in such a way that the  distribution $\fwmarg{t}{}$ of $\state_t$ (i.e. the marginal distribution of the forward process) converges as $t \to \infty$  to  $\bwmarg{\text{ref}}{}$.
+   Following \cite{sohl2015deep,song2021denoising}, the forward process can be chosen as a Markov chain with joint distribution
+\begin{equation}
+    \label{eq:forward_def}
+    \fwmarg{0:n}{\chunk{\lstate}{0}{n}} = \fwmarg{\mathrm{data}}{\lstate_0} \textstyle\prod_{t=1}^{n} \fwtrans{t}{\lstate_{t-1}}{\lstate_{t}}, \quad \fwtrans{t}{\lstate_{t-1}}{\lstate_{t}}= \gauss( \lstate_t; (1 - \beta_t)^{1/2} \lstate_{t-1}, \beta_t \idm_{\dimx})\eqsp,
+\end{equation}
+where $\idm_{\dimx}$ is the identity matrix of size $\dimx$,  $\sequence{\beta}[t][\nset] \subset (0,1)$ is a non-increasing sequence and $\normpdf(\statevar{}; \mathbf{\mu}, \Sigma)$ is the p.d.f. of the Gaussian distribution with mean $\mathbf{\mu}$ and covariance matrix $\Sigma$ (assumed to be non-singular) evaluated at $\statevar{}$.
+  For all $t > 0$, set $\alphacumprod{t}{} = \prod_{\ell=1}^t (1 - \beta_\ell)$ with the convention $\alpha_0 = 1$. We have for all $0 \leq s < t \leq n$,
+  \begin{equation}
+  \fwtrans{t|s}{\lstate_{s}}{\lstate_t} \eqdef \textstyle \int \prod_{\ell=s+1}^{t} \fwtrans{\ell}{\lstate_{\ell-1}}{\lstate_\ell} \rmd \chunk{\lstate}{s+1}{t-1} = \normpdf(\lstate_{t}; (\alphacumprod{t}{} / \alphacumprod{s}{})^{1/2} \lstate_{s}, (1 - \alphacumprod{t}{} / \alphacumprod{s}{}) \idm_{\dimx}) \eqsp.
+  \end{equation} 
+    For the standard choices of  $ \alphacumprod{t}{}$,  the sequence of distributions $(\fwmarg{t}{})_t$ converges weakly to the standard normal distribution as $t \to \infty$, which we chose as the reference distribution.   For the reverse process, \cite{song2021denoising,song2021maximum} introduce an \emph{inference distribution} $\revbridge{1:n|0}{\lstate_0}{{\chunk{\lstate}{1}{n}}}$, depending on a sequence $\sequence{\sigma}[t][\nset]$ of hyperparameters satisfying 
+$\sigma_{t}^2 \in [0,1 - \alphacumprod{t-1}{}]$ for all $t \in \nset^*$, and defined as
+$\revbridge{1:n|0}{\lstate_0}{{\chunk{\lstate}{1}{n}}}=
+\revbridge{n|0}{\lstate_0}{\lstate_n} \textstyle\prod_{t=n}^{2}
+\revbridge{t-1|t, 0}{\lstate_t, \lstate_0}{\lstate_{t-1}} \eqsp,$ where $\revbridge{n|0}{\lstate_0}{\lstate_n}=\gauss\left(\lstate_n ; \alphacumprod{n}{}^{1/2} \lstate_0,\left(1-\alphacumprod{n}{}  \right) \Id \right)$ and
+$\revbridge{t-1|t, 0}{\lstate_t,\lstate_0}{\lstate_{t-1}} =\gauss\left(\lstate_{t-1} ; \boldsymbol{\mu}_{t}(\lstate_0,\lstate_t), \sigma_{t}^2 \idm_{d} \right) \eqsp,$
+with
+$\boldsymbol{\mu}_{t}(\lstate_0,\lstate_t)= \alphacumprod{t-1}{} ^{1/2} \lstate_0+ (1- \alphacumprod{t-1}{} -\sigma^2 _t)^{1/2} (\lstate_t-\alphacumprod{t}{}^{1/2} \lstate_0) \big/ (1-\alphacumprod{t}{})^{1/2} \eqsp.$
+For $t=n-1,\dots,1$, we define by backward induction the sequence $
+\revbridge{t|0}{\lstate_0}{\lstate_t} %=  \int \revbridge{1:n|0}{\lstate_0}{\lstate_{1:n}} \rmd \chunk{\lstate}{1}{t-1} \rmd \chunk{\lstate}{t+1}{n}
+=  \int \revbridge{t|t+1,0}{\lstate_{t+1}, \lstate_0}{\lstate_{t}} \revbridge{t+1|0}{\lstate_0}{\lstate_{t+1}} \rmd \lstate_{t+1}.$
+It is shown in \cite[Lemma 1]{song2021denoising} that for all $t \in [1:n]$, the  distributions of the forward and inference process conditioned on the initial state coincide, i.e. that
+$\revbridge{t|0}{\lstate_0}{\lstate_t} =  \fwtrans{t|0}{\lstate_0}{\lstate_t}.$
+The backward process is derived from the inference distribution by replacing, for each $t \in [2:n]$, $\lstate_0$ in the definition $\revbridge{t-1|t, 0}{\lstate_t, \lstate_0}{\lstate_{t-1}}$ with a prediction where $\xpred{0|t}[\theta](\lstate_t) \eqdef \alphacumprod{t}{}^{-1/2} \left(\lstate_t - (1 - \alphacumprod{t}{})^{1/2}\epsprop{\lstate_t, t}{\theta}\right)$
+% \begin{equation}
+% \label{eq:prediction}
+% \xpred{0|t}[\theta](\lstate_t) \eqdef \alphacumprod{t}{}^{-1/2} \left(\lstate_t - (1 - \alphacumprod{t}{})^{1/2}\epsprop{\lstate_t, t}{\theta}\right) \,,
+% \end{equation} 
+where $\epsprop{\lstate,t}{\theta}$ is typically a neural network parameterized by $\theta$.
+More formally, the backward distribution is defined as
+$
+    \oldbwmargparam{0:n}{\lstate_{0:n}}{\param} =\oldbwmargparam{n}{\lstate_n}{} \textstyle\prod_{t=0}^{n+1} \bwtrans{\theta}{t}{\lstate_{t+1}}{\lstate_{t}}\eqsp,
+$ where
+$\oldbwmargparam{n}{\lstate_n}{}  =  \normpdf{\left(\lstate_n; 0_\dimx, \Id_{\dimx} \right)}$ and
+for all $t \in [1:n-1]$,
+\begin{equation}
+    \label{eq:bwker:defn}
+    \bwtrans{\theta}{t}{\lstate_{t+1}}{\lstate_{t}} \eqdef \revbridge{t|t+1, 0}{\lstate_{t+1}, \xpred{0|t+1}[\theta](\lstate_{t+1})}{\lstate_{t}} = \normpdf(\lstate_t, \bwmean^\param _{t+1}(\lstate_{t+1}), \sigma^2 _{t+1} \Id_{\dimx})\eqsp,
+\end{equation}
+where $\bwmean_{t+1}(\lstate_{t+1}) \eqdef \bridgemean(\xpred{0|t+1}[\theta](\lstate_{t+1}), \lstate_{t+1})$ and $0_\dimx$ is the null vector of size $\dimx$. At step $0$, we set $\bwtrans{}{0}{\lstate_1}{\lstate_0} \eqdef \normpdf(\lstate_0; \xpred{0|1}[\theta](\lstate_{1}), \sigma^2 _1 \Id_{\dimx})$.
+The parameter  $\theta$ is obtained \cite[Theorem 1]{song2021denoising} by solving the following optimization problem:
+\begin{equation}
+\label{eq:optimal-denoising}
+    \theta_{*} \in \textstyle \argmin_{\theta} \sum_{t=1}^{n} (2 \dimx \sigma^2_t \alpha_t)^{-1} \int \|\epsilon - \epsprop{\sqrt{\alpha_t}x_0 + \sqrt{1 - \alpha_t}\epsilon, t}{\theta}\|_2^2 \normpdf(\epsilon; 0_{\dimx}, \idm_{\dimx}) \fwmarg{\operatorname{data}}{\rmd \lstate_0} \rmd \epsilon \eqsp.
+\end{equation}
+Thus, $\epsprop{\state_t,t}{\theta_*}$ might be seen as the predictor of the noise added to $\state_0$ to obtain $\state_t$ (in the forward pass) and justifies the ''prediction'' terminology. 
+The time $0$ marginal $\smash{\oldbwmargparam{0}{\lstate_0}{\param_*} = \int \oldbwmargparam{0:n}{\lstate_{0:n}}{\param_*} \rmd \lstate_{1:n}}$
+which we will refer to as the \emph{prior}  is used as an approximation of $\fwmarg{\mathrm{data}}{}$ and the time $s$ marginal is $\smash{\oldbwmargparam{s}{\lstate_s}{\param_*} = \int \oldbwmargparam{0:n}{\lstate_{0:n}}{\param_*} \rmd \lstate_{1:s-1} \rmd \lstate_{s+1:n}}$.
+In the rest of the paper we drop the dependence on the parameter $\param_*$. We define for all $v \in \R^{\ell},w \in \R^{k}$, the concatenation operator $\cat{v}{w} = [v^T, w^T]^T \in \R^{\ell + k}$. For $i \in [1:\ell]$, we let $\vecidx{v}{}{i}$ the $i$-th coordinate of $v$.
+\paragraph{Related works. } 
+The subject of Bayesian problems is very vast, and it is impossible to discuss here all the results obtained in this very rich literature.
+One of such domains is image restoration problems, such as deblurring, denoising inpainting, which are challenging problems in computer vision that involves restoring a partially observed degraded image.
+Deep learning techniques are widely used for this task \cite{arjomand2017deep,yeh2018image,xiang2023deep,wei2022deep}  with many of them relying on auto-encoders, VAEs \cite{ivanov2018variational,peng2021generating,zheng2019pluralistic}, GANs \cite{yeh2018image,zeng2022aggregated}, or autoregressive transformers \cite{yu2018generative,wan2021high}.
+In what follows, we focus on methods based on denoising diffusion that has recently emerged as a way to produce high-quality realistic samples from the original data distribution on par with the best GANs in terms of image and audio generation, without the intricacies of adversarial training; see \cite{sohl2015deep,song2020score,song2022solving}.
+Diffusion-based approaches do not require specific training for degradation types, making them much more versatile and computationally efficient. In \cite{song2022solving}, noisy linear inverse problems are proposed to be solved by diffusing the degraded observation forward, leading to intermediate observations $\{ \lmeas_s \}_{s = 0} ^n$, and then running a modified backward process that promotes consistency with $\lmeas_s$ at each step $s$.
+The Denoising-Diffusion-Restoration model (\ddrm) \cite{kawar2022denoising} also modifies the backward process so that the unobserved part of the state follows the backward process while the observed part is obtained as a noisy weighted sum between the noisy observation and the prediction of the state. As observed by \cite{lugmayr2022repaint}, \ddrm\ is very efficient, but the simple blending used occasionally causes inconsistency in the restoration process.  
+\dps\  \cite{chung2023diffusion} considers a backward process targeting the posterior. %Since the score cannot be approximated as samples from the posterior is unavailable, they approximate it using the score of the prior combined with Tweedie's formula.
+\dps\ approximates the score of the posterior using the Tweedie formula, which incorporates the learned score of the prior.
+The approximation error is quantified and shown to decrease when the noise level is large, i.e., when the posterior is close to the prior distribution. As shown in \Cref{sec:numerics} with a very simple example, neither \ddrm\ nor \dps\ can be used to sample the target posterior and therefore do not solve the Bayesian recovery problem (even if we run \ddrm\ and \dps\ several time with independent initializations). Indeed, we show that \ddrm\ and \dps\ produce samples under the "prior" distribution (which is generally captured very well by the denoising diffusion model), but which are not consistent with the observations (many samples land in areas with very low likelihood). 
+In \cite{trippe2023diffusion} the authors introduce \smcdiff, a Sequential Monte Carlo-based denoising diffusion model that aims at solving specifically the \emph{inpainting problem}. \smcdiff\ produces a particle approximation of the conditional distribution of the non observed part of the state conditionally on a forward-diffused trajectory of the observation. The resulting particle approximation is shown to converge to the true posterior of the SGM under the assumption that the joint laws of the forward and backward processes coincide, which fails to be true in realistic setting.
+%Other than being restricted to the noiseless inpainting problem, their assumption cannot be guaranteed to hold in realistic scenarios.
+In comparison with \smcdiff, \algo\ is a versatile approach that solves any Bayesian linear inverse problem while being consistent under practically no assumption. In parallel to our work, \cite{wu2023practical} also developed a similar SMC based methodology but with a different proposal kernel.

@@ -1,0 +1,10 @@
+In this section we present our methodology for the inpainting problem \eqref{eq:inpainting}, both with noise and without noise.
+The more general case is treated in \Cref{sec:gen_lin_ip}.
+Let $\dimorig \in [1:\dimx - 1]$.
+In what follows we denote the $\dimorig$ top coordinates of a vector $\lstate \in \rset^{\dimx}$ by $\ltopstate$ and the remaining coordinates by $\lbottomstate$, so that $\lstate = \cat{\ltopstate}{\lbottomstate}$. The inpainting problem is defined as
+\begin{equation}
+   \label{eq:inpainting}
+    \ormeas =  \topstate + \noisestd \noise \eqsp, \quad \varepsilon \sim \ndist{0}{\idm_{\dimorig}} \eqsp, \quad \sigma \geq 0 \eqsp,
+\end{equation}
+where $\topstate$ are the first $\dimorig$ coordinates of a random variable $\state \sim \bwmarg{0}{}$. The goal is then to recover the law of the complete state $\state$ given a realisation $\ltrmeas$ of the incomplete observation $\trmeas$ and the model \eqref{eq:inpainting}.
+%\vspace{-.23cm}

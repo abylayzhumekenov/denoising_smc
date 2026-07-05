@@ -1,0 +1,112 @@
+% \subsection{Optimal filter approach}
+
+% Our approximate sampling scheme relies on the diffusion of the pair $(X,Y)$. As $X \sim \datadistr$ is already diffused into a Gaussian through the OU process, we can also diffuse $Y$ by exploiting the linearity of the observation model. More precisely, we consider an extended observation sequence using the  model 
+% \begin{equation} 
+%         Y_{t_i} = A X_{t_i} + \sqrt{\alpha_{t_i}}\noise \eqsp, \quad \forall i \in [0:n] \eqsp.
+% \end{equation}
+% For $i = 0$ we recover the original observation model since $\alpha_{t_0} = 1$. Using \eqref{eq:OU:t0sol}, we obtain a closed form computable expression for each $Y_{t_i}$,
+% \begin{align*} 
+%     Y_{t_i} & = A X_{t_i} + \sqrt{\alpha_{t_i}} \noise \\
+%     & = \sqrt{\alpha_{t_i}} A X_{t_0} + \sqrt{1 - \alpha_{t_{i+1}}} A Z_{i+1} + \sqrt{\alpha_{t_i}} \noise \\
+%     & = \sqrt{\alpha_{t_i}} Y_{t_0} + \sqrt{1 - \alpha_{t_{i+1}}} A Z_{i+1} \eqsp.
+% \end{align*}
+% Thus, conditionally on $Y_{t_0}$, the $Y_{t_i}$, $1\leq i \leq n$, are progressively diffused into samples from $\gauss(0, AA^\top)$. Furthermore, since $Y_{t_0}$ is known we can sample $(Y_{t_1}, \dotsc, Y_{t_n})$ without the knowledge of the observation noise $\noise$ and unknown initial hidden state $X_{t_0}$. When viewed backwards, the observation record $(Y_{t_n}, \dotsc, Y_{t_0})$ is also paired with the real reversed process $(X_{t_n}, \dotsc, X_{t_0})$ and we can thus write the associated state space model. We may instead then consider the SSM
+% \begin{equation} 
+%     \label{eq:hmm:original}
+%     \begin{cases}
+%     \revY{t_i} & = A \revX{t_i} + \sqrt{\alpha_{t_i}} \noise \eqsp,\\
+%     \revX{t_{i - 1}} &= \gamma_{i, 1} \revX{t_i} + \gamma_{i, 2} \epsprop{t_i, \revX{t_i}}{\theta} + \sigma_{t_i} Z_{i-1} \eqsp.
+%     \end{cases}
+% \end{equation}
+% where the dynamics of $\revX{}$ are those of \eqref{eq:bw:approximation}. While using the same noise $\noise$ came in handy as it allowed us to sample a diffused observation trajectory without the knowledge of $X_*$ and $\noise$, it becomes problematic when we formulate the SSM; it no longer has the convenient structure of a Hidden Markov model or any of its variants. Indeed, the conditional distribution of $Y_{t_i}$ conditionally on $(X_{t_0}, \dotsc, X_{t_{i}}, Y_{t_0}, \dotsc, Y_{t_{i-1}})$ is an atom since the noise $\noise$ can be deduced from any $(X_{t_j}, Y_{t_j})$. 
+
+% We then correct the discrepancy with respect to the targeted posterior using \emph{importance sampling}. In the rest of the paper we simplify the notations and write $(\revX{k}, Y_{k})$ for $(\revX{t_k}, Y_{t_k})$.
+
+% Let $P_{0:n}$ denote the joint distribution of $(\revX{0}, \dotsc, \revX{n})$ \eqref{eq:bw:approximation}, $m_n$ the distribution $\revX{n}$ which is that of a standard Gaussian random variable, and $P_0(\rmd x_0 | y_0) \propto g(y_0 | x) m_0(\rmd x_0)$ the posterior associated with the SSM \eqref{eq:hmm:original} that we want to sample from approximately. For all $A \in \mathcal{B}(\R^d)$
+% \begin{equation}
+%     \label{eq:PGwithinISIR}
+% \begin{aligned} 
+%     \int \1_A(x_0) P_0(\rmd x_0 |y_0) & \propto \int \1_A(x_0) g_0(y_0 | x_0) P_{0:n}(\rmd x_{0:n}) \\
+%     & \propto \int \1_A(x_0) \prod_{s = 1}^n \frac{1}{g_s(y_s | x_s)} Q_{0:n}(\rmd x_{0:n} | y_{0:n})  \eqsp,
+% \end{aligned}
+% \end{equation}
+% where $Q_{0:n}(\rmd x_{0:n} | y_{0:n})$ is the joint posterior of the HMM \eqref{eq:hmm:modified},
+% \begin{equation} 
+%     Q_{0:n}(\rmd x_{0:n} | y_{0:n}) \propto g_n(y_n | x_n) m_n(\rmd x_n) \prod_{s = 0}^{n-1} g_s(y_s | x_s) m_s(\rmd x_{s} | x_{s+1})
+% \end{equation}
+% \yazid{all the details about the PF and FFBSi will be given in a separate section.}
+% and $(m_s, g_s)_{s = 0} ^n$ are the transitions and potentials associated with \eqref{eq:hmm:modified}. As $Q_{0:n}$ is the posterior of an HMM, we may approximate it using the FFBSI algorithm described in Section xxx. Moreover, as the dynamics of the observation model are \emph{linear}, we can readily implement the auxiliary particle filter with the optimal transition $q_s( x_s | x_{s+1}, y_s) \propto g(y_s | x_s) m(\rmd x_s | x_{s+1})$,
+% % \[ 
+% %     q_s(\rmd x_s | x_{s+1}, y_s) = g(y_s | x_s) m(\rmd x_s | x_{s+1}) \big/ \int g_s(y_s | \tilde{x}_s) m(\rmd \tilde{x}_s | x_{s+1})
+% % \]
+% which is simply the probability measure of a Gaussian with mean and covariance 
+% \begin{align*}
+%     \pE\big[ \revX{s} \big| \revX{s+1}, y_s \big] & = \pE \big[ \revX{s} | \revX{s+1} \big] + K_s \left( y_s - A \pE \big[ \revX{s} | \revX{s+1}] \right) \eqsp, \\
+%     \mathrm{\mathbb{C}ov}\big[ \revX{s} \big| \revX{s+1}, y_s \big] & = \sigma^2 _{s+1} \big[\mathbf{I}_d + K_s A] 
+% \end{align*}
+% where $K_s = \sigma^2 _{s+1} A^\intercal \left[ \sigma^2 _{s+1} A A^\intercal + \mathrm{\mathbb{C}ov}(y_s | X_s) \right]^{-1}$, and $\pE \big[ \revX{s} | \revX{s+1} \big]$, $\mathrm{\mathbb{C}ov}(y_s | X_s)$ are given by the model \eqref{eq:hmm:modified}. The APF algorithm for the approximation of the probability flow $\{ Q_s(\rmd x_s | y_{s:n}) \}_{s = n} ^0$ is summarized in \Cref{alg:APF}. 
+% \begin{algorithm2e}
+%     \caption{Auxiliary particle filter}
+%     \label{alg:APF} 
+%     \KwInput{Number of particles $N$.}
+%     \KwOutput{$\big\{ \particle{1:N}{s} \big\}_{s = n} ^0$, $\big\{ \weight{1:N}{s} \big\}_{s = n} ^0$}
+%     Sample $(\particle{1}{n}, \dotsc, \particle{N}{n}) \iid m_n$;\\
+%     Set $(\weight{1}{n}, \dotsc, \weight{N}{n}) = (g_n(y_n | \particle{1}{n}), \dotsc, g_n(y_n | \particle{N}{n}))$;\\
+%     \For{$s \in n \to 1$}{
+%         Sample $(A^1 _s, \dotsc, A^n _s) \iid \mathrm{Categorical}\big( \left\{ \weight{i}{s} \right\}_{i = 1} ^N\big)$;\\
+%         \For{$i \in [1:N]$}{
+%             Sample $\particle{i}{s-1} \sim q_s(\rmd x_{s-1} | \particle{A^i _s}{s}, y_{s-1})$; \\
+%             Set $\tilde{\omega}^{i} _{s-1} = \omega_{s-1}(y_{s-1}, \particle{A^i _s}{s})$
+%         }
+%         Set $\weight{i}{s-1} = \tilde{\omega}^{i} _{s-1} / \sum_{j = 1}^N \tilde{\omega}^{j} _{s-1}$.
+%     }
+%  \end{algorithm2e}
+% We then see from \eqref{eq:PGwithinISIR} that in order to sample approximately from $p_0(\rmd x_0 | y_0)$ we may use the Particle Gibbs with backward sampling which we now briefly describe before diving into the details. Let $q^N _{0:T}(\rmd x_{0:T} | y_{0:T}) = \sum_{i = 1}^N w(\particle{i}{0:T}) \delta_{\particle{i}{0:T}}(\rmd x_{0:T})$ denote the FFBS weighted empirical approximation of $q_{0:T}(\rmd x_{0:T} | y_{0:T})$, where $\sum_{i = 1}^N w(\particle{i}{0:T}) = 1$ and $\particle{i}{0:T}$ is the trajectory with terminal particle $\particle{i}{T}$.
+% \begin{enumerate}[label=(\roman*), wide, labelwidth=!, labelindent=0pt]
+%     \item Compute the FFBS weighted empirical approximation of $q_{0:T}(\rmd x_{0:T} | y_{0:T})$; \[ q^N _{0:T}(\rmd x_{0:T} | y_{0:T}) = \sum_{i = 1}^N w(\particle{i}{0:T}) \delta_{\particle{i}{0:T}}(\rmd x_{0:T}) \eqsp,\]
+%     where $\sum_{i = 1}^N w(\particle{i}{0:T}) = 1$ and $\particle{i}{0:T}$ is the trajectory with terminal particle $\particle{i}{T}$.
+% \end{enumerate}
+
+% where the noises $(\noise_{i})_{i\geq 0}$ are i.i.d standard Gaussian random variables and  independent from $(Z_i)_{i\geq 0}$.  The joint distribution of \eqref{eq:hmm:modified} is that of a classical Hidden Markov Model and thus factorizes as
+% \[ 
+% q(\rmd x_{0:T}, y_{0:T}) =   \prod_{s = 0}^T g_t(y_t | x_t) p_{0:T}(\rmd x_{0:T}) \eqsp.
+% \]
+% The weight in \eqref{eq:IS} thus simplifies to 
+% \[ 
+%     \frac{g(y_* | x_0) p_{0:T}(x_{0:T})}{q(x_{0:T} | y_{0:T})} \propto \prod_{s = 1}^T \frac{1}{g(y_s | x_s)} \eqsp.
+% \]
+% To sample approximately from $q(\rmd x_{0:T} | y_{0:T})$ we use an auxiliary particle smoother with optimal transition kernel $q(\rmd x_{t-1} | x_t, y_{t-1})$ (readily available since the observation dynamics are linear.)
+
+% Some comments: 
+% \begin{itemize}
+%     \item There are two levels of approximation; (1) we replace $\datadistr(\rmd x_0 | y_*)$ with $p_0(\rmd x_0 | y_*)$. The error should be easy to control if the likelihood behaves well and we use the existing controls on the prior $\| \datadistr - p_0 \|$. The second error from the particle filter approximation should also be easy to control. The error bound should explicitely depend on the quality of the introduced posterior $q$ relative to the targeted posterior $p_{0:T}(\rmd x_{0:T} | y_*)$.
+%     % \item Since the initial model \eqref{eq:hmm:original} and \eqref{eq:hmm:modified} share the same hidden dynamics and the potentials $g_t$ have full support, there are no issues regarding the domination, i.e. $q( \cdot | y_{0:T}) \gg p(\cdot | y_*)$ always and the weights do not degenerate.
+% \end{itemize}
+
+% \begin{example}[Optimal kernel]
+%     If the noise in the observation process \eqref{eq:obsprocess:mispecified} is Gaussian then the optimal filter is computable and its density is given by
+%     \[ 
+%         q(X_{t_i} | Y_{t_i}, X_{t_{i-1}}) = \frac{g(Y_{t_i} | X_{t_i}) p(X_{t_i} | X_{t_{i-1}})}{\int g(Y_{t_i} | x) p(\rmd x | X_{t_{i-1}})} \eqsp,
+%     \]
+%     in which case the weight becomes independent of $X_{t_i}$ and
+%     \[ 
+%         w(X_{t_{i-1}}, X_{t_i}) = \int g(Y_{t_i} | x) p(\rmd x | X_{t_{i-1}}) \eqsp.
+%     \]
+%     We have that
+%     \[ q(\rmd x_{t_i} | Y_{t_i}, X_{t_{i-1}}) \overset{\mathcal{L}}{=} \gauss(\mu_i(X_{t_{i-1}}), \Sigma_i(X_{t_{i-1}}))\] 
+%     where 
+%     \begin{align*} 
+%         K_i & = \gamma_i A^\intercal \big[ \gamma_i AA^\intercal + \lambda_t ^2 \Sigma^y _{t_i} \Sigma^{y, \intercal} _{t_i}\big]^{-1} \\
+%         \mu_i(x_{t_i}) & = f_i(x_{t_i}) + K_i \big[ Y_{t_i} - A f_i(x_{t_i}) \big]\\
+%         \Sigma_i & = \gamma_k \cdot \big[ \mathbf{I}_n - K_i A \big] 
+%     \end{align*}
+%     and 
+%     \begin{equation}
+%         w(X_{t_{i-1}}, X_{t_i}) \\
+%         \propto \exp \left\{ -\frac{1}{2} \big( Y_{t_{i}} - A f_{i-1}(x_{t_{i-1}}) \big)^\intercal \Gamma_i ^{-1} \big( Y_{t_i} - A f_{i-1}(x_{t_{i-1}})\big)\right\}
+%     \end{equation}
+%     where
+%     \[ 
+%         \Gamma_i = \gamma(t_i) A A^\intercal + \lambda^2 _t \Sigma^y _{t _i} \Sigma^{y, \intercal} _{t-i}\eqsp.
+%     \]
+% \end{example}

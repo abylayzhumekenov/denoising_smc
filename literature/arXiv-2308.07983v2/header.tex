@@ -1,0 +1,85 @@
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{array}
+\usepackage{xargs}
+\usepackage{xifthen}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+% \usepackage{geometry}
+% \geometry{
+%   paper = letterpaper,
+%   margin = 1.45in,
+%   includehead,
+%   footskip = 1cm
+% }
+\usepackage{xcolor}
+\usepackage{url}
+
+\usepackage[textwidth=4cm,textsize=footnotesize]{todonotes}
+
+\usepackage{ifthen}
+\usepackage[linesnumberedhidden,ruled,vlined, algo2e]{algorithm2e}
+\RequirePackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+\usepackage{hyperref}
+\usepackage[nodisplayskipstretch]{setspace}
+\usepackage{amssymb,amsmath,amscd,amsfonts,amsthm,bbm,mathrsfs,yhmath}
+\usepackage{mathtools}
+% \usepackage[parfill]{parskip}
+\usepackage{booktabs}
+\usepackage{xcolor}
+\usepackage{bm}
+\usepackage{todonotes}
+\usepackage{amsfonts}
+\usepackage{algorithm}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{cleveref}
+\usepackage{algpseudocode}
+\usepackage{enumitem}
+\usepackage{caption}
+\usepackage{subcaption}
+\usepackage{datatool}
+\usepackage[T1]{fontenc}
+\newtheorem{thm}{Theorem}[section]
+\newtheorem{corollary}[thm]{Corollary}
+\newtheorem{lemma}[thm]{Lemma}
+\newtheorem{example}[thm]{Example}
+\newtheorem{defn}[thm]{Definition}
+\newtheorem{proposition}[thm]{Proposition}
+\newtheorem{conj}[thm]{Conjecture}
+\newtheorem{rem}[thm]{Remark}
+\newtheorem*{rem*}{Remark}
+\newtheorem{assumption}{A}
+\numberwithin{equation}{section}
+
+\newcommand{\todoo}[1]{\todo[linecolor=red,backgroundcolor=red!25,bordercolor=red]{\small{#1}}}
+\usepackage{stmaryrd}
+
+\newcounter{hypA}
+\newenvironment{hypA}{\refstepcounter{hypA}\begin{itemize}
+  \item[({\bf A\arabic{hypA}})]}{\end{itemize}}
+  \newcounter{seq}
+  \newenvironment{seq}{\refstepcounter{seq}\begin{itemize}
+    \item[({\bf S\arabic{seq}})]}{\end{itemize}}
+    
+\SetKwInput{KwInput}{Input}                % Set the Input
+\SetKwInput{KwOutput}{Output}  
+\Crefname{hypA}{{\textsf{A}}\!}{{\textbf{A}}} 
+
+
+\usepackage{comment}
+\newcommand\mycommfont[1]{\ttfamily\textcolor{purple}{\tiny{#1}}}
+\SetCommentSty{mycommfont}
+
+\newcommand\blfootnote[1]{%
+  \begingroup
+  \renewcommand\thefootnote{}\footnote{#1}%
+  \addtocounter{footnote}{-1}%
+  \endgroup
+}

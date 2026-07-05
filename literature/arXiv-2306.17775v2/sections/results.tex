@@ -1,0 +1,272 @@
+\section{Simulation study and conditional image generation}\label{sec:results}
+\begin{figure*}[t]
+    \tiny
+    \includegraphics[scale=0.7]{sections/figures/toy/toy_A.png}
+    \includegraphics[scale=0.7]{sections/figures/toy/toy_B.png}
+    \includegraphics[scale=0.7]{sections/figures/toy/toy_C.png}
+    \includegraphics[scale=0.6]{sections/figures/toy/toy_legend.png}
+  \centering
+    \caption{
+   % Error on small-scale problems with ground truth.  Error of estimate of conditional mean (mean +- 2SEM) with 25 replicates. 
+   Errors of conditional mean estimations with 2 SEM error bars averaged over 25 replicates. TDS applies to all three tasks and provides increasing accuracy with more particles.  
+}
+\label{fig:exp-toy}
+\vspace{-1.5em}
+\end{figure*}
+We first test the dependence of the accuracy of TDS on the number of particles in synthetic settings with tractable exact conditionals in \Cref{subsec:exp-toy}.
+\Cref{subsec:exp-mnist} compares TDS to alternative approaches on class-conditional image generation, and an image inpainting experiment is included in \Cref{supp:subsubsec:mnist-inpainting}. 
+See \Cref{sec:supp_results} for all additional details.
+
+Our evaluation includes:
+(1) \textit{TDS}; (2) \textit{TDS-IS},  an importance sampler that uses TDS's proposal; %which can be viewed as TDS without resampling steps; 
+(3) \textit{IS}, a naive importance sampler described in \Cref{subsec:SMC_framing};  and
+(4) \textit{Gradient Guidance}. %, referred to the generalization of  prior works  \citep{chung2022diffusion,hovideo,song2023pseudoinverse}, and implemented as TDS with one particle (see \Cref{sec:related-works}).
+For inpainting-type problems we further include: (5) \textit{Replacement method}; and (6) \textit{SMC-Diff}. %Additionally, We include a comparision to Classifier Guidance in high-dimensional image generation tasks in \Cref{supp:subsubec:inet-and-cifar}. 
+\iffalse
+\begin{enumerate}[label=(\roman*)] 
+\item \emph{TDS}: twisted diffusion sampler; 
+\item \emph{TDS-IS}: an importance sampler that uses twisted proposals and weight set to $\twist(y\mid \xzero)$. TDS-IS can be viewed as TDS without resampling steps;
+\item \emph{Gradient guidance}: viewed as TDS with one particle. This approach coincides with the \emph{reconstruction guidance} \citep[e.g.][]{chung2022diffusion,hovideo,song2023pseudoinverse};
+\item \emph{IS}: the naive importance sampler described in \Cref{sec:method}; 
+\item \emph{Replacement}: a heuristic sampler for inpainting tasks that replaces $\xt_{\mask}$ with a noisy version of the observed $\xzero_{\mask}$ at each $t$ \citep{song2020score};  
+\item \emph{SMC-Diff}: an SMC algorithm with replacement method as proposals for inpainting tasks \citep{trippe2022diffusion}.
+TDS and SMC-Diff are implemented with systematic resampling.
+\end{enumerate}
+\fi 
+
+Each SMC sampler forms an approximation to $\pmodel(\xzero \mid y)$ with $K$ weighted particles $(\sum_{k^\prime=1}^K w_{k^\prime})^{-1} \cdot \sum_{k=1}^K w_k \delta_{\xzero_k}$. 
+Gradient guidance and replacement method are considered to form a similar particle-based approximation with $K$ independent samples viewed as $K$ particles with uniform weights. 
+
+\paragraph{Compute Cost:} %
+Compared to unconditional generation, TDS has compute cost that is 
+(i) larger by a constant factor due to the need to backpropogate through the denoising network when computing the conditional score approximation and
+(ii) linear in the number of particles.
+As a result, the compute cost at inference cost is potentially large relative for accurate inference to be achieved.
+%However 
+%Extra (time and memory) cost from backprop, but memory cost can be reduced by use of gradient checkpointing \citep{chen2016training}.
+
+By comparison, conditional training methods
+provide fast inference by \emph{amortization} \citep{gershman2014amortized},
+in which most computation is done ahead of time.
+Hence they may be preferable for applications where sampling time computation is a primary concern.
+On the other hand, TDS may be preferable when the likelihood criterion is readily available (e.g.\ through an existing classifier on clean data) but training an amortized model poses challenges;
+for example, the labeled data, neural-network engineering expertise, and up-front compute resources required for amortization training can be prohibitive.
+
+%
+
+\subsection{Applicability and precision of TDS in two dimensional simulations}\label{subsec:exp-toy}
+We explore two questions in this section:
+(i) what sorts of conditioning information can be handled by TDS and other methods, and 
+(ii) how does the precision of TDS depend on the number of particles?
+
+To study these questions, we first consider an unconditional diffusion model $\pmodel(\xzero)$ approximation of a bivariate Gaussian.
+For this choice, the marginals of the forward process are also Gaussian, and so we may define $\pmodel(\dt{x}{0:T})$ with an analytically tractable score function without neural network approximation.
+Consequently, we can analyze the performance without the influence of score network approximation errors.
+And the choice of a two-dimensional diffusion permits close approximation of exact conditional distributions by numerical integration that can then be used as ground truth.
+
+We consider three test cases defining the conditional information: 
+(1)  Smooth likelihood: $y$ is an observation of the Euclidean norm of $x$ with Laplace noise, with $\pmodel(y\mid \xzero)=\exp\{| \|\xzero \|_2 - y|\} / 2 .$  This likelihood is smooth almost everywhere.\footnote{This likelihood is smooth except at the point $x=(0, 0)$.}
+    (2) Inpainting:  $y$ is an observation of  the first dimension of $\xzero$, with $\pmodel(y\mid \xzero, \mask=0) = \delta_{y}(\xzero_0)$.  
+    (3) Inpainting with degrees-of-freedom: $y$ is a an observation of either the first or second dimension of $\xzero,$ with $\mathcal{M}=\{0, 1\}$ and $\pmodel(y \mid \xzero) = \frac{1}{2}[\delta_y(\xzero_0)+\delta_y(\xzero_1)].$. 
+\iffalse
+\begin{enumerate}
+    \item {Smooth likelihood: $y$ is an observation of the Euclidean norm of $x$ with Laplace noise, with $\pmodel(y\mid \xzero)=\exp\{| \|\xzero \|_2 - y|\} / 2 .$  This likelihood is smooth almost everywhere.\footnote{This likelihood is smooth except at the point $x=(0, 0)$.} }
+    \item{Inpainting:  $y$ is an observation of $\xzero$'s first dimension, with $\pmodel(y\mid \xzero, \mask=0) = \delta_{y}(\xzero_0).$}
+    %\item{Inpainting:  $\pmodel(\xzero \mid y=1)$ where $y$ representing the first dimension of $\xzero$ is set to 1}
+    %\item{Inpainting with degrees-of-freedom: $\pmodel(\xzero \mid y = 0 \textrm{ or } 1)$ where y -- first dimension of $\xzero$ -- can be either 0 or 1. }
+    \item{Inpainting with degrees-of-freedom: $y$ is a an observation of either the first or second dimension of $\xzero,$ with $\mathcal{M}=\{0, 1\}$ and $\pmodel(y \mid \xzero) = \frac{1}{2}[\delta_y(\xzero_0)+\delta_y(\xzero_1)].$}
+\end{enumerate}
+\fi 
+In all cases we fix $y=0$ and consider estimating $\E_{\pmodel}[\xzero\mid y].$
+
+
+\Cref{fig:exp-toy} reports the estimation error for the mean of the  desired conditional distribution, i.e. $\|\sum w_k \xzero_k  - \E_q[\xzero \mid y ] \|_2$.
+TDS provides a computational-statistical trade-off:
+using more particles decreases mean square estimation error at the $O(1/K)$ parametric rate
+(note the slopes of $-1$ in log-log scale) as expected from standard SMC theory \citep[Ch. 11]{chopin2020introduction}.
+This convergence rate is shared by TDS, TDS-IS, and IS in the smooth likelihood case,
+and by TDS, SMCDiff and in the inpainting case;
+TDS-IS, IS and SMCDiff are applicable however only in these respective cases, 
+whereas TDS applicable in all cases.
+The only other method which applies to all three settings is Gradient Guidance, which exhibits significant estimation error and does not improve with many particles.
+
+
+
+
+\subsection{Class-conditional image generation}\label{subsec:exp-mnist}
+%\textbf{Main message}: Utility with a few particles
+
+%We apply TDS to image inpainting and class-conditioned generation tasks on the MNIST dataset. For both tasks, we trained an unconditional diffusion model $\pmodel$  on 60k images with a modified architecture from a public codebase\footnote{\url{https://github.com/openai/guided-diffusion}}. See appendix for details.   
+
+%\subsubsection{Class-conditioned generation}
+
+%\begin{figure}
+%  \centering
+%  \begin{subfigure}[t]{0.9\linewidth}
+%    \centering
+%   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label7-P64-resampleP16.pdf}
+%      \caption{Conditional samples of each method ran with 64 particles given class $y=7$.}
+%      \label{subfig:mnist-class-sample}
+%  \end{subfigure}\hfill 
+%    \begin{subfigure}[t]{0.46\linewidth}
+%    \centering
+%    \includegraphics[width=\textwidth]{sections/figures/mnist-class/class-ess-legendTrue.pdf}
+%      \caption{ESS trace avg. over 100 runs ($K=64$)}%for SMC-based methods averaged over 100 runs.}
+%      \label{subfig:mnist-class-ess}
+%  \end{subfigure}%\hfill 
+%  \begin{subfigure}[t]{0.5\linewidth}
+%    \centering
+%    \includegraphics[width=\linewidth]{sections/figures/mnist-class/class-accuracy-legendTrue.pdf}
+%      \caption{Classification accuracy avg. over 1k runs.}% Results are averaged over 1{,}000 runs.}
+%      \label{subfig:mnist-class-accuracy}
+%  \end{subfigure}
+%  \caption{MNIST class-conditional generation. TDS  generates a diverse set of desired digits, and has higher particle efficiency compared to other SMC samplers.  Notably, TDS with $K=2$ particles outperform the Guidance baseline in terms of classification accuracy.}
+%  \label{fig:mnist-class}
+%\end{figure}
+
+
+
+
+%Add a sentence to motivate this task. Neural network approximation. 
+We next study the performance of TDS on diffusion models with neural network approximations to the score functions.
+In particular, we study the class-conditional image generation task, which involves sampling an image from $\pmodel(\xzero \mid y) \propto \pmodel (\xzero) \plikelihood{y}{\xzero}$, where $\pmodel (\cdot)$ is a pretrained diffusion model on images $\xzero$, $y$ is a given image class, and $\plikelihood{y}{\cdot}$ is the classification likelihood. %\footnote{We trained an unconditional diffusion model  on 60{,}000 training images with 1{,}000 diffusion steps and the architecture proposed in  \citep{dhariwal2021diffusion}.The  classification likelihood $\plikelihood{y}{\cdot}$ is parameterized by a pretrained ResNet50 model taken from  \url{https://github.com/VSehwag/minimal-diffusion}.} 
+To assess the faithfulness of generation, we evaluate  \emph{classification accuracy} on predictions of conditional samples  $\xzero$ given $y$, made by the same classifier that specifies the likelihood. 
+In all experiments, we follow the standard practice of returning the denoising mean on the final sample \cite{ho2020denoising}.
+
+On the MNIST dataset, we compare TDS to TDS-IS, Gradient Guidance, and IS. 
+%The results are summarized in \Cref{fig:image-class-cond}. 
+\Cref{subfig:mnist-class-sample}  compares the conditional samples of TDS and Gradient Guidance given class $y=7$.  
+Samples from Gradient Guidance have noticeable artifacts, and most of them do not resemble the digit 7; by contrast, TDS produces authentic and correct digits.
+
+\Cref{subfig:mnist-class-accuracy} presents an ablation study of the effect of \# of particles $K$ on MNIST. For all SMC samplers,  more particles improve the classification accuracy,  with $K=64$ leading to nearly perfect accuracy. The performance of Gradient Guidance is constant with respect to $K$ (in expectation). Notably, for fixed $K$, TDS and TDS-IS have comparable performance and outperform Gradient guidance and IS. 
+%This observation suggests that one can use TDS-truncate %to avoid effective sample size drop and to encourage the generation diversity, without compromising the performance.  
+
+We next apply TDS to higher dimension datasets.  \Cref{subfig:inet-tds-ind-samples} shows  samples from TDS $(K=16)$ using a pre-trained diffusion model  and a pretrained classifier on the ImageNet dataset ($256\times 256 \times 3$ dimensions). These samples are qualitatively good and capture the class label. \Cref{supp:subsubec:inet-and-cifar} provides more samples, comparision to Classifier Guidance \citep{dhariwal2021diffusion}, and results for the CIFAR-10 dataset. 
+
+TDS can be extended by exponentiating twisting functions with a \emph{twist scale}. This extension is related to the existing literature of Classifier Guidance   that considers re-scaling the
+gradient of the log classification probability. 
+See \Cref{supp:subsubsec:mnist-class} for details and ablation study. 
+
+
+\begin{figure*}[t!]
+  \centering
+  \begin{subfigure}[t]{0.38\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/two-cols-classifier-guidance-sample-comparision-label7-P64-resampleP16-showmethodnameTrue.pdf}
+     % \caption{Approximate conditional samples of each method with 64 particles given class $y=7$.}
+      \caption{MNIST: samples by TDS ($K=64$) and Gradient Guidance   given class `7'. TDS samples are randomly selected out of 64 particles in a single SMC run.}
+      \label{subfig:mnist-class-sample}
+  \end{subfigure}
+\hfill
+  \begin{subfigure}[t]{0.34\linewidth}
+    \centering\includegraphics[width=\linewidth]{sections/figures/mnist-class/class-accuracy-legendTrue.pdf}
+      \caption{MNIST: classification accuracy vs.\ $K$. Results are averaged over 1{,}000 runs with error bars denoting 2 standard errors.}
+      \label{subfig:mnist-class-accuracy}
+  \end{subfigure}
+  \hfill
+    \begin{subfigure}[t]{0.22\linewidth}
+    \centering\includegraphics[width=\linewidth]{sections/figures/inet-and-cifar10/inet_TDS_independent_samples_N4.pdf}
+      \caption{ImageNet: samples by TDS $(K=16)$ given class `brambling' from 4 independent SMC runs.}% Results are averaged over 1{,}000 runs.}
+      \label{subfig:inet-tds-ind-samples}
+  \end{subfigure}
+\caption{Image class-conditional generation task.}
+\vspace{-1.5em}
+%  \caption{MNIST class-conditional generation. TDS  generates a diverse set of desired digits, and has higher particle efficiency compared to other SMC samplers.  Notably, TDS with $K=2$ particles outperform the Guidance baseline in terms of classification accuracy.}
+  \label{fig:image-class-cond}
+\end{figure*}
+
+%Figure 3 shows more samples given randomly selected classes. We also reported results of the unconditional model from [1] that are evaluated on 50k samples with 250 sampling steps (Table 1). TDS and CG provide similar classification accuracy. TDS has similar FIDs compared to the unconditional model and better inception score. CG’s FID and inception score are better than TDS. We suspect this difference is attributed to the sample correlation (and hence less diversity) within particles in a single run of TDS(P=16).
+%TDS can be applied to higher dimensional datasets, e.g. CIFAR10 and ImangeNet 256. 
+
+
+
+
+%In addition, we include an MNIST inpainting experiment in \Cref{sec:supp_results}. We observe that TDS consistently outperforms TDS-IS, Guidance, IS, Replacement and SMC-Diff across $K$. We also encounter the ESS drop in the final 10 steps, and we likewise employ a truncation procedure there.% to alleviate the issue. 
+
+\iffalse 
+
+\subsubsection{Inpainting} 
+\begin{figure}[t]
+  \centering
+  \begin{subfigure}[t]{0.28\linewidth}
+    \centering
+    \includegraphics[width=\textwidth]{sections/figures/mnist-inpainting/inpainting-quarter-ess.pdf}
+      \caption{Effective sample size v.s. $t$}
+  \end{subfigure}\hfill 
+    \begin{subfigure}[t]{0.72\linewidth}
+    \centering
+    \includegraphics[width=\textwidth]{sections/figures/mnist-inpainting/inpainting-quarter-accuracy.pdf}
+      \caption{Classification and Bayes Accuracy v.s. $K$}
+  \end{subfigure}
+  \caption{MNIST inpainting task}
+  \label{fig:MNIST-inpaiting}
+\end{figure}
+
+
+The goal of inpainting is to sample from $\pmodel \left(\xzero \mid y=f(\xzero)\right)$ where $ f(\xzero) := \xzero_M$ denotes an indexing function with $M$ indices of observed pixels, and $y$ is the observed part of an image.  
+
+We consider two accuracy criteria through the use of a separately pre-trained classifier as mentioned above. We know the true label $\dt{z}{0}$ for $\xzero$. 
+\begin{itemize}
+    \item Bayes accuracy $:=$
+    %\begin{align}
+     $   \mathds{1} \left\{  \left(\argmax_{z=1:C} \int \pmodelapprox (\xzero \mid y) p(z \mid \xzero)  d\xzero \right) = \dt{z}{0} \right\} $
+    %\end{align}
+    \item Weighted accuracy $:=$
+    $  \int \pmodelapprox (\xzero \mid y) \mathds{1} \{ \argmax_{z=1:C} p(z \mid \xzero) = \truelabel \} d\xzero$
+    
+\end{itemize}
+
+%\textbf{Bayes-optimal classification under partial information.}
+%Consider the task assigning to an image of a digit $\xzero$ a classification $z$ of as one of the 10 digits, 1 through 10, when only a part of the image, $y,$ has been observed. For example, we consider $y$ to be the left half of an image and assume $z$ is represented as a one-hot vector. Provided that both (1) the distribution over images $\pmodel(\xzero),$ and (2) the true labeling mechanism $p(z\mid \xzero)$ are known, the Bayes optimal classifier (with respect to the zero-one loss) is
+\begin{align}\label{eqn:bayes_opt_classifier}
+\begin{split}
+    \hat z^*(y) &= \argmax_{\ell} p(z_\ell=1 \mid y) \\
+    &= \argmax_{\ell} \int \pmodel(\xzero \mid y) p(z_\ell=1 \mid \xzero )d\xzero,
+\end{split}
+\end{align}
+where $p(z_\ell=1 \mid \xzero)$ is given by the optimal classifier on full images.
+
+\Cref{eqn:bayes_opt_classifier} suggests that, if samples $\dt{x_m}{0}\sim\pmodel(\xzero \mid y)$ are available, we can use a Monte Carlo estimate of $\hat z^*(y)$ as
+as 
+$$
+    \hat z^*(y) \approx M\inv \sum_{m=1}^M p(z \mid \dt{x_m}{0}),
+$$
+to approximate the optimal Bayes rule.
+
+This observation provides a grounds to evaluate the accuracy of approximations to $p(\xzero \mid y)$ in a non-trivial setting;
+approximation error in $p(\xzero \mid y)$ can only decrease the accuracy of the resulting classifier.
+\textbf{Evaluation set-up and details:}
+To examine the impact of number particles used on performance,
+and the interaction between this knob and the quality of the score approximation (and there more twisting functions),
+we consider classification of MNIST digits under partial information.
+A diffusion model was fit to a training set of $50,000$ images.
+Then on a test set of $10,000$ labeled test images we compared the performance of several inpainting algorithms on the following evaluation procedure, applied for on each test image:
+\begin{enumerate}
+    \item{Mask the right side of the image,}
+    \item{Run the inpainting algorithm to sample completions of the image,}
+    \item{Run the classifier of the completed images, and}
+    \item{Make a prediction for the image as the label highest average predicted probability.}
+\end{enumerate}
+We compare the following inpainting algorithms on the basis of mean classification accuracy:
+\begin{enumerate}
+    \item{Twisted SMC (K=1 corresponds to reconstruction guidance)}
+    \item{Naive SMC (importance sampling)}
+    \item{SMCDiff}
+    \item{Twisted SMC without resampling (SIS)}
+    \item{The replacement method.}
+    \item{Baseline Bayes' optimal using KDE?}
+\end{enumerate}
+
+
+We next asked if there was particle collapse, by looking the effective sample size per step.
+This helped to pick between several choices of scaling on reconstruction guidance too.
+\begin{itemize}
+    \item{Twisted SMC with different variance schedules}
+    \item{Twisted SMC with different \#'s of steps?}
+    \item{SMCDiff}
+\end{itemize}
+
+
+\fi 
+
+\input{sections/results_protein}

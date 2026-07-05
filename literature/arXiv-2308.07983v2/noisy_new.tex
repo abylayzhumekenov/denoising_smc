@@ -1,0 +1,141 @@
+We consider the case $\noisestd > 0$. The posterior density is given by
+$
+    \noisyfilter{0}{\lmeas}{\lstate_0} \propto \pot{0}{\lmeas}{\ltopstate_0} \bwmarg{0}{\lstate_0}$, where $\pot{0}{\lmeas}{\lstate_0} \eqdef \normpdf(\lmeas; \ltopstate_0, \noisestd^2 \Id_{\dimorig})$.
+In what follows, assume that there exists $\tau \in [1:n]$ such that $\sigma^2 = (1 - \alphacumprod{\tau}{}) \big/ \alphacumprod{\tau}{}$. We denote $\tilde\lmeas_\tau = \alphacumprod{\tau}{}^{1/2} \lmeas$. We can then write that 
+\begin{equation}
+    \label{eq:pot_as_foward}
+    \pot{0}{\lmeas}{\ltopstate_0} = \alphacumprod{\tau}{}^{1/2} \cdot \normpdf(\tilde\lmeas_\tau; \alphacumprod{\tau}{}^{1/2} \lstate_0, (1 - \alphacumprod{\tau}{}) \cdot \Id_{\dimorig})
+    = \alphacumprod{\tau}{}^{1/2} \cdot \tfwtrans{\tau|0}{\ltopstate_0}{\tilde\lmeas_\tau} \eqsp,
+\end{equation}
+which hints that the likelihood function $\pot{0}{\lmeas}{}$ is closely related to the forward process \eqref{eq:forward_def}. We may then write the posterior $\noisyfilter{0}{\lmeas}{\lstate_0}$ as 
+$\filter{0}{\lmeas}{\lstate_0}  \propto \tfwtrans{\tau|0}{\ltopstate_0}{\tilde\lmeas_\tau} \bwmarg{0}{\lstate_0} \propto \int \delta_{\tilde\lmeas_\tau}(\rmd \ltopstate_\tau) \fwtrans{\tau|0}{\lstate_0}{\lstate_\tau} \bwmarg{0}{\lstate_0} \rmd \lbottomstate_\tau$.
+%\end{equation*}
+%\begin{equation*}
+%    \textstyle \filter{0}{\lmeas}{\lstate_0}  \propto \int \delta_{\tilde\lmeas_\tau}(\rmd \ltopstate_\tau) \tfwtrans{\tau|0}{\ltopstate_0}{\ltopstate_\tau} \bwmarg{0}{\lstate_0}
+%    \propto \int \delta_{\tilde\lmeas_\tau}(\rmd \ltopstate_\tau) \fwtrans{\tau|0}{\lstate_0}{\lstate_\tau} \bwmarg{0}{\lstate_0} \rmd \lbottomstate_\tau  \eqsp,
+%\end{equation*}
+Next, assume that the forward process \eqref{eq:forward_def} is the reverse of the backward one \eqref{eq:bwker:defn}, i.e. that 
+\begin{equation} 
+    \label{eq:bweqfw}
+    \bwmarg{t}{\lstate_t} \fwtrans{t+1}{\lstate_t}{\lstate_{t+1}} = \bwmarg{t+1}{\lstate_{t+1}} \bwtrans{}{t}{\lstate_{t+1}}{\lstate_t}\eqsp,  \quad \forall t \in [0:n-1] \eqsp.
+\end{equation} 
+This is similar to the assumption made in \smcdiff\  \cite{trippe2023diffusion}. Then, it is easily seen that it implies $\bwmarg{0}{\lstate_0} \fwtrans{\tau|0}{\lstate_0}{\lstate_{\tau}} = \bwmarg{\tau}{\lstate_{\tau}} \bwtrans{}{0|\tau}{\lstate_{\tau}}{\lstate_0}$ and thus 
+\begin{equation}
+    \label{eq:noiseless_at_tau}
+    \filter{0}{\lmeas}{\lstate_0} = {\int \bwtrans{}{0|\tau}{\lstate_\tau}{\lstate_0} \delta_{\tilde\lmeas_\tau}(\rmd \ltopstate_\tau) \bwmarg{\tau}{\lstate_\tau} \rmd \lbottomstate_\tau}\big/{\int \delta_{\tilde\lmeas_\tau}(\rmd \overline{z}_\tau) \bwmarg{\tau}{z_\tau} \rmd \underline{z}_\tau}
+    = \int \bwtrans{}{0|\tau}{\cat{{\tilde\lmeas_\tau}}{\lbottomstate_\tau}}{\lstate_0} \filter{\tau}{\tilde\lmeas_\tau}{\rmd \lbottomstate_\tau} \eqsp,
+\end{equation}
+where $\filter{\tau}{\tilde\lmeas_\tau}{\lbottomstate_\tau} \propto \bwmarg{\tau}{\cat{\tilde\lmeas_\tau}{\lbottomstate_\tau}}$.
+\eqref{eq:noiseless_at_tau} highlights that solving the inverse problem \eqref{eq:inpainting} with $\noisestd > 0$ is equivalent to solving an inverse problem on the intermediate state $\state_{\tau} \sim \bwmarg{\tau}{}$ with \emph{noiseless} observation $\tilde\lmeas_\tau$ of the $\dimorig$ top coordinates and then propagating the resulting posterior back to time $0$ with the backward kernel $\bwtrans{}{0|\tau}{}{}$.
+%To obtain a particle approximation of $\filter{\tau}{\tilde\lmeas_\tau}{}$ we may then use the methodology of the previous section with the potentials $\smash{\pot{t}{\lmeas}{}: \lstate_t \mapsto \tfwtrans{t|\tau}{\tilde\lmeas_\tau}{\lstate_t}}$ for $t \in [\tau+1:n]$. Indeed, consider the sequence $\{ \fwdfilter{t}{\tilde\lmeas_\tau}{} \}_{t = \tau} ^n$ defined by $\fwdfilter{t}{\tilde\lmeas_\tau}{\lstate_t} = \int \filter{\tau}{\tilde\lmeas_\tau}{\rmd \lbottomstate_\tau} \fwtrans{t|\tau}{\cat{\tilde\lmeas_\tau}{\lbottomstate_\tau}}{\lstate_t} $. Using that $\bwmarg{\tau}{\lstate_\tau} = \int \bwmarg{0}{\rmd \lstate_0} \fwtrans{\tau|0}{\lstate_0}{\lstate_\tau}$ by assumption and the identity \eqref{eq:backward-induction}, we find that
+%\begin{align*}
+%    \fwdfilter{t}{\tilde\lmeas_\tau}{\lstate_t} & \propto \int \bwmarg{0}{\rmd \lstate_0} \tfwtrans{\tau | 0}{\ltopstate_0}{\tilde\lmeas_\tau} \tfwtrans{t|\tau}{\tilde\lmeas_\tau}{\ltopstate_t} \bfwtrans{t|0}{\lbottomstate_0}{\lbottomstate_t} \\
+%    & \propto \int \bwmarg{0}{\rmd \lstate_0} \tfwtrans{\tau | 0}{\ltopstate_0}{\tilde\lmeas_\tau} \tfwtrans{t|\tau}{\tilde\lmeas_\tau}{\ltopstate_t} \tfwtrans{t+1|\tau}{\tilde\lmeas_\tau}{\rmd \ltopstate_{t+1}} \brevbridge{t|t+1, 0}{\lbottomstate_{t+1}, \lbottomstate_0}{\lbottomstate_t} \bfwtrans{t+1|0}{\lbottomstate_0}{\rmd \lbottomstate_{t+1}} \eqsp,
+%\end{align*}
+%and replacing $\lbottomstate_0$ in the bridge kernel $\brevbridge{t|t+1, 0}{}{}$ by $\bottomxpred{0|s+1}(\lstate_{s+1})$, we obtain the recursion
+%\begin{equation}
+%    \label{eq:tau_approx_rec}
+%    \fwdfilter{t}{\tilde\lmeas_\tau}{\lstate_t} \approx \int \tfwtrans{t|\tau}{\tilde\lmeas_\tau}{\ltopstate_t} \bbwtrans{}{t}{\lstate_{t+1}}{\lbottomstate_t} \fwdfilter{t+1}{\tilde\lmeas_\tau}{\rmd \lstate_{t+1}} \eqsp,
+%\end{equation}
+%which provides the intuition for our choice of potential.
+The assumption \eqref{eq:bweqfw} does not always holds in realistic settings.%regarding the reversal of the backward process holds only approximately in realistic settings.
+Therefore, while \eqref{eq:noiseless_at_tau} also holds only approximately in practice, we can still use it as inspiration for designing potentials when the assumption is not valid.
+Consider then $\{ \pot{t}{\lmeas}{} \}_{t = \tau} ^n$ and sequence of probability measures $\{ \filter{t}{\lmeas}{} \}_{t = \tau} ^n$ defined for all $t \in [\tau: n]$ as
+$
+    \filter{t}{\lmeas}{x_t} \propto \pot{t}{\lmeas}{\lstate_t} \bwmarg{t}{\lstate_t}$, where $\pot{t}{\lmeas}{\lstate_t }\eqdef\normpdf\left(\lstate_t; \tilde\lmeas_\tau, \big(1 - (1 - \inflationstd) \alphacumprod{t}{} / \alphacumprod{\tau}{} \big) \Id_{\dimorig}\right)$, $\inflationstd \geq 0$.
+In the case of $\inflationstd = 0$, we have $\pot{t}{\lmeas}{\lstate_t} = \tfwtrans{t|\tau}{\tilde\lmeas_\tau}{\ltopstate_t}$ for $t \in [\tau + 1:n]$ and $\filter{\tau}{\lmeas}{} = \filter{\tau}{\tilde\lmeas_\tau}{}$. The recursion \eqref{eq:FKrecursion} holds for $t \in [\tau:n]$ and assuming $\inflationstd > 0$, we find that
+$ 
+    \filter{0}{\lmeas}{\lstate_0} \propto {\pot{0}{\lmeas}{\lstate_0}} \int {\pot{\tau}{\lmeas}{\lstate_\tau}}^{-1} \bwtrans{}{0|\tau}{\lstate_\tau}{\lstate_0} \filter{\tau}{\lmeas}{\rmd \lstate_\tau} \eqsp,
+$
+which resembles the recursion \eqref{eq:noiseless_at_tau}. In practice we take $\kappa$ to be small in order to mimick the Dirac delta mass at $\ltopstate_\tau$ in \eqref{eq:noiseless_at_tau}. Having a particle approximation $\filter{\tau}{N}{} = N^{-1} \sum_{i = 1}^N \delta_{\particle^i _\tau}$ of $\filter{\tau}{\lmeas}{}$ by adapting \Cref{alg:algonoiseless}, we estimate $\filter{0}{\lmeas}{}$ with $
+    \filter{0}{N}{} = \textstyle \sum_{i = 1}^N \weight{i}{0} \delta_{\particle^i _0}$ where $\particle^i _0 \sim \bwtrans{}{0|\tau}{\particle^i _\tau}{\cdot }$ and $\weight{i}{0} \propto \pot{0}{\lmeas}{\particle^i _0}$.
+In the next section we extend this methodology to general linear Gaussian observation models.
+Finally, note that \eqref{eq:noiseless_at_tau} allows us to extend \smcdiff\, to handle noisy inverse problems in a principled manner. This is detailed in \Cref{sec:smc_diff_ext}.
+% Let $\{ \tau_i \}_{i = 1} ^\dimorig \subset [1:n]$ be a sequence of timesteps with $\tau_1 < \dotsc < \tau_\dimorig$. For each $i \in [1:\top]$, define for $s \in [\tau_i, n]$,
+% \begin{equation}
+%     \label{eq:potential:coordinate:noisy}
+%     \pot{s, i}{\lmeas}{\vecidx{\ltopstate}{s}{i}} = \normpdf(\vecidx{\ltopstate}{s}{i}; \alpha_{s}^{1/2} \vecidx{\lmeas}{}{i}, \sigma^2 _{s| \tau_\ell}) \eqsp, \quad \mathrm{where} \quad \sigma^2 _{s|\tau_\ell} =  1 - (1 - \sigma^2 _\delta) \alpha_s / \alpha_{\tau_i}
+% \end{equation}
+%  and $\sigma_{\delta}^2 > 0$ is a free hyper-parameter that is discussed later in this section. In the particular case of $\sigma^2 _\delta = 0$, $\pot{s,i}{\lmeas}{}$ is the density of forward process from $\tau_i$ to $s > \tau_i$ starting from $\smash{\alpha^{1/2} _{\tau_i}} \vecidx{\lmeas}{}{i}$. Then, define for $s \in [\tau_1:n]$, 
+% \[ 
+%     \pot{s}{\lmeas}{\ltopstate_s} = \prod_{i = 1}^{\tau(s)}\pot{s, i}{\lmeas}{\vecidx{\ltopstate}{s}{i}}, \quad \mathrm{where} \quad \tau(s) \eqdef \max \{ k \in [1:\dimorig]: s - \tau_k \geq 0\}.
+%     \] 
+% We consider the sequence of distributions $\{\filter{s}{\lmeas}{}\}_{s=\tau_1}^{n}$ defined recursively as follows; the first distribution is $\filter{n}{\lmeas}{\ltopstate_n} \propto \bwmarg{n}{\lstate_n} \pot{n}{\lmeas}{\lstate_n}$, and for $s \in [\tau_1:n]$
+%     \begin{equation} 
+%         \label{eq:FKrecursion:noisy}
+%         \filter{s}{\lmeas}{\lstate_s} \propto \int \filter{s+1}{\lmeas}{\lstate_{s+1}} \bwtrans{}{s}{\lstate_{s+1}}{\lstate_s} \frac{\pot{s}{\lmeas}{\lstate_s}}{\pot{s+1}{\lmeas}{\lstate_{s+1}}} \rmd \lstate_{s+1} \eqsp,
+%     \end{equation}
+%     Define also 
+%     \begin{equation} 
+%         \label{eq:FKrecursion:nofilter}
+%         \filter{0:\tau_1 - 1}{\lmeas}{\chunk{\lstate}{0}{\tau_1 - 1}} \propto \int \filter{\tau_1}{\lmeas}{\lstate_{\tau_1}} \left\{ \prod_{\ell = 0}^{\tau_1 - 1} \bwtrans{}{\ell}{\lstate_{\ell+1}}{\lstate_\ell} \right\} \frac{\pot{0}{\lmeas}{\ltopstate_0}}{\pot{\tau_1}{\lmeas}{\lstate_{\tau_1}}} \rmd \lstate_{\tau_1} \eqsp.
+%     \end{equation}
+%         By construction $\filter{s}{\lmeas}{\lstate_s} \propto \bwmarg{s}{\lstate_s} \pot{s}{\lmeas}{\ltopstate_s}$ for any $s \in [\tau_1:n]$. Thus, replacing $\filter{\tau_1}{\lmeas}{}$ in \eqref{eq:FKrecursion:nofilter} we see that that $\filter{0:\tau_1 - 1}{\lmeas}{}$ admits the posterior as time $0$ marginal.
+%      We hence propose the following scheme to obtain an empirical approximation of $\smash{\filter{0}{\lmeas}{}}$. Between steps $n$ and $\tau_1$ we produce particle approximations with APF of each $\filter{s}{\lmeas}{}$ using the instrumental kernel 
+%         $
+%         \bwopt{s}{\lmeas}{\lstate_{s+1}}{\lstate_s} \propto
+%             \bwtrans{}{s}{\lstate_{s+1}}{\lstate_s} \pot{s}{\lmeas}{\ltopstate_s} 
+%         $
+%     and weight function $\uweight{}{s}(\lstate_{s+1}) \propto \int \bwtrans{}{s}{\lstate_{s+1}}{\lstate_s} \pot{s}{\lmeas}{\ltopstate_s} \rmd \lstate_s / \pot{s+1}{\lmeas}{\ltopstate_{s+1}}$ which are both available in closed form, see \Cref{alg:algonoisy} and \Cref{appendix:explicitwandker}. Between steps $\tau_1 - 1$ and $0$ we sample for all $i \in [1:N]$ a trajectory $(\particle^{i} _{\tau_1 - 1}, \dotsc, \particle^{i} _0)$ from the backward process conditionally on $\particle{}^{\anc{i}{\tau_1 - 1}} _{\tau_1}$ and then weight with $\weight{i}{0} \propto \pot{0}{\lmeas}{\particle^i _0} / \pot{s}{\lmeas}{\particle^{\anc{i}{\tau_1 - 1}} _{\tau_1}}$. The particle approximation of $\filter{0}{\lmeas}{}$ is then $\filter{0}{N}{} = \sum_{i = 1}^N \weight{i}{0} \delta_{\particle^{i} _{0}}$. The complete procedure is summarized in \Cref{alg:algonoisy}.
+
+%     \begin{algorithm2e}[H]
+%         \caption{\algo\ ($\noisestd > 0$) \textbf{TO BE MODIFIED}}
+%         \label{alg:algonoisy} 
+%         \KwInput{Number of particles $N$, timesteps $\{ \tau_i \}_{i = 1} ^\dimorig$}
+%         \KwOutput{$\pchunk{\particle_0}{1}{N}$, $\weight{1:N}{0}$}
+%         $\overline{z}^i _{n} \sim \normpdf(\mathbf{0}_{\dimorig}, \idm_{\dimorig}), \underline{z}^i _{n} \sim \normpdf(\mathbf{0}_{\dimb}, \idm_{\dimb})$;\\
+%         $\bparticle^i _n = \mathsf{k}_n \alpha_n ^{1/2} \lmeas + (1 - \alpha_n) \mathsf{k} _n \underline{z}^i _n$;\\
+%         Set $\particle^i _n = \cat{\overline{z}^i _n}{\bparticle^i _n}$;\\
+%         \For{$s \gets n-1:0$}{
+%             \If{$s = n-1$}{
+%                 $\uweight{}{n-1}(\particle^i _n) = \normpdf\big(\alpha_{n-1}^{1/2} \lmeas; \boldsymbol{\mu}_{n}(\tparticle^i _{n}, \topxpred{0|n}(\m{V} \particle^i _{n})), \sigma_{n}^2 + 1 - \alpha_s\big)$;
+%             }
+%             \Else{
+%                 $\uweight{}{s}(\particle^i _{s+1}) = \frac{\normpdf\left(\alpha_{s}^{1/2} \lmeas; \boldsymbol{\mu}_{s+1}(\tparticle^i _{s+1}, \topxpred{0|s+1}(\m{V} \particle^i _{s+1})), \sigma_{s+1}^2 + 1 - \alpha_s\right)}{\normpdf\left(\alpha_{s+1}^{1/2}\lmeas; \tparticle^i _{s+1}, 1 - \alpha_{s+1} \right)}$;
+%             }
+%             $\anc{i}{s} \sim \categorical\big(\{ \uweight{}{s}(\particle^{j} _{s+1}) / \sum_{k = 1}^N \uweight{}{s}(\particle^{k} _{s+1})\} _{j = 1} ^N \big)$;\\
+%             $\overline{z}^i _{s} \sim \normpdf(\mathbf{0}_{\dimorig}, \idm_{\dimorig}), \underline{z}^i _{s} \sim \normpdf(\mathbf{0}_{\dimb}, \idm_{\dimb})$;\\
+%             $\tparticle^i _s = \mathsf{k}_s \alpha^{1/2} _s \lmeas + (1 - \mathsf{k}_s) \boldsymbol{\mu}_{s+1}(\tparticle^{\anc{i}{s}} _{s+1}, \topxpred{0|s+1}(\m{V} \particle^{\anc{i}{s}} _{s+1})) + (1 - \alpha_s) \mathsf{k}_s \overline{z}^i _{s}$;\\
+%             $\bparticle^{i}_{s} = \boldsymbol{\mu}_{s+1}(\tparticle^{\anc{i}{s}} _{s+1}, \topxpred{0|s+1}(\m{V} \particle^{\anc{i}{s}} _{s+1})) + \sigma _{s+1} \underline{z}^i _{s}$;\\
+%             Set $\particle^i _s = \cat{\tparticle^i _s}{\bparticle^i _s}$;
+%         }
+%         $\particle^{i} _{0} \sim \bwtrans{}{0|\tau_1}{\particle^i _{\tau_1}}{\cdot}$; \\
+%         Set $\smash{\weight{i}{0} \propto \pot{0}{\lmeas}{\particle^i _0} / \pot{\tau_1}{\lmeas}{\particle^{\anc{i}{\tau_1 - 1}} _{\tau_1}}}$;
+%         \end{algorithm2e}
+
+% Let us now provide some intuition on the sequence of distributions defined by \eqref{eq:FKrecursion:noisy} and \eqref{eq:FKrecursion:nofilter}. Our first main insight is that the likelihood function $\pot{0}\lmeas{}$ \eqref{eq:noisyposterior} is closely related to the forward process \eqref{eq:forward_def}. Indeed, assume that there exists $\{ \tau_i \}_{i = 1} ^{\dimorig} \subset [1:n]$ such that $\alpha_{\tau_i} \noisestd^2 = (1 - \alpha_{\tau_i}) s_i^2$. Then we can express the potential $\pot{0}{\lmeas}{}$ in terms of forward kernels; for all $i \in \intvect{1}{\dimorig}$, we have that
+%  $\normpdf(\alpha_{\tau_i}^{1/2}\vecidx{\lmeas}{}{i}; \alpha_{\tau_i}^{1/2} \vecidx{\ltopstate}{0}{i}, 1 - \alpha_{\tau_i}) \propto \normpdf(\vecidx{\lmeas}{}{i}; \vecidx{\ltopstate}{0}{i}, \noisestd^2/s^2 _i)$, and therefore we can write
+%  \begin{equation}
+%     \label{eq:pot:forward}
+%         \pot{0}\lmeas{\lstate_{0}} \propto \prod_{i = 1}^{\dimorig} \normpdf(\alpha_{\tau_i}^{1/2}\vecidx{\lmeas}{}{i}; \alpha_{\tau_i}^{1/2} \vecidx{\ltopstate}{0}{i}, 1 - \alpha_{\tau_i}) \eqsp. 
+%         \end{equation}
+% and  $\normpdf(\alpha_{\tau_i}^{1/2}\vecidx{\lmeas}{}{i}; \alpha_{\tau_i}^{1/2} \vecidx{\ltopstate}{0}{i}, 1 - \alpha_{\tau_i})$ is the likelihood of observing $\alpha_{\tau_i}^{1/2}\vecidx{\lmeas}{}{i}$ for $\vecidx{\state}{\tau_i}{i}$ where $\state_{\tau_i} \sim \fwtrans{\tau_i | 0}{\lstate_0}{\cdot}$.
+% Now assume for the sake of intuition that $\bwmarg{s+1}{\lstate_{s+1}} \bwtrans{}{s}{\lstate_{s+1}}{\lstate_s} = \bwmarg{s}{\lstate_s} \fwtrans{s+1}{\lstate_s}{\lstate_{s+1}}$ for all $s \in [0:n-1]$ which is similar to the assumption considered in \cite{trippe2023diffusion}.
+% Then using \eqref{eq:pot:forward} we can  establish that $\filter{0}{\lmeas}{}$ is the time $0$ marginal posterior of the joint states $\chunk{\state}{0}{n}$ with noiseless observations $\smash{\diffltrmeas_{i}  \eqdef \alpha_{\tau_i}^{1/2}\vecidx{\lmeas}{}{i}}$ of $\vecidx{\state}{\tau_i}{i}$ for $i \in [1:\dimorig]$. We denote this posterior on the joint states by $\filter{0:n}{\diffltrmeas}{}$ and define it formally in \Cref{proof:noisytonoiseless} of the supplementary. 
+% Denote for $\ell \in \intvect{1}{\dimx}$, $\projidx{\lstate}{}{\ell} \in \R^{\dimx-1}$ the vector $\lstate$ with its $\ell$-th coordinate removed.  The proof of \Cref{prop:noisytonoiseless}  can be found in \Cref{proof:noisytonoiseless}.
+% \begin{proposition}  
+%     \label{prop:noisytonoiseless}
+%     Assume that $\bwmarg{s+1}{\lstate_{s+1}} \bwtrans{}{s}{\lstate_{s+1}}{\lstate_s} = \bwmarg{s}{\lstate_s} \fwtrans{s+1}{\lstate_s}{\lstate_{s+1}}$ for all $s \in [0:n-1]$. Then it holds that
+%     \begin{equation*} 
+%         \noisyfilter{0}{\lmeas}{\lstate_{0}} \propto
+%         \int \bwmarg{\tau_\dimorig}{\lstate_{\tau_\dimorig}} \delta_{\diffltrmeas_\dimorig}(\rmd \vecidx{\lstate}{\tau_\dimorig}{\dimorig}) \rmd \projidx{\lstate}{\tau_\dimorig}{\dimorig} \left\{ \prod_{i = 1}^{\dimorig-1} \bwtrans{}{\tau_i | \tau_{i + 1}}{\lstate_{\tau_{i+1}}}{\lstate_{\tau_{i}}} \delta_{\diffltrmeas_i}(\rmd \vecidx{\lstate}{\tau_i}{i}) \rmd \projidx{\lstate}{\tau_i}{i} \right\} \bwtrans{}{0|\tau_1}{\lstate_{\tau_1}}{\lstate_0} \eqsp.
+%     \end{equation*}
+% \end{proposition}
+% As an illustration consider the case $\dimorig=1$. Then we have that 
+% \[ 
+%     \filter{0}{\diffltrmeas}{\lstate_0} \propto \int \philter{\tau_1}{\diffltrmeas}(\projidx{\lstate}{\tau_1}{1}) \delta_{\diffltrmeas_1}(\rmd \vecidx{\lstate}{\tau_1}{1})\bwtrans{}{0|\tau_1}{\lstate_{\tau_1}}{\lstate_0} \rmd \projidx{\lstate}{\tau_1}{1} \eqsp,
+%     \]
+%  where $\smash{\philter{\tau_1}{\diffltrmeas}(\projidx{\lstate}{\tau_1}{1}) \propto \bwmarg{\tau_1}{\cat{\diffltrmeas_1}{\lstate^{\setminus 1} _{\tau_1}}}}$ and thus, obtaining a particle approximation of $\filter{0}{\diffltrmeas}{}$ breaks down to: (1) obtaining a particle approximation of the noiseless posterior $\filter{\tau_1}{\diffltrmeas}{}$ as done in the previous section, (2) propagating the resulting particles from time $\tau_1$ to $0$ using the backward process.
+%   More generally, the target posterior $\filter{0}{\lmeas}{}$ is the result of the following procedure: (1) for all $i \in [1:\dimorig]$ recursively obtain a particle approximation of the noiseless posterior $\filter{\tau_i}{\diffltrmeas}{}$ of $\state_{\tau_i}$ with observation $\diffltrmeas_i$ of $\vecidx{\state}{\tau_i}{i}$, starting from $\filter{\tau_{i+1}}{\diffltrmeas}{}$, (2) propagate the particle approximation of $\filter{\tau_1}{\diffltrmeas}{}$ from time $\tau_1$ to $0$ using the backward process. 
+  
+%   Leveraging this insight, we can derive a  tractable approximate recursion for the posterior. Let $\idxtbwtrans{s}{\lstate_{s+1}}{\vecidx{\lstate}{s}{\ell}}{\ell}$ be the density of the $\ell$-th component of the backward transition. Then, letting $\filter{s}{\diffltrmeas}{\lstate_s} \eqdef \int \filter{0:n}{\diffltrmeas}{\lstate_{0:n}} \rmd \lstate_{1:s-1} \rmd \lstate_{s+1:n}$ and replacing again $\lstate_0$ in \Cref{lem:decomposition_noisyposterior} with its prediction $\topxpred{0|s+1}(\m{V} \lstate_{s+1})$ we find that with $\sigma^2 _\delta = 0$ (in which case $\pot{s,i}{\lmeas}{}$ is the component-wise forward transition between $\tau_i$ and $s$),
+% \begin{equation} 
+%     \label{eq:noisy:in_between}
+%     \filter{s}{\diffltrmeas}{\lstate_s} \approx \int \filter{s+1}{\diffltrmeas}{\lstate_{s+1}} \bbwtrans{}{s}{\lstate_{s+1}}{\lbottomstate_s} \left\{ \prod_{\ell = \tau(s)+1} ^{\dimorig} \idxbwtrans{s}{\lstate_{s+1}}{\vecidx{\ltopstate}{s}{\ell}}{\ell}  \right\} \pot{s}{\lmeas}{\ltopstate_s} \rmd \lstate_{s+1} \eqsp,
+% \end{equation}
+% for all $s \in [0:n] \setminus \{\tau_1, \dotsc, \tau_\dimorig \}$ and when $s = \tau_k$,
+% \begin{equation*} 
+%     \label{eq:noisy:perfect:at_tau}
+%     \filter{s}{\diffltrmeas}{\lstate_s} \approx \int \filter{s+1}{\diffltrmeas}{\lstate_{s+1}} \bbwtrans{}{s}{\lstate_{s+1}}{\lbottomstate_s} \left\{ \prod_{\ell = k+1} ^{\dimorig} \idxbwtrans{s}{\lstate_{s+1}}{\vecidx{\ltopstate}{s}{\ell}}{\ell} \prod_{i = 1}^{k-1} \pot{s,i}{\lmeas}{\vecidx{\ltopstate}{s}{i}} \right\} \delta_{\diffltrmeas_k}(\rmd \vecidx{\lstate}{s}{k}) \rmd \lstate_{s+1} \eqsp.
+% \end{equation*}
+% Getting direct inspiration from \eqref{eq:noisy:in_between} presents a challenge since $\filter{\tau_k}{\diffltrmeas}{}$ has an atom at $\vecidx{\lstate}{\tau_k}{k}$  for all $k \in [1:\dimorig]$. In order to mimic this constraint while still having $\filter{0}{\lmeas}{}$ as marginal, we have set $\pot{s, k}{\lmeas}{\ltopstate_{\tau_k}} = \normpdf(\vecidx{\ltopstate}{\tau_k}{k}; \diffltrmeas_k, \sigma^2 _\delta)$.

@@ -1,0 +1,148 @@
+\section{Motif-scaffolding application details}\label{sec:supp_results_protein}
+
+
+\textbf{Unconditional model of protein backbones.}
+We here use the FrameDiff, a diffusion generative model described by \citet{yim2023se}.
+FrameDiff parameterizes protein $N$-residue protein backbones as a collection of rigid bodies defined by rotations and translations as $\xzero=[(R_1, z_1), \dots, (R_N, z_N)]\in SE(3)^N$.
+$SE(3)$ is the special Euclidean group in three dimensions (a Riemannian manifold). 
+Each $R_n\in SO(3)$ (the special orthogonal group in three dimensions) is a rotation matrix and each $z_n\in \R^3$ in a translation.
+Together, $R_n$ and $z_n$ describe how one obtains the coordinates of the three backbone atoms \texttt{C}, $\texttt{C}_\alpha$, and \texttt{N} for each residue by translating and rotating the coordinates of an \emph{idealized} residue with $C_\alpha$ carbon and the origin. 
+The conditioning information is then a motif $y=\xzero_\mask\in SE(3)^{|\mask|}$ for some $\mask\subset \{1,\dots, N\}.$
+FrameDiff is a continuous time diffusion model and includes the number of steps as a hyperparmeter; we use 200 steps in all experiments.
+We refer the reader to \citep{yim2023se} for details on the neural network architecture,
+and details of the forward and reverse diffusion processes.
+
+\paragraph{Twisting functions for motif scaffolding.}
+To define a twisting function, we use a tangent normal approximation to $\pmodel(y\mid \xt)$ as introduced in \cref{eqn:tangent_normal}.
+In this case the tangent normal factorizes across each residue and across the rotational and translational components.
+The translational components are represented in $\R^3,$ and so are treated as in the previous Euclidean cases, using the variance preserving extension described in \Cref{sec:supp_method}.
+For the rotational components, represented in the special orthogonal group $SO(3),$ the tangent normal may be computed as described in \Cref{sec:riemannian}, using the known exponential map on $SO(3)$.
+In particular, we use as the twisting function
+\begin{align}
+\twist (y\mid \xt, \mask) = \prod_{m=1}^{|\mask |} \mathcal{N}(y^T_m; \denoiser(\xt)^T_{\mask_m}, 1-\bar \alpha_t)\mathcal{TN}_{\denoiser(\xt)^R_{\mask_m}}(y_m^R; 0, \bar \sigma_t^2),
+\end{align}
+where $y^T_m, \denoiser(\xt)^T_{\mask_m} \in \R^3$ represent the translations associated with the $m^{th}$ residue of the motif and its prediction from $\xt,$ and
+$y^R_m, \denoiser(\xt)^R_{\mask_m} \in SO(3)$ represent the analogous quantities for the rotational component.
+Next, $1-\bar \alpha_t=\Var_q[\xt \mid \xzero]$ and  $\bar \sigma_t^2$ is the time of the Brownian motion associated with the forward process at step $t$ \citep{yim2023se}.
+For further simplicity, our implementation further approximates log density of the tangent normal on rotations using the squared Frobenius norm of the difference between the rotations associated with the motif and the denoising prediction (as in \citep{watson2022broadly}), which becomes exact in the limit that $\bar \sigma_t$ approaches 0 but avoids computation of the inverse exponential map and its Jacobian.
+
+
+
+
+
+%Though $\nabla_{\xt}\log \twist(y; \xt)$ is a $\mathcal{T}_{\xt}$-valued Riemannian gradient, it is nevertheless computable by automatic differentiation.
+
+
+%\BLT{Could postpone for arxiv version.} Significantly higher success-rates are obtained when using ESMfold rather than AF2, and when not constraining the sequence (see appendix).
+
+
+\textbf{Motif rotation and translation degrees of freedom.}  We similarly seek to eliminate the rotation and translation of the motif as a degree of freedom. 
+We again represent our ambivalence about the rotation of the motif with randomness,
+augment our joint model to include the rotation with a uniform prior, 
+and write
+\begin{align}
+\plikelihood{y}{\xzero}=\int p(R)\plikelihood{y}{\xzero, R}\quad  \mathrm{for}\quad \plikelihood{y}{\xzero, R}=\delta_{Ry}(\xzero)
+\end{align}
+and with $p(R)$ the uniform density (Haar measure) on SO(3), and $Ry$ represents rotating the rigid bodies described by $y$ by $R.$ 
+For computational tractability, we approximate this integral with a Monte Carlo approximation defined by subsampling a finite number of rotations, $\mathcal{R} = \{R_k\}$ (with $|\mathcal{R}|=$\texttt{\# Motif Rots.} in total).
+Altogether we have
+$$
+\twist(y\mid \xt) = |\mathcal{R}|\inv \cdot |\mathcal{M}|\inv \sum_{R \in \mathcal{R}} \sum_{\mask \in \mathcal{M}} \twist(Ry\mid \xt, \mask).
+$$
+
+The subsampling above introduces the number of motif locations and rotations subsampled as a hyperparameter.
+Notably the conditional training approach does not immediately address these degrees of freedom,
+and so prior work randomly sampled a single value for these variables \citep{trippe2022diffusion,wang2022scaffolding,watson2022broadly}.
+
+\paragraph{Evaluation details.}
+We use \emph{self-consistency} evaluation approach for generated backbones \citep{trippe2022diffusion} that 
+(i) uses fixed backbone sequence design (inverse folding) to generate a putative amino acid sequence to encode the backbone, 
+(ii) forward folds sequences to obtain backbone structure predictions, and
+(iii) judges the quality of initial backbones by their agreement (or self-consistency) with predicted structures.
+We inherit the specifics of our evaluation and success criteria set-up following \citep{watson2022broadly}, including
+using ProteinMPNN \citep{dauparas2022robust} for step (i) and AlphaFold \citep{jumper2021highly} on a single sequence (no multiple sequence alignment) for (ii).
+
+In this evaluation we use ProteinMPNN \citep{dauparas2022robust} with default settings to generate 8 sequences for each sampled backbone.
+Positions not indicated as resdesignable in \citep[Methods Table 9]{watson2022broadly} are held fixed.
+We use AlphaFold \citep{jumper2021highly} for forward folding.
+We define a ``success'' as a generated backbone for which at least one of the 8 sequences has backbone atom with both 
+scRMSD < 1 {\AA} on the motif and 
+scRMSD < 2 {\AA} on the full backbone.
+
+We benchmarked TDS on 24/25 problems in the benchmark set introduced \citep[Methods Table 9]{watson2022broadly}.
+A 25th problem (6VW1) is excluded because it involves multiple chains, which cannot be represented by FrameDiff. FrameDiff requires specifying a total length of scaffolds.
+In all replicates, we fixed the scaffold the median of the \texttt{Total Length} range specified by \citet[Methods Table 9]{watson2022broadly}.
+For example, 116 becomes 125 and 62-83 becomes 75.
+
+
+As discussed in the main text, in our handling of the motif-placement degree of freedom we restrict the number of possible placements considered for discontiguous motifs.
+To select these placements we
+(i) restrict to masks which place the motif indices in a pre-specified order that we do not permute
+and do not separate residues that appear contiguously in source PDB file,
+and 
+(ii) when there are still too many possible placements 
+sub-sample randomly to obtain the set of masks $\mathcal{M}$ of at most some maximum size (\texttt{\# Motif Locs.}).
+We do not enforce the spacing between segments specified in the ``contig'' description described by \citep{watson2022broadly}.
+
+
+\paragraph{Resampling.}
+In all motif-scaffolding experiments, we use systematic resampling.
+An effective sample size threshold is used $K/2$ in all cases, that is, we trigger resampling steps only when the effective sample size falls below this level.
+
+
+\subsection{Additional Results}
+
+\begin{figure}[t]
+  \centering
+    \includegraphics[width=1.0\textwidth]{sections/figures/protein/benchmark_success_rates}
+      \caption{Results on full motif-scaffolding benchmark set.  The y-axis is the fraction of successes across at least $200$ replicates.  Error bars are $\pm 2$ standard errors of the mean.  Problems with scaffolds shorter than 100 residues are bolded.  TDS (K=8) outperforms the state-of-the-art (RFdiffusion) on most problems with short scaffolds.}
+  \label{fig:full_benchmark}
+\end{figure}
+
+\paragraph{Impact of twist scale on additional motifs.}
+\Cref{fig:5IUS_results} showed monotonically increasing success rates with the twist scale.
+However, this trend does not hold for every problem.
+\Cref{{fig:prot-twist-scale}} demonstrates this by comparing the success rates with different twist-scales on five additional benchmark problems.
+
+\begin{figure}[t]
+    \tiny
+    \includegraphics[scale=1.0]{sections/figures/protein/twist_scale_figure.png}
+  \centering
+    \caption{Increasing the twist scale has a different impact across motif-scaffolding benchmark problems.}
+\label{fig:prot-twist-scale}
+\end{figure}
+
+\paragraph{Effective sample size varies by problem.}
+\Cref{fig:prot-ESS} shows two example effective sample size traces over the course of sample generation.
+For \texttt{6EXZ-med} resampling was triggered 38 times (with 14 in the final 25 steps),
+and for \texttt{5UIS} resampling was triggered 63 times (with 13 in the final 25 steps).
+The traces are representative of the larger benchmark.
+
+\begin{figure}[t]
+    \tiny
+    \includegraphics[scale=1.0]{sections/figures/protein/6EXZ_med_38_resamples.png}
+    \includegraphics[scale=1.0]{sections/figures/protein/5UIS_63_resample.png}
+  \centering
+    \caption{
+    Effective sample size traces for two motif-scaffolding examples (Left) \texttt{6EXZ-med} and (Right) \texttt{5IUS}.
+    In both case $K=8$ and a resampling threshold of $0.5K$ is used.  Dashed red lines indicate resampling times. 
+}
+\label{fig:prot-ESS}
+\end{figure}
+
+
+%\paragraph{Impact of not constraining sequence, using ESMFold instead of AF2}
+%\BLT{This can be left for the arxiv and skipped for NeurIPS appendix.}
+
+
+\paragraph{Application of TDS to RFdiffusion:}
+We also tried applying TDS to RFdiffusion \cite{watson2022broadly}.
+RFdiffusion is a diffusion model that uses the same backbone structure representation as FrameDiff.
+However, unlike FrameDiff, RFdiffusion trained with a mixture of conditional examples, in which a segment of the backbone is presented as input as a desired motif,
+and unconditional training examples in which the only a noised backbone is provided.
+Though in our benchmark evaluation provided the motif information as explicit conditioning inputs, 
+we reasoned that TDS should apply to RFdiffusion as well (with conditioning information not provided as input).
+However, we were unable to compute numerically stable gradients (with respect to either the rotational or translational components of the backbone representation); 
+this lead to twisted proposal distributions that were similarly unstable and trajectories that frequently diverged even with one particle.
+We suspect this instability owes to RFdiffusion's structure prediction pretraining and limited fine-tuning, which may allow it to achieve good performance without having fit a smooth score-approximation.
+

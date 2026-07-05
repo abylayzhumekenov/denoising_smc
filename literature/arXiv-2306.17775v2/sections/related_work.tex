@@ -1,0 +1,38 @@
+\section{Related work}
+%\BLT{This section could be moved to the appendix if needed.}
+There has been much recent work on conditional generation using diffusion models.
+But these prior works demand either task specific conditional training,
+or involve unqualified approximations and can suffer from poor performance in practice.
+
+% Conditional training
+%\paragraph{Conditionally trained models.}
+%Much prior work relies on conditional training or fine-tuning for conditional generation. For example, conditional training for text-conditional image generation can involve augmenting the diffusion model to accommodate learned text embeddings as additional inputs ($y$), assembling a data set of paired image and text pairs, and performing denoising training with $y$ provided (\citep{ramesh2022hierarchical}). This strategy amounts to amortization of the conditional generation problem, and has been used for inpainting problems as well with random masks \citep{saharia2022palette,watson2022broadly}. A limitation of these approaches is that they demand the time and expertise needed to (1) construct a satisfactory set of conditional training examples and (2) design and train a neural network that can accomplish the conditional inference task.
+
+\textbf{Classifier-guidance.}
+Classifier-guidance \citep{song2020score,dhariwal2021diffusion} is an approach for generating samples from a diffusion model that fall into a desired class.  This strategy requires training a time-dependent classifier to approximate, for each $t,\ p(y\mid \xt).$
+Training such a classifier may be inconvenient or even impossible if, for example, one does not have access to labeled data. \lw{TODO: mention classifier-free guidance. However, both methods require training  class-conditioned models. We do not include for experiment comparisons. }
+% Conditional training free
+
+\textbf{Reconstruction guidance.}
+Outside of the context of SMC and the twisting technique, the use of denoising estimate $\denoiser (\xt, t)$ to form an approximation $\pmodelapprox (\xt \mid \xtpo, y)$ to $\pmodel (\xt \mid \xtpo, y)$ is called 
+ \emph{reconstruction guidance} \citep{hovideo,chung2022diffusion,song2023pseudoinverse}.
+ This technique involves sampling one trajectory from $\pmodelapprox (\xt \mid \xtpo, y)$ from $T-1$ to 1, starting with $\xT \sim p(\xT)$.
+Notably, while this approximation is reasonable, there is no formal guarantee or evaluation criteria on how accurate the approximations, as well as the final conditional samples $\xzero$,  are. 
+A limitation of this class of methods it's sensitivity to required hyperparameters (i.e.\ the \emph{guide scale}) that influence the approximation which they sample. 
+Also this approach has empirically been shown to have unreliable performance in image inpainting problems \citep{zhang2023towards}.
+
+\textbf{Replacement method.}
+The replacement method \citep{song2020score} is the most widely used approach for approximate conditional sampling in an unconditionally trained diffusion model.
+However, it applies only in cases when a subset of the data dimensions are observed (i.e.\ the inpainting problem) and can have poor empirical performance (as we show).
+% With some theoretical guarantees
+
+\textbf{SMCDiff.}
+Most closely related to the present work is \citet{trippe2022diffusion},
+which SMC to provide asymptotically accurate conditional samples in cases when a subset of the data dimensions are observed (i.e.\ the inpainting problem).
+However, this prior work 
+(1) is limited to he inpainting case,
+(2) provides asymptotically accurate conditional samples only under the unrealistic assumption that the learned diffusion model exactly matches the forward noising process at every step. \lw{TODO: be more explicit about comparison to our method.}
+%and (3) suffers from path collapse that limits accuracy.
+
+
+%\BLT{conditional sampling from unconditional models (5/10 introduction)} For inpainting problems, where conditioning information represents \emph{unmasked} dimensions of the data and the goal is to sample possible realizations of the remaining masked dimensions, one strategy is to simply run the unconditional sampling procedure but with the unmasked fraction replaced with (noised) conditioning information at each step . In more general inverse problems, a second approach leverages the gradient of some function of $y$ to steer sample paths to more promising regions \citep{hovideo, chung2022diffusion, song2023pseudoinverse,bansal2023universal}. 

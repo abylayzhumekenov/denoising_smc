@@ -1,0 +1,255 @@
+\documentclass{article}
+\RequirePackage{etex}
+\makeatletter
+\def\input@path{{./../}}
+\makeatother
+
+
+
+\usepackage{titletoc}
+% Custom formatting for appendix TOC entries
+\titlecontents{section}
+  [0pt]
+  {\addvspace{1ex}}
+  {\contentspush{\thecontentslabel\enspace}}
+  {}
+  {\titlerule*[0.7em]{.}\contentspage}
+  
+
+
+
+%\usepackage[toc,page,header]{appendix}
+%\usepackage{minitoc}
+
+% if you need to pass options to natbib, use, e.g.:
+\PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2023
+% ready for submission
+%\usepackage{neurips_2023}
+%\usepackage[nonatlib]{neurips_2023}
+
+\usepackage{subcaption}
+\usepackage{booktabs}
+\usepackage{lscape}
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%\usepackage[preprint]{neurips_2023}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+     \usepackage[final]{neurips_2023}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2023}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage[hidelinks]{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{amsmath}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{graphicx}
+\usepackage{mathtools}
+
+
+%\usepackage{algorithm}
+%\usepackage[noend]{algpseudocode}
+%\algnewcommand{\LineComment}[1]{\State \(\triangleright\) #1}
+%\usepackage[ruled,vlined]{algorithm2e}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Luhuan's custom comments stuff
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newif\ifcomments
+% \commentsfalse
+\commentstrue
+\ifcomments\newcommand{\comments}[1]{#1}\else\newcommand{\comments}[1]{}\fi
+
+\definecolor{clrgp}{rgb}{.9,0,.9}
+\definecolor{red}{rgb}{.8,0,0}
+\definecolor{blue}{rgb}{0,0, 0.8}
+
+%\newcommand{\lw}[1]{}
+%\newcommand{\bt}[1]{}
+%\newcommand{\can}[1]{}
+%\newcommand{\BLT}[1]{}
+\newcommand{\lw}[1]{\comments{\textcolor{blue}{[LW: #1]}}}
+\newcommand{\bt}[1]{\comments{\textcolor{clrgp}{[BT: #1]}}}
+\newcommand{\can}[1]{\comments{\textcolor{red}{[CAN: #1]}}}
+\newcommand{\BLT}[1]{\textcolor{blue}{ {\small \ (brian)} #1}}
+\input{preamble}
+\input{preamble_neurips}
+\usepackage{cleveref}
+\newtheorem{fkModel}{SMC Sampler}[section]
+\crefname{fkModel}{sampler}{samplers}
+\Crefname{fkModel}{Sampler}{Samplers}
+
+\usepackage{enumitem}
+\newlist{requirements}{enumerate}{1}
+\setlist[requirements,1]{label=\textbf{R\arabic*.},
+                   ref  =\textbf{R\arabic*.}}
+\crefname{requirementsi}{requirement}{requirements}
+\Crefname{requirementsi}{Requirement}{Requirements}
+
+%\title{Twisting Towards Perfection: Asymptotically Accurate Conditional Sampling in Diffusion Models}
+\title{Practical and Asymptotically Exact Conditional Sampling in Diffusion Models}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  Luhuan Wu\thanks{Equal contribution, order by coin flip.} \\
+  Columbia University\\
+  \texttt{lw2827@columbia.edu} \\
+  % examples of more authors
+  \And
+  Brian L. Trippe\textsuperscript{*} \\
+  Columbia University\\
+  \texttt{blt2114@columbia.edu} \\
+  \And
+  Christian A. Naesseth \\
+  University of Amsterdam \\
+  \texttt{c.a.naesseth@uva.nl} \\
+  \And
+  David M. Blei \\
+  Columbia University\\
+  \texttt{david.blei@columbia.edu} \\
+  \And
+  John P. Cunningham \\
+  Columbia University\\
+  \texttt{jpc2181@columbia.edu} \\
+  % Address \\
+  % Address \\
+  % \texttt{email} \\
+  % \AND
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+% Included in NeurIPS submission for space, deleting for arxiv
+%\setlength{\abovedisplayskip}{1pt}
+%\setlength{\belowdisplayskip}{1pt}
+%\setlength{\abovedisplayshortskip}{1pt}
+%\setlength{\belowdisplayshortskip}{1pt}
+
+\usepackage{autonum}
+
+\newcommand{\workshopsubmission}{0} % 1 for true, 0 for false
+
+\makeatletter
+\renewcommand\section{\@startsection {section}{1}{\z@}
+                                   {-0.5ex \@plus -1ex \@minus -.2ex}                               {0.3ex \@plus.2ex}
+                                   {\large\bf\raggedright}}
+\renewcommand\subsection{\@startsection{subsection}{2}{\z@}                                     {-0.25ex\@plus -1ex \@minus -.2ex}
+{0.5ex \@plus .2ex}               {\normalsize\bf\raggedright}}
+\makeatother
+
+
+\begin{document}
+
+
+
+\maketitle
+
+%\doparttoc % Tell to minitoc to generate a toc for the parts
+%\faketableofcontents % Run a fake tableofcontents command for the partocs
+
+
+
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+
+\input{sections/intro}
+
+\input{sections/background_and_notation}
+
+\input{sections/method}
+%\input{sections/extension_riemannian}
+
+
+\input{appendix/supp_related_works}
+
+\input{sections/results}
+
+\input{sections/discussion}
+
+\input{sections/acknowledgements}
+%\newpage
+
+\bibliographystyle{plainnat}
+
+\bibliography{references}
+\newpage
+
+
+
+
+\newpage 
+\appendix
+\section*{Appendix}
+%\setcounter{table}{0}
+\addcontentsline{toc}{section}{Appendix}
+\startcontents[appendixtoc]
+\printcontents[appendixtoc]{l}{1}{\setcounter{tocdepth}{1}}
+
+%\addcontentsline{toc}{section}{Appendix} % Add the appendix text to the document TOC
+%\part{Appendix} % Start the appendix part
+%\parttoc % Insert the appendix TOC
+
+
+
+
+
+% Related Works 
+
+
+% Method 
+%% theorem, algorithm, modifications with DDPM structure etc
+
+% Experiments 
+
+
+
+
+% Change algorithm counter representation to uppercase letters
+%\renewcommand{\thealgorithm}{\Alph{algorithm}}
+\renewcommand{\thefigure}{\Alph{figure}}
+
+%\input{appendix/smc_appendix}
+%\input{appendix/naive_smc}
+\input{appendix/supp_method}
+\input{appendix/supp_related_work_really_supplemental}
+\input{appendix/supp_results}
+
+
+
+\end{document}

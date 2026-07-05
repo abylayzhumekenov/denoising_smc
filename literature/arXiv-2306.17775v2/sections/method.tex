@@ -1,0 +1,372 @@
+\section{\methodname{}: SMC sampling for diffusion model conditionals }\label{sec:method}
+%We further assume the conditional independence of $\dt{x}{1:T}$ and $y$ given $\dt{x}{0}$.
+
+
+%\textbf{Problem statement.}
+%Our goal in this work is to approximate conditional distributions of diffusion generative models.
+%We introduce conditioning information $y$ through a smooth likelihood function $\plikelihood{y}{\xzero}.$ 
+%We extend our joint model to include $y$ and $\plikelihood{y}{\xzero}$ as $\pmodel(\dt{x}{0:T}, y)=\pmodel(\dt{x}{0:T})\pmodel(y\mid \xzero)$ where we define $\pmodel(y \mid \xzero)=\plikelihood{y}{\xzero}$. The goal is to sample from the conditional $\pmodel(\xzero \mid y)$. 
+%%and write the conditional of interest as $\pmodel(\xzero \mid y).$
+
+
+%To this end, we
+
+%In this section, we develop \methodname{} (\methodshort{}), a practical SMC algorithm targeting $\pmodel(\xzero \mid y)\propto \pmodel(\xzero)\plikelihood{y}{\xzero},$ the conditional distribution of a diffusion model $\pmodel(\xzero)$ defined though a likelihood denoted $\plikelihood{y}{\xzero}$. 
+Consider conditioning information $y$ associated with a given likelihood function $\plikelihood{y}{\xzero}.$
+We embed $y$ in a joint model over $\dt{x}{0:T}$ and $y$ as
+$\pmodel(\dt{x}{0:T},y) = \pmodel(\dt{x}{0:T}) \plikelihood{y}{\xzero},$ 
+where $y$ and $\dt{x}{1:T}$ are conditionally independent given $\xzero.$
+Our goal is to sample from the conditional $\pmodel(\xzero\mid y)$.% implied by this joint model.
+
+In this section, we develop \methodname{} (\methodshort{}), a practical SMC algorithm targeting $\pmodel(\xzero \mid y).$ 
+%a joint model 
+First, we describe how the Markov structure of diffusion models permits a factorization of an extended conditional distribution to which SMC applies.
+Then, we show how a diffusion model's denoising predictions support the application of \emph{twisting}, an SMC technique in which one uses proposals and weighting functions that approximate the ``optimal'' ones.
+%We show that \methodshort{} provides asymptotically exact estimates of conditional distributions and applies to a broad range of conditioning criteria.
+%After introducing a first approximation, 
+Lastly, we extend TDS to certain ``inpainting'' problems where $\plikelihood{y}{\xzero}$ is not smooth,
+and to Riemannian diffusion models.
+
+
+\ifnum\workshopsubmission=1
+TDS builds on diffusion generative models and SMC;
+we provide background and specify the conventions we adopt for diffusion models and SMC in \Cref{sec:background}.
+Empirical results are left to \Cref{sec:results}.
+\fi 
+
+\begin{algorithm}[t]
+\SetAlgoLined
+\SetKwFor{For}{for}{}{}
+\SetKwBlock{Begin}{function}{end}
+\BlankLine 
+
+\For{$k=1:K$}{
+\vspace{-0.1em}
+\BlankLine
+$\xT_k \sim p(\xT), \quad w_k \leftarrow \dt{\twistfcn_k}{T} =\twist(y\mid \xT_k)$ \quad \tcp{initial proposal and weight} \label{alg_line:initial_twisting_function}
+}
+\vspace{-0.1em}
+\BlankLine
+\For{$t = T-1,\cdots, 0$}{
+     \vspace{-0.1em}
+    \BlankLine
+     $ \{\dt{x}{t+1}_k, \dt{\twistfcn}{t+1}_k\}_{k=1}^K \sim \mathrm{Multinomial}\left(\{ \dt{x}{t+1}_{k}, \dt{\twistfcn}{t+1}_{k}\}_{k=1}^K; \{ w_{k}\}_{k=1}^K \right)$ \quad \tcp{resample}
+     \label{alg_line:resampling}
+     \vspace{-0.1em}
+     \BlankLine
+     \For{$k=1:K$}{
+          \vspace{-0.1em}
+    \BlankLine
+    $\tilde s_k =  (\denoiser(\xtpo_k) - \xtpo_k)/t\sigma^2 + \nabla_{\xtpo_k} \log \dt{\twistfcn}{t+1}_k$ \quad \tcp{conditional score approx.} \label{alg_line:conditional_score}
+         \vspace{-0.1em}
+    \BlankLine
+    $\xt_k \sim \pTwist(\cdot {\mid} \xtpo_k, y):=\mathcal{N}\left(\xtpo_k + \sigma^2 \tilde s_k, \proposalVar \right) 
+    $ \quad \tcp{proposal}\label{alg_line:proposal}
+         \vspace{-0.1em}
+    \BlankLine
+     $\dt{\twistfcn_k}{t} \leftarrow \twist(y\mid \xt_k)$ \quad \tcp{twisting function (in eqs.\ \eqref{eq:diffusion-twisting-functions}, \eqref{eqn:inpaint_twist}, or \eqref{eqn:mask_dof_twist})}
+     \vspace{-0.1em}
+    \BlankLine
+    $ w_k \leftarrow p_\theta(\xt_k {|} \xtpo_k)\dt{\twistfcn}{t}_k/ [\pTwist(\xt_k {|} \xtpo_k, y)\dt{\twistfcn}{t+1}_k]$  \quad \tcp{weight} 
+    } 
+}
+\caption{Twisted Diffusion Sampler (TDS)}
+\label{alg:TDS}
+ \vspace{0.1em}
+\end{algorithm}
+
+\subsection{Conditional diffusion sampling as an SMC procedure}\label{subsec:SMC_framing}
+The Markov structure of the diffusion model permits a factorization that is recognizable as the final target of an SMC algorithm.
+We  write the conditional distribution, extended to  include $\dt{x}{1:T},$ as
+\begin{align}\label{eq:diffusion-final-target}
+    \pmodel(\dt{x}{0:T} \mid y) &=  
+    \ifnum\workshopsubmission=0
+        \frac{\pmodel (\dt{x}{0:T} ,y)}{\pmodel(y)} = 
+    \fi
+    \frac{1}{\pmodel(y)}\Big[p(\xT) \prod_{t=0}^{T-1} \pmodel (\xt \mid \xtpo )  \Big] \plikelihood{y}{\xzero}
+\end{align}
+with the desired marginal, $\pmodel(\xzero \mid y).$
+Comparing the diffusion conditional of \cref{eq:diffusion-final-target} to the SMC target of \cref{eq:final-target} suggests SMC can be used.
+
+For example, consider a first attempt at an SMC algorithm.
+Set the proposals as
+%\begin{equation}
+$\proposal_T(\xT)= p(\xT)\quad \mathrm{and} \quad
+\proposal_t(\xt \mid \xtpo) = \pmodel (\xt \mid \xtpo)\quad \mathrm{for}\quad 1\le t \le T,$
+%\end{equation}
+and weighting functions as  
+%\begin{equation}
+$\weight_T(\xT)=\weight_t(\xt, \xtpo)=1\quad \mathrm{for} \quad 1\le t \le T \quad \mathrm{and} \quad \weight_0 (\xzero, \dt{x}{1}) = \plikelihood{y}{\xzero}.$
+%\end
+
+Substituting these choices into \cref{eq:final-target} results in the desired final target  $\target_0 = \pmodel(\dt{x}{0:T}\mid y)$ with normalizing constant $\mathcal{L}_0 = \pmodel(y)$. 
+%and so defines an SMC sampler whose final target is $\pmodel(\dt{x}{0:T} \mid y),$ and with normalization constant $L_0=\pmodel(y),$ as desired.
+As a result, the associated SMC algorithm produces a final set of $K$ samples and weights $\{ \xzero_k; \dt{w}{0}_k\}_{k=1}^K$ that provides an asymptotically accurate approximation $\mathbb{P}_K (\xzero \mid y):=(\sum_{k}^K w^0_k)\inv \sum_{k=1}^K \dt{w}{0}_k \delta_{\xzero_k}(\xzero)$ to the desired $\pmodel(\xzero \mid y).$ 
+%Specifically, if we let $\mathbb{P}_K=(\sum_{k}^K w^0_k)\inv \sum_{k=1}^K \dt{w}{0}_k \delta_{\xzero_k}$ be the $K$ sample approximation, then $\mathbb{P}_K$ converges weakly to $\pmodel(\xzero \mid y)$ as $K$ goes to infinity. \BLT{\footnote{A previous version equated the discrete measure and density pointwise; I've modified this to say weak convergence instead which can be more correct but which we don't define until the appendix...  So this can be improved.}}
+%\begin{align}\label{eq:naive-is}
+%\lim_{K\rightarrow \infty} \int_A (\sum_{k}^K w^0_k)\inv \sum_{k=1}^K \dt{w}{0}_k \delta_{\xzero_k} (\xzero)d\xzero 
+%= \int_A \target_0 (\xzero) d\xzero = \int_A \pmodel(\xzero \mid y) d \xzero
+%\ifnum\workshopsubmission=0
+%    \qquad \mathrm{with}\ \ \dt{x}{0}_k \overset{i.i.d.}{\sim} \pmodel(\dt{x}{0}).
+%\fi
+%\end{align}
+%\ifnum\workshopsubmission=1
+%with $\dt{x}{0}_k \overset{i.i.d.}{\sim} \pmodel(\dt{x}{0})$.
+%\fi
+
+%And when $K \to \infty$, this approximation becomes arbitrarily accurate.
+The approach above is simply importance sampling with proposal $\pmodel (\dt{x}{0:T})$; with all intermediate weights set to 1, one can skip resampling steps to reduce the variance of the procedure.
+Consequently, this approach will be impractical if $\pmodel(\xzero\mid y)$ is too dissimilar from $\pmodel(\xzero)$
+as only a small fraction of unconditional samples will have high likelihood: the number of particles required for accurate estimation of $\pmodel(\dt{x}{0:T} \mid y)$ is exponential in $\KL{\pmodel(\dt{x}{0:T} \mid y)}{\pmodel (\dt{x}{0:T})}$ \citep{chatterjee2018sample}. 
+
+\subsection{Twisted diffusion sampler}\label{subsec:PF_twisted}
+
+%In this part, we show how we can \emph{twist} the choice of the above proposals $\proposal_t$ and weighting functions $\weight_t$ to circumvent the exponential complexity of particles.
+
+\emph{Twisting} is a technique in the SMC literature intended to reduce the number of particles required for good approximation accuracy \citep{guarniero2017iterated,heng2020controlled}. %\citep[Chapter 3] {naesseth2019elements}.
+%The key idea is to relieve the discrepancy between successive intermediate targets by bringing them closer to the final target. 
+%, so only a practical amount of particles are need for accurate estimation  (recall this amount scales exponentially with $\mathrm{KL}(\target_{t-1} \| \target_{t})$ for each step $t$)
+Loosely, it introduces a sequence of \emph{twisting functions} that modify the naive proposals and weighting functions, so that the resulting intermediate targets are closer to the final target of interests. 
+% This idea is achieved by introducing a sequence of \emph{twisting functions} that define new \emph{twisted} proposals and \emph{twisted} weighting functions. 
+We refer the reader to \citet[Chapter 3.2]{naesseth2019elements} for background on twisting in SMC.
+
+\textbf{Optimal twisting.}
+%For example, consider twisting the  proposals $\proposal_t$ in the naive procedure  described in \Cref{subsec:SMC_framing} to define 
+Consider defining the twisted proposals $\proposal_t^*$ by multiplying the naive proposals $\proposal_t$ described in \Cref{subsec:SMC_framing} by $\pmodel (y \mid \xt)$ as
+\ifnum\workshopsubmission=0
+\begin{align}\label{eq:optimal-twisted-proposals}
+\proposal_T^* (\xT) &\propto p(\xT) \pmodel(y {|} \xT) \ \mathrm{and} \ 
+     \proposal_t^* (\xt {|} \xtpo) \propto \pmodel(\xt {|} \xtpo) \pmodel(y{|} \xt) \quad \mathrm{for}  \qquad 0\leq t < T.
+\end{align}
+\else
+\begin{align}\label{eq:optimal-twisted-proposals}
+\proposal_T^* (\xT) &\propto \proposal_T (\xT) \twistfcn_T^* (\xT) \ \mathrm{and} \ 
+\\
+     \proposal_t^* (\xt \mid \xtpo) &\propto \proposal_t (\xt \mid \xtpo) \twistfcn_t^* (\xt) \ \mathrm{for}  \qquad 0\leq t < T.
+\end{align}
+\fi
+The factors $\pmodel(y \mid \xt)$ are the \emph{optimal} twisting functions
+because they permit an SMC sampler that draws exact samples from $\pmodel(\dt{x}{0:T} \mid y)$ even when run with a single particle.
+
+To see that a single particle is an exact sample, by Bayes rule, the proposals in \cref{eq:optimal-twisted-proposals} reduce to 
+\ifnum\workshopsubmission=0
+\begin{align}\label{eq:optimal-twisted-proposals-reduced}
+     \proposal_T^{*} (\xT) &= \pmodel(\xT \mid y)\ \mathrm{and}  \ 
+     \proposal_t^{*} (\xt \mid \xtpo) = \pmodel ( \xt \mid \xtpo, y)\quad \mathrm{for}  \qquad 0\leq t < T.
+\end{align}
+ \else
+\begin{align}\label{eq:optimal-twisted-proposals-reduced}
+     \proposal_T^{*} (\xT) &= \pmodel(\xT \mid y)\ \mathrm{and}  \\
+     \proposal_t^{*} (\xt \mid \xtpo) &= \pmodel ( \xt \mid \xtpo, y)\quad \mathrm{for}  \qquad 0\leq t < T.
+\end{align}
+ \fi
+As a result, 
+if one samples $\xT\sim \proposal_T^{*}(\xT)$ and $\xt\sim \proposal_t^{*} (\xt \mid \xtpo)$
+for  $t=T-1,\dots, 0$,
+by (i) the law of total probability and (ii) the chain rule of probability, 
+ one obtains $\xzero \sim \pmodel(\xzero \mid y)$ as desired.
+%If we choose twisted weighting functions as $\weight^*_T(\xT)=\weight^*_t(\xt, \xtpo) = 1$ for  $t=T-1,\dots, 0$,  
+%then resulting twisted targets $\target_t^*$ are all equal to $\pmodel(\dt{x}{0:T}\mid y)$. 
+%Specifically, substituting  $\proposal_t^{*}$ and $\weight_t^{*}$ into \cref{eq:final-target} gives 
+%\ifnum\workshopsubmission=0
+%\begin{align}\label{eqn:opt_intermediate}
+%    \target_t^{*} (\dt{x}{0:T}) = \frac{1}{1}  \left[\pmodel (\xT \mid y) \prod_{t=0}^{T-1}\pmodel ( \xt \mid \xtpo, y)\right]
+%    \left[1 \cdot \prod_{t=0}^{T-1} 1 \right]
+%    =\pmodel(\dt{x}{0:T}\mid y), \quad \mathrm{for}\quad 0\le t \le T.
+%\end{align}
+%\else
+%, for $t=0,\cdots, T,$
+%\begin{align}\label{eqn:opt_intermediate}
+%    \target_t^{*} (\dt{x}{0:T}) = \pmodel (\xT \mid y) \prod_{t=0}^{T-1}\pmodel ( \xt \mid \xtpo, y)
+%    =\pmodel(\dt{x}{0:T}\mid y), 
+%\end{align}
+%\fi
+
+%As a consequence of \cref{eqn:opt_intermediate}, $\mathrm{KL} (\target_{t-1}^{*} \| \target_t^{*})=0$ for each $t,$ and essentially one particle is sufficient for exact conditional sampling.
+However, we cannot readily sample from each $r^*_t$
+because $\pmodel(y\mid \xt)$ is not analytically tractable. The challenge is that $\pmodel(y\mid \xt) = \int \plikelihood{y}
+{\xzero} \pmodel(\xzero \mid \xt) d\xzero $ depends on $x_t$ through $\pmodel(\xzero\mid \xt)$. The latter in turn requires marginalizing out $\dt{x}{1},\dots, \dt{x}{t-1}$ from the joint density $\pmodel(\dt{x}{0:t-1} \mid \xt),$ 
+whose form depends on $t$ calls to the neural network $\denoiser$.
+
+%However, we cannot generate samples from  the optimally twisted proposals $\proposal_t^*$ in \cref{eq:optimal-twisted-proposals-reduced}.
+%%But we can develop a practical sampler through tractable twisting functions.   
+%$\nu_0(\dt{x}{0:T})=$
+%\begin{align}\label{eq:optimal-twisting-functions}
+%    \psi^*_t (\xt) := \pmodel (y \mid \xt) =\int \plikelihood{y}{\xzero} \pmodel (\xzero \mid \xt)  d\xzero. 
+%\end{align}
+%which define the optimally twisted proposal as 
+%
+%Notably, the \emph{optimal} twisting functions are chosen as 
+%\begin{align}\label{eq:optimal-twisting-functions}
+%    \psi^*_t (\xt) := \pmodel (y \mid \xt) =\int \plikelihood{y}{\xzero} \pmodel (\xzero \mid \xt)  d\xzero. 
+%\end{align}
+%which define the optimally twisted proposal as 
+%\begin{align}\label{eq:optimal-twisted-proposals}
+%     \proposal_t^{\psi^*} (\xt \mid \xtpo) &\propto \proposal_t (\xt \mid \xtpo) \psi_t^* (\xt) 
+%     %= \pmodel (\xt \mid \xtpo) \pmodel (y \mid \xt)  
+%     \propto \pmodel ( \xt \mid \xtpo, y), \qquad 0\leq t < T \\ 
+%     \proposal_T^{\psi^*} (\xT) &\propto \proposal_T(\xT) \psi_T^* (\xT)\propto \pmodel(\xT \mid y), 
+%\end{align}
+%and the optimally twisted weighting functions as 1. 
+
+\textbf{Tractable twisting.}
+To avoid this intractability, we approximate the optimal twisting functions by
+\begin{align}\label{eq:diffusion-twisting-functions}
+     \twist(y\mid \xt) := \plikelihood { y}{\denoiser (\xt)}    \approx  \pmodel (y \mid \xt),
+\end{align}
+which is the likelihood function evaluated at $\denoiser(\xt)$, the denoising estimate of $\xzero$ at step $t$ from the diffusion model.
+This tractable twisting function $ \twist(y\mid \xt)$ is the key ingredient needed to define the Twisted Diffusion Sampler (TDS, \Cref{alg:TDS}).
+We motivate and develop its components below.
+
+The approximation  in \cref{eq:diffusion-twisting-functions} offers two favorable properties.
+First, $\twist(y \mid \xt)$ is computable because it depends on $\xt$ only though one call to $\denoiser,$ instead of an intractable integral over many calls as in the case of optimal twisting.
+Second, $\twist(y\mid \xt)$ becomes an increasingly accurate approximation of $\pmodel(y \mid \xt),$  as $t$ decreases and $\pmodel(\xzero \mid \xt)$ concentrates on $\E_{\pmodel}[\xzero \mid \xt]$, which $\denoiser$ is fit to approximate;
+at $t=0$, where we can choose $\denoiser(\xzero)=\xzero$, we obtain $\twist(y\mid \xzero) = \plikelihood{y}{\xzero}.$
+
+
+
+We next use \cref{eq:diffusion-twisting-functions}
+to develop a sequence of twisted proposals $\pTwist(\xt \mid \xtpo, y),$ to approximate the optimal proposals $\pmodel(\xt \mid \xtpo, y)$ in \cref{eq:optimal-twisted-proposals-reduced}.
+Specifically, we define twisted proposals as
+\begin{align}\label{eq:diffusion-twisted-proposals}
+    \pTwist(\xt \mid \xtpo, y) &:= \mathcal{N} \left(\xt; \xtpo + \sigma^2 \scoremodel(\xtpo, y), \proposalVar \right), \\
+\mathrm{where}\quad \scoremodel(\xtpo, y) &:= \scoremodel(\xtpo) + \nabla_{\xtpo} \log  \twist (y\mid \xtpo)\label{eqn:conditional_score_approx}
+\end{align}
+is an approximation of the conditional score, $\scoremodel(\xtpo, y) \approx \nabla_{\xtpo} \log \pmodel(\xtpo \mid y),$ and
+$\proposalVar$ is the proposal variance.
+For simplicity one could choose $\proposalVar=\sigma^2$ to match the variance of $\pmodel (\xt \mid \xtpo)$.
+%\lw{discuss whether we use $\tilde \sigma_t^2$ or $\sigma_t^2$ in \cref{eq:diffusion-twisted-proposals}} 
+
+\Cref{eq:diffusion-twisted-proposals} builds on previous works (e.g.\ \citep{song2020score,shi2022conditional}) that seek to approximate the reversal of a conditional forward process.
+%;appendix XXX shows how this expression obtains from a Taylor approximation of $\log \pmodel(\xt \mid \xtpo, y).$ \lw{should we keep this paragraph now that we have reference above?}
+The gradient in \cref{eqn:conditional_score_approx} is computed by back-propagating through  $\denoiser(\xtpo).$
+We further discuss this technique, which has been used before \citep[e.g.\ in][]{hovideo,song2023pseudoinverse}, in \Cref{sec:related-works}. 
+
+
+\paragraph{Twisted targets and weighting functions.} 
+Because $\pTwist(\xt \mid \xtpo, y)$ will not in general coincide with the optimal twisted proposal $\pmodel (\xt \mid \xtpo)$, 
+we must introduce non-trivial weighting functions to ensure the resulting SMC sampler converges to the desired final target.
+In particular, we define \emph{twisted} weighting functions as 
+\ifnum\workshopsubmission=0
+\begin{align}\label{eq:diffusion-twisted-weigthing-functions}
+    &\weight_t (\xt , \xtpo ):= \frac{\pmodel (\xt \mid \xtpo) \twist(y \mid \xt)}{\twist(y \mid \xtpo) \pTwist(\xt \mid \xtpo, y)}, \qquad t=0,\dots, T-1 %\\
+    %&\weight_T^{\psi} (\xT) := \pTwist(\xT).
+\end{align}
+\else
+\begin{align}\label{eq:diffusion-twisted-weigthing-functions}
+    &\weight_t (\xt , \xtpo ):= \frac{\pmodel (\xt \mid \xtpo) \twist(y \mid \xt)}{
+    \pTwist(\xt \mid \xtpo, y)\twist(y \mid \xtpo)}
+\end{align}
+for $t=0,\dots, T-1,$
+\fi
+and $\weight_T (\xT) := \pTwist(y \mid \xT)$. 
+The weighting functions in \cref{eq:diffusion-twisted-weigthing-functions} recover the optimal, constant weighting functions if all other approximations at play are exact. 
+
+These tractable twisted proposals and weighting functions define intermediate targets that gradually approach the final target $\target_0=\pmodel (\dt{x}{0:T} \mid y)$.
+Substituting into \cref{eq:final-target} each $\pTwist(\xt \mid \xtpo, y)$ in \cref{eq:diffusion-twisted-proposals} for $\proposal_t(\xt\mid \xtpo)$ and $\weight_t(\xt, \xtpo)$ in \cref{eq:diffusion-twisted-weigthing-functions} %for each $\weight_t(\xt, \xtpo)$ 
+and then simplifying we obtain the intermediate targets  
+\begin{align}\label{eq:twisted-intermediates}
+   \nu_t(\dt{x}{0:T}) %&\propto\left[p(\xT)\prod_{t^\prime=0}^T \pTwist(\xt \mid \xtpo, y) \right] \left[\twist(y\mid \xT) \prod_{t^\prime=t}^{T-1}  \frac{\pmodel (\xt \mid \xtpo) \twist(y \mid \xt)}{\twist(y \mid \xtpo) \pTwist(\xt \mid \xtpo, y)}\right] \label{eq:twisted-intermediates-1} \nonumber \\
+   &\propto  \pmodel(\dt{x}{0:T}\mid y) \Big[\frac{\twist(y\mid \xt)}{\pmodel(y \mid \xt)} \prod_{t^\prime=0}^{t-1} \frac{\pTwist(\dt{x}{t^\prime} \mid \dt{x}{t^\prime +1}, y)}{
+   \pmodel(\dt{x}{t^\prime}\mid \dt{x}{t^\prime + 1}, y)} \Big].
+\end{align}
+The right-hand bracketed term in \cref{eq:twisted-intermediates} 
+can be understood as the discrepancy of $\target_t$ from the final target $\target_0$ accumulated from step $t$ to $0$ (see \Cref{sec:twisted_intermediates_derivation} for a derivation).
+As $t$ approaches $0,$
+$\twist(y\mid \xt)$ improves as an approximation of $\pmodel(y \mid \xt),$ and the $t$-term product inside the bracket consists of fewer terms -- the latter accounts for the discrepancy between practical and optimal proposals. 
+Finally, at $t=0,$ because $\twist(y\mid \xzero) = \pmodel(y \mid \xzero)$ by construction, \cref{eq:twisted-intermediates} reduces to $\target_0(\dt{x}{0:T}) = \pmodel(\dt{x}{0:T}\mid y),$
+as desired.
+
+\textbf{The \methodshort{} algorithm and  asymptotic exactness.}
+Together, the twisted  proposals $\pTwist(\xt\mid \xtpo, y)$  and  weighting functions $\weight_t(\xt, \xtpo)$ lead to \emph{Twisted Diffusion Sampler}, or TDS (\Cref{alg:TDS}).
+While Algorithm~\ref{alg:TDS} states multinomial resampling for simplicity, in practice other resampling strategies (e.g.\ systematic \citep[Ch. 9]{chopin2020introduction}) may be used as well.
+Under additional conditions, TDS provides arbitrarily accurate estimates of $\pmodel (\xzero \mid y)$.
+Crucially, this guarantee does not rely on assumptions on the accuracy of the approximations used to derive the twisted proposals and weights. \Cref{sec:supp_method} provides the formal statement with complete conditions and proof.
+
+
+
+\begin{theorem}\label{prop:twisted_SMC} (Informal) 
+Let $\mathbb{P}_{K}(\xzero)=(\sum_{k^\prime}^K w_{k^\prime})\inv \sum_{k=1}^K w_k\delta_{\dt{x_k}{0}}(\xzero)$ denote the discrete measure defined by the particles and weights returned by \Cref{alg:TDS} with $K$ particles.
+Under regularity conditions on the twisted proposals and weighting functions, $\mathbb{P}_K(\xzero)$
+converges setwise to $\pmodel(\xzero\mid y)$ as $K$ approaches infinity.
+\end{theorem}
+
+%\Cref{sec:supp_method} provides the formal statement with complete conditions and proof.
+
+
+
+
+
+\subsection{TDS for inpainting, additional degrees of freedom}\label{subsec:conditioning-problems}
+The twisting functions $\twist(y \mid \xt):=\plikelihood{y}{\denoiser(\xt)}$ we introduced above are one convenient option,
+but are sensible only when $\plikelihood{y}{ \denoiser(\xt)}$ is differentiable and strictly positive.
+We now show how alternative twisting functions lead to proposals and weighting functions that address inpainting problems and  more flexible conditioning specifications.
+In these extensions, Algorithm~\ref{alg:TDS} still applies with the new definitions of twisting functions.
+\Cref{sec:supp_method} provides additional details, including the adaptation of TDS to variance preserving diffusion models \citep{ho2020denoising}.
+
+
+%We present three scenarios of conditioning problems where TDS can be applied to. The main methodology is demonstrated on the first scenario. We extend our method to two other scenarios that are commonly seen in real-world applications. 
+
+\textbf{Inpainting.}
+Consider the case that $\xzero$ can be segmented into observed dimensions $\mask$ and unobserved dimensions $\umask$ such that we may write $\xzero=[\xzero_\mask, \xzero_\umask]$
+and let $y=\xzero_\mask,$
+and take $\plikelihood{y}{\xzero}=\delta_y(\xzero_\mask).$
+The goal, then, is to sample
+$\pmodel(\xzero \mid \xzero_\mask =y)= \pmodel(\xzero_\umask \mid \xzero_\mask)\delta_{y}(\xzero_\mask).$
+Here we define the twisting function for each $t>0$ as 
+\begin{align}\label{eqn:inpaint_twist}
+    \twist(y\mid \xt, \mask):= \mathcal{N}\left(y; \denoiser (\xt)_\mask, t\sigma^2 \right),
+\end{align}
+and set twisted proposals and weights according to 
+\cref{eq:diffusion-twisted-proposals,eq:diffusion-twisted-weigthing-functions}.
+The variance in \cref{eqn:inpaint_twist}
+is chosen as $t \sigma^2 =\mathrm{Var}_{\pmodel}[\xt \mid \xzero]$ for simplicity;
+in general, choosing this variance to more closely match $\mathrm{Var}_{\pmodel}[y\mid \xt]$ may be preferable.
+For $t=0,$ we define the twisting function analogously with small positive variance, 
+for example as $\twist(y\mid \xzero)= \mathcal{N}(y; \xzero_\mask, \sigma^2).$
+This choice of simplicity changes the final target slightly;
+alternatively, the final twisting function, proposal, and weights may be chosen to maintain asymptotic exactness (see \Cref{sec:supp_method_inpaint_alt_final_step}).
+
+
+
+\textbf{Inpainting with degrees of freedom.} 
+We next consider the case when we wish to condition on some observed dimensions,
+but have additional degrees of freedom.
+%In particular, 
+%let $\pmodel(\xzero \mid y) = \pmodel(\xzero \mid \exists \mask \in \mathcal{M} \ \mathrm{s.t.}\ \xzero_\mask =y),$
+%where $\mathcal{M}$ is a set of possible observed dimensions.
+For example in the context of motif-scaffolding in protein design,
+we may wish to condition on a functional motif $y$ appearing \emph{anywhere} in a protein structure, rather than having a pre-specified set of indices $\mask$ in mind. 
+To handle this situation, we
+(i) let $\mathcal{M}$ be a set of possible observed dimensions,
+(ii) express our ambivalence in which dimensions are observed as $y$ using randomness by placing a uniform prior on $p(\mask)= 1/|\mathcal{M}|$ for each $\mask \in \mathcal{M},$ and
+(iii) again embed this new variable into our joint model to define the degrees of freedom likelihood by 
+$p(y\mid \xzero)=\sum_{\mask \in \mathcal{M}} \pmodel(\mask, y \mid \xzero)=|\mathcal{M}|\inv \sum_{\mask \in \mathcal{M}} p(y\mid \xzero, \mask).$
+Accordingly, we approximate $\pmodel(y\mid \xt)$ with the twisting function
+\begin{align}\label{eqn:mask_dof_twist}
+    \twist(y\mid \xt) := |\mathcal{M}|\inv \sum_{\mask \in \mathcal{M}} \twist(y\mid \xt, \mask),
+\end{align}
+with each $\twist(y\mid \xt,\mask)$ defined
+as in \cref{eqn:inpaint_twist}.
+Notably, \cref{eqn:mask_dof_twist,eqn:inpaint_twist} coincide when $|\mathcal{M}|=1.$
+
+The sum in \cref{eqn:mask_dof_twist} may be computed efficiently because each term depends on $\xt$ only through the same denoising estimate $\denoiser(\xt),$
+which must be computed only once.
+Since computation of $\denoiser(\xt)$ is the expensive step, the overall run-time is not significantly increased by using even large $|\mathcal{M}|$.
+
+
+\subsection{TDS on Riemannian manifolds}\label{sec:TDS_riemannian_main}
+TDS extends to Riemannian diffusion models on with little modification.
+Riemannian diffusion models \citep{deriemannian} are structured like in the Euclidean case, but with conditionals defined by tangent normal distributions parameterized with a score approximation followed by a manifold projection step (see e.g.\ \citep{chirikjian2014gaussian,deriemannian}). 
+When we assume that (as, e.g., in \citep{yim2023se}) the model is associated with a denoising network $\denoiser$, twisting functions are also constructed analogously.
+For conditional tasks defined by likelihoods, $\twist(y\mid \xt)$ in \cref{eq:diffusion-twisting-functions} applies.
+ For inpainting (and by extension, degrees of freedom), we propose 
+ \begin{align}\label{eqn:tangent_normal}
+     \twist(y\mid \xt) = \mathcal{TN}_{\denoiser(\xt)_\mask}(y ; 0, t \sigma^2),
+      \end{align}
+%\begin{align}\label{eqn:likelihood_approx_riemannian} \twist(y\mid \xt) {=} \mathcal{TN}_{\denoiser^M(\xt)}(y ; 0, \bar \sigma_t^2),\end{align}
+where $\mathcal{TN}_{\denoiser(\xt)_\mask}(0, t \sigma^2)$ is a tangent normal distribution centered on $\denoiser(\xt)_\mask.$
+As in the Euclidean case, $\pTwist(\xt \mid \xtpo, y)$ is defined with 
+conditional score approximation $s_\theta(\dt{x}{t},y)=s_\theta(\dt{x}{t}) + \nabla_{\dt{x}{t}} \log \tilde p(y \mid \dt{x}{t})$, which is computable by automatic differentiation.
+\Cref{sec:riemannian} provides details.
+%Though $\nabla_{\xt}\log \twist(y; \xt)$ is a $\mathcal{T}_{\xt}$-valued Riemannian gradient, it is nevertheless computable 

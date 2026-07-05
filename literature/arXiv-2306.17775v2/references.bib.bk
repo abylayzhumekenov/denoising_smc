@@ -1,0 +1,327 @@
+@article{procko2014computationally,
+  title={A computationally designed inhibitor of an Epstein-Barr viral Bcl-2 protein induces apoptosis in infected cells},
+  author={Procko, Erik and Berguig, Geoffrey Y and Shen, Betty W and Song, Yifan and Frayo, Shani and Convertine, Anthony J and Margineantu, Daciana and Booth, Garrett and Correia, Bruno E and Cheng, Yuanhua and others},
+  journal={Cell},
+  year={2014},
+  publisher={Elsevier}
+}
+
+@inproceedings{trippe2022diffusion,
+  title={Diffusion probabilistic modeling of protein backbones in {3D} for the motif-scaffolding problem},
+  author={Trippe, Brian L and Yim, Jason and Tischer, Doug and Broderick, Tamara and Baker, David and Barzilay, Regina and Jaakkola, Tommi},
+  booktitle={International Conference on Learning Representations},
+  year={2023}
+}
+
+@article{mirza2014conditional,
+  title={Conditional generative adversarial nets},
+  author={Mirza, Mehdi and Osindero, Simon},
+  journal={arXiv preprint arXiv:1411.1784},
+  year={2014}
+}
+
+@article{dhariwal2021diffusion,
+  title={Diffusion models beat {GAN}s on image synthesis},
+  author={Dhariwal, Prafulla and Nichol, Alexander},
+  journal={Advances in Neural Information Processing Systems},
+  year={2021}
+}
+
+
+@inproceedings{kawar2022denoising,
+  title={Denoising diffusion restoration models},
+  author={Kawar, Bahjat and Elad, Michael and Ermon, Stefano and Song, Jiaming},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2022}
+}
+
+@inproceedings{ho2020denoising,
+  title={Denoising diffusion probabilistic models},
+  author={Ho, Jonathan and Jain, Ajay and Abbeel, Pieter},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2020}
+}
+
+
+@article{saharia2022image,
+  title={Image super-resolution via iterative refinement},
+  author={Saharia, Chitwan and Ho, Jonathan and Chan, William and Salimans, Tim and Fleet, David J and Norouzi, Mohammad},
+  journal={IEEE Transactions on Pattern Analysis and Machine Intelligence},
+  year={2022},
+  publisher={IEEE}
+}
+
+@article{fulop2022efficient,
+  title={Efficient Likelihood-based Estimation via Annealing for Dynamic Structural Macrofinance Models},
+  author={Fulop, Andras and Heng, Jeremy and Li, Junye},
+  journal={arXiv preprint arXiv:2201.01094},
+  year={2022}
+}
+
+
+% FK-models in chapter 5, generic PF algorithm in chapter 10 as algorithm 10.1
+@book{chopin2020introduction,
+  title={{An introduction to sequential Monte Carlo}},
+  author={Chopin, Nicolas and Papaspiliopoulos, Omiros},
+  year={2020},
+  publisher={Springer}
+}
+
+% Chapter 3 for twisting functions
+@article{naesseth2019elements,
+  title={{Elements of sequential Monte Carlo}},
+  author={Naesseth, Christian A and Lindsten, Fredrik and Sch{\"o}n, Thomas B},
+  journal={Foundations and Trends in Machine Learning},
+  year={2019},
+  publisher={Now Publishers, Inc.}
+}
+
+% Appendix (I) for replacement method
+@inproceedings{song2020score,
+  title={Score-based generative modeling through stochastic differential equations},
+  author={Song, Yang and Sohl-Dickstein, Jascha and Kingma, Diederik P and Kumar, Abhishek and Ermon, Stefano and Poole, Ben},
+  booktitle={International Conference on Learning Representations},
+  year={2020}
+}
+@article{chatterjee2018sample,
+  title={The sample size required in importance sampling},
+  author={Chatterjee, Sourav and Diaconis, Persi},
+  journal={The Annals of Applied Probability},
+  year={2018},
+  publisher={JSTOR}
+}
+@inproceedings{deriemannian,
+  title={Riemannian Score-Based Generative Modelling},
+  author={De Bortoli, Valentin and Mathieu, Emile and Hutchinson, Michael John and Thornton, James and Teh, Yee Whye and Doucet, Arnaud},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2022},
+}
+
+@article {watson2022broadly,
+  title={De novo design of protein structure and function with {RFdiffusion}},
+    author = {Watson, Joseph L. and Juergens, David and Bennett, Nathaniel R. and Trippe, Brian L. and Yim, Jason and Eisenach, Helen E. and Ahern, Woody and Borst, Andrew J. and Ragotte, Robert J. and Milles, Lukas F. and Wicky, Basile I. M. and Hanikel, Nikita and Pellock, Samuel J. and Courbet, Alexis and Sheffler, William and Wang, Jue and Venkatesh, Preetham and Sappington, Isaac and Torres, Susana V{\'a}zquez and Lauko, Anna and De Bortoli, Valentin and Mathieu, Emile and Ovchinnikov, Sergey and Barzilay, Regina and Jaakkola, Tommi S. and DiMaio, Frank and Baek, Minkyung and Baker, David},
+  journal={Nature},
+  year={2023},
+  publisher={Nature Publishing Group}
+}
+
+@article{ramesh2022hierarchical,
+  title={Hierarchical text-conditional image generation with {CLIP} latents},
+  author={Ramesh, Aditya and Dhariwal, Prafulla and Nichol, Alex and Chu, Casey and Chen, Mark},
+  journal={arXiv preprint arXiv:2204.06125},
+  year={2022}
+}
+@inproceedings{hovideo,
+  title={Video Diffusion Models},
+  author={Ho, Jonathan and Salimans, Tim and Gritsenko, Alexey A and Chan, William and Norouzi, Mohammad and Fleet, David J},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2022}
+}
+@inproceedings{chung2022diffusion,
+  title={Diffusion posterior sampling for general noisy inverse problems},
+  author={Chung, Hyungjin and Kim, Jeongsol and Mccann, Michael T and Klasky, Marc L and Ye, Jong Chul},
+  booktitle={International Conference on Learning Representations},
+  year={2023}
+}
+@inproceedings{song2023pseudoinverse,
+  title={Pseudoinverse-guided diffusion models for inverse problems},
+  author={Song, Jiaming and Vahdat, Arash and Mardani, Morteza and Kautz, Jan},
+  booktitle={International Conference on Learning Representations},
+  year={2023}
+}
+
+@article{bansal2023universal,
+  title={Universal Guidance for Diffusion Models},
+  author={Bansal, Arpit and Chu, Hong-Min and Schwarzschild, Avi and Sengupta, Soumyadip and Goldblum, Micah and Geiping, Jonas and Goldstein, Tom},
+  journal={arXiv preprint arXiv:2302.07121},
+  year={2023}
+}
+
+
+@book{doucet2001sequential,
+  title={{Sequential Monte Carlo methods in practice}},
+  author={Doucet, Arnaud and De Freitas, Nando and Gordon, Neil James},
+  year={2001},
+  publisher={Springer}
+}
+@article{chen2022analog,
+  title={Analog bits: Generating discrete data using diffusion models with self-conditioning},
+  author={Chen, Ting and Zhang, Ruixiang and Hinton, Geoffrey},
+  journal={arXiv preprint arXiv:2208.04202},
+  year={2022}
+}
+@inproceedings{karras2022elucidating,
+  title={Elucidating the design space of diffusion-based generative models},
+  author={Karras, Tero and Aittala, Miika and Aila, Timo and Laine, Samuli},
+  booktitle={Advances in Neural Information Processing Systems},
+  year={2022}
+}
+@article{whiteley2014twisted,
+  title={Twisted particle filters},
+  author={Whiteley, Nick and Lee, Anthony},
+  journal={The Annals of Statistics},
+  year={2014},
+  publisher={Citeseer}
+}
+
+@article{guarniero2017iterated,
+  title={The iterated auxiliary particle filter},
+  author={Guarniero, Pieralberto and Johansen, Adam M and Lee, Anthony},
+  journal={Journal of the American Statistical Association},
+  year={2017},
+  publisher={Taylor \& Francis}
+}
+
+
+@inproceedings{saharia2022palette,
+  title={Palette: Image-to-image diffusion models},
+  author={Saharia, Chitwan and Chan, William and Chang, Huiwen and Lee, Chris and Ho, Jonathan and Salimans, Tim and Fleet, David and Norouzi, Mohammad},
+  booktitle={ACM SIGGRAPH 2022 Conference Proceedings},
+  year={2022}
+}
+@inproceedings{zhang2023towards,
+  title={Towards Coherent Image Inpainting Using Denoising Diffusion Implicit Models},
+  author={Zhang, Guanhua and Ji, Jiabao and Zhang, Yang and Yu, Mo and Jaakkola, Tommi and Chang, Shiyu},
+  booktitle={International Conference on Machine
+Learning},
+  year={2023}
+}
+@article{vincent2011connection,
+  title={A connection between score matching and denoising autoencoders},
+  author={Vincent, Pascal},
+  journal={Neural Computation},
+  year={2011},
+  publisher={MIT Press}
+}
+@article{heng2020controlled,
+  title={Controlled sequential {Monte Carlo}},
+  author={Heng, Jeremy and Bishop, Adrian N and Deligiannidis, George and Doucet, Arnaud},
+  journal={Annals of Statistics},
+  year={2020},
+  publisher={Institute of Mathematical Statistics}
+}
+@inproceedings{chirikjian2014gaussian,
+  title={Gaussian approximation of non-linear measurement models on {L}ie groups},
+  author={Chirikjian, Gregory and Kobilarov, Marin},
+  booktitle={53rd IEEE Conference on Decision and Control},
+  organization={IEEE}, 
+  year={2014}
+}
+@article{ho2022classifier,
+  title={Classifier-free diffusion guidance},
+  author={Ho, Jonathan and Salimans, Tim},
+  journal={arXiv preprint arXiv:2207.12598},
+  year={2022}
+}
+@inproceedings{shi2022conditional,
+  title={Conditional simulation using diffusion {S}chr{\"o}dinger bridges},
+  author={Shi, Yuyang and De Bortoli, Valentin and Deligiannidis, George and Doucet, Arnaud},
+  booktitle={Uncertainty in Artificial Intelligence},
+  year={2022},
+}
+@inproceedings{meng2021sdedit,
+  title={{SDE}dit: Guided image synthesis and editing with stochastic differential equations},
+  author={Meng, Chenlin and He, Yutong and Song, Yang and Song, Jiaming and Wu, Jiajun and Zhu, Jun-Yan and Ermon, Stefano},
+  booktitle={International Conference on Learning Representations},
+  year={2021}
+}
+@inproceedings{gordon1993novel,
+  title={{Novel approach to nonlinear/non-Gaussian Bayesian state estimation}},
+  author={Gordon, Neil J and Salmond, David J and Smith, Adrian FM},
+  booktitle={IEE Proceedings F (Radar and Signal Processing)},
+  year={1993},
+  organization={IET}
+}
+@inproceedings{yim2023se,
+  title={{SE(3)} diffusion model with application to protein backbone generation},
+  author={Yim, Jason and Trippe, Brian L and De Bortoli, Valentin and Mathieu, Emile and Doucet, Arnaud and Barzilay, Regina and Jaakkola, Tommi},
+  booktitle={International Conference on Machine Learning},
+  year={2023}
+}
+@article{dauparas2022robust,
+  author={Dauparas, Justas and Anishchenko, Ivan and Bennett, Nathaniel and Bai, Hua and Ragotte, Robert J and Milles, Lukas F and Wicky, Basile IM and Courbet, Alexis and de Haas, Rob J and Bethel, Neville and 
+   and Leung, Philip J  and Huddy, Timothy and Pellock, Sam and Tischer, Doug  and Chan, F  and Koepnick, Brian  and Nguyen, H  and Kang, Alex  and Sankaran, B  and Bera, Asim K.  and King, Neil P.  and Baker, David},
+    title = {Robust deep learning-based protein sequence design using {ProteinMPNN}},
+    journal = {Science},
+    year = {2022},
+}
+@article{senior2020improved,
+  title={Improved protein structure prediction using potentials from deep learning},
+  author={Senior, Andrew W and Evans, Richard and Jumper, John and Kirkpatrick, James and Sifre, Laurent and Green, Tim and Qin, Chongli and {\v{Z}}{\'\i}dek, Augustin and Nelson, Alexander WR and Bridgland, Alex and others},
+  journal={Nature},
+  volume={577},
+  number={7792},
+  pages={706--710},
+  year={2020},
+  publisher={Nature Publishing Group UK London}
+}
+@article{jumper2021highly,
+  title={{Highly accurate protein structure prediction with AlphaFold}},
+  author={John M. Jumper and Richard Evans and Alexander Pritzel and Tim Green and Michael Figurnov and Olaf Ronneberger and Kathryn Tunyasuvunakool and Russ Bates and Augustin Z{\'i}dek and Anna Potapenko and Alex Bridgland and Clemens Meyer and Simon A A Kohl and Andy Ballard and Andrew Cowie and Bernardino Romera-Paredes and Stanislav Nikolov and Rishub Jain and Jonas Adler and Trevor Back and Stig Petersen and David A. Reiman and Ellen Clancy and Michal Zielinski and Martin Steinegger and Michalina Pacholska and Tamas Berghammer and Sebastian Bodenstein and David Silver and Oriol Vinyals and Andrew W. Senior and Koray Kavukcuoglu and Pushmeet Kohli and Demis Hassabis},
+  journal={Nature},
+  year={2021},
+}
+@article{wang2022scaffolding,
+  title={Scaffolding protein functional sites using deep learning},
+  author={Wang, Jue and Lisanza, Sidney and Juergens, David and Tischer, Doug and Watson, Joseph L and Castro, Karla M and Ragotte, Robert and Saragovi, Amijai and Milles, Lukas F and Baek, Minkyung and Anishchenko, Ivan and Yang, Wei and Hicks, Derrick R and Exposit, Marc and  Schlichthaerle, Thomas  and Chun, Jung-Ho and Dauparas, Justas Bennett, Nathaniel and Wicky, Basile I M and Muenks, Andrew and DiMaio, Frank and Correia, Bruno and Ovchinnikov, Sergey and Baker, David},
+  journal={Science},
+  year={2022},
+  publisher={American Association for the Advancement of Science}
+}
+
+
+@inproceedings{lugmayr2022repaint,
+  title={Repaint: {I}npainting using denoising diffusion probabilistic models},
+  author={Lugmayr, Andreas and Danelljan, Martin and Romero, Andres and Yu, Fisher and Timofte, Radu and Van Gool, Luc},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  year={2022}
+}
+@inproceedings{du2023reduce,
+  title={Reduce, reuse, recycle: {C}ompositional generation with energy-based diffusion models and {MCMC}},
+  author={Du, Yilun and Durkan, Conor and Strudel, Robin and Tenenbaum, Joshua B and Dieleman, Sander and Fergus, Rob and Sohl-Dickstein, Jascha and Doucet, Arnaud and Grathwohl, Will},
+  booktitle={International Conference on Machine
+Learning},
+  year={2023}
+}
+@inproceedings{gershman2014amortized,
+  title={Amortized inference in probabilistic reasoning},
+  author={Gershman, Samuel and Goodman, Noah},
+  booktitle={Proceedings of the Annual Meeting of the Cognitive Science Society},
+  year={2014}
+}
+
+@article{cardoso2023monte,
+  title={Monte {C}arlo guided diffusion for {B}ayesian linear inverse problems},
+  author={Cardoso, Gabriel and Idrissi, Yazid Janati El and Corff, Sylvain Le and Moulines, Eric},
+  journal={arXiv preprint arXiv:2308.07983},
+  year={2023}
+}
+@article{pitt1999filtering,
+  title={Filtering via simulation: {A}uxiliary particle filters},
+  author={Pitt, Michael K and Shephard, Neil},
+  journal={Journal of the American Statistical Association},
+  year={1999},
+  publisher={Taylor \& Francis}
+}
+
+@inproceedings{robbins1992empirical,
+    title={{An empirical Bayes approach to statistics}},
+    author={Robbins, Herbert},
+    booktitle={3rd Berkeley Symposium on Mathematical Statistics},
+year={1956}
+}
+
+@article{efron2011tweedie,
+  title={Tweedie’s formula and selection bias},
+  author={Efron, Bradley},
+  journal={Journal of the American Statistical Association},
+  year={2011},
+  publisher={Taylor and Francis}
+}
+
+@article{chen2016training,
+  title={Training deep nets with sublinear memory cost},
+  author={Chen, Tianqi and Xu, Bing and Zhang, Chiyuan and Guestrin, Carlos},
+  journal={arXiv preprint arXiv:1604.06174},
+  year={2016}
+}

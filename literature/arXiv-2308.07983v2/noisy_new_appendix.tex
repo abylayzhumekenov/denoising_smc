@@ -1,0 +1,58 @@
+For all $t \in [\tau_1:n]$ define $\smash{\fwdfilter{t}{\tilde\ltrmeas}{\rmd \ltrstate_t} \eqdef \int \filter{\tau_1:n}{\tilde\ltrmeas}{\rmd \ltrstate_{\tau_1:n}}}$, and for all $s \in [0:n-1]$, $z_s \in \rset$ and $\ell \in [1:\dimtr]$, let $\bwtransV{\ell}{s}{\ltrstate_{s+1}}{z_s} \eqdef \normpdf(z_s; \vecidx{\bwmeanV_{s+1}(\ltrstate_{s+1})}{}{\ell}, \sigma^2 _{t+1})$.
+By adapting the derivations of the previous section and using \Cref{lem:decomposition_noisyposterior}, we find that the following approximate recursion is satisfied; for all $k \in [1:\dimtr]$ and $t \in [\tau_k + 1, \tau_{k+1} - 1]$,
+\begin{equation}
+   \fwdfilter{t}{\tilde\ltrmeas}{\ltrstate_t} \approx \int \bbwtransV{}{t}{\ltrstate_{t+1}}{\ltrbottomstate_t} \textstyle \prod_{\ell = \tau(t) + 1} ^\dimtr \bwtransV{\ell}{t}{\ltrstate_{t+1}}{\vecidx{\ltrstate}{t}{\ell}} \textstyle \prod_{j = 1} ^{\tau(t)} \idxfwtrans{t|\tau_j}{\tilde\ltrmeas_j}{\vecidx{\ltrstate}{t}{j}}{j}\fwdfilter{t+1}{\tilde\ltrmeas}{\rmd \ltrstate_{t+1}} \eqsp,
+\end{equation}
+where for all $t \in [\tau_1:n]$, $\tau(t) \eqdef \max\{ k \in [1:\dimtr]: \tau_k \leq t\}$ and for all $j \in [1:\dimtr]$, and $t, s \in [1:n]$ such that $t > s$, $\fwtrans{t|s}{}{}^j$ denotes the density of the $j$-th coordinate of the forward process from $s$ to $t$. If $t = \tau_k$, then
+\[
+   \fwdfilter{t}{\tilde\ltrmeas}{\rmd \ltrstate_t} \approx \int \bbwtransV{}{t}{\ltrstate_{t+1}}{\rmd \ltrbottomstate_t} \delta_{\tilde\ltrmeas_k}(\rmd \vecidx{\ltrstate}{t}{k}) \textstyle \prod_{\ell = \tau(t) + 1} ^\dimtr \bwtransV{\ell}{t}{\ltrstate_{t+1}}{\rmd \vecidx{\ltrstate}{t}{\ell}} \textstyle \prod_{j = 1} ^{\tau(t) - 1} \idxfwtrans{t|\tau_j}{\tilde\ltrmeas_j}{\rmd \vecidx{\ltrstate}{t}{j}}{j}\fwdfilter{t+1}{\tilde\ltrmeas}{\rmd \ltrstate_{t+1}}  \eqsp.
+\]
+We target the posterior $\filter{0}{\ltrmeas}{}$ by mimicking this recursion. Consider then $\{ \pot{t}{\lmeas}{} \}_{t = \tau} ^n$ and sequence of probability measures $\{ \filter{t}{\ltrmeas}{} \}_{t = \tau} ^n$ defined for all $t \in [\tau_1: n]$ by $\filter{t}{\ltrmeas}{\ltrstate_t} \propto \pot{t}{\ltrmeas}{\ltrstate_t} \bwmarg{t}{\ltrstate_t}$ and
+\begin{equation}
+   \pot{t}{\ltrmeas}{}: \ltrstate_t \mapsto \textstyle \prod_{i = 1}^{\tau(t)} \normpdf\left(\ltrstate_t; \tilde\ltrmeas_i, 1 - (1 - \inflationstd) \alphacumprod{t}{} / \alphacumprod{\tau_i}{} \right) \eqsp, \quad \inflationstd > 0 \eqsp.
+\end{equation}
+We obtain a particle approximation of $\filter{\tau_1}{\ltrmeas}{}$ using a particle filter with proposal kernel and weight function
+$$
+\bwtransV{\ltrmeas}{t}{\ltrstate_{t+1}}{\ltrstate_t} \propto \pot{t}{\ltrmeas}{\ltrstate_t} \bwtrans{}{t}{\ltrstate_{t+1}}{\ltrstate_t} \eqsp, \quad \uweight{}{t}(\ltrstate_{t+1}) = {\int \pot{t}{\ltrmeas}{\ltrstate_t} \bwtrans{}{t}{\ltrstate_{t+1}}{\rmd \ltrstate_t}}\big/\pot{t+1}{\ltrmeas}{\ltrstate_{t+1}} \eqsp,
+$$
+which are both available in closed form. Indeed, using standard Gaussian conjugation formulas, we find that
+\begin{equation}
+   \bwtransV{\ltrmeas}{t}{\ltrstate_{t+1}}{\ltrstate_t} = \bbwtransV{}{t}{\ltrstate_{t+1}}{\ltrbottomstate_t} \textstyle \prod_{k = \tau(t) + 1}^{\dimtr} \bwtransV{k}{t}{\ltrstate_{t+1}}{\vecidx{\ltrstate}{t}{k}} \textstyle \prod_{\ell = 1}^{\tau(t)} \bwtransV{\ltrmeas, \ell}{t}{\ltrstate_{t+1}}{\vecidx{\ltrstate}{t}{\ell}} \eqsp,
+\end{equation}
+where, by letting $\sigma^2 _{t|\tau_\ell} \eqdef 1 - (1 - \inflationstd) \alphacumprod{t}{} \big/ \alphacumprod{\tau_\ell}{}$ and $\mathsf{K}_{t|\tau_\ell} = \sigma^2 _{t+1} / (\sigma^2 _{t+1} + \sigma^2 _{t|\tau_\ell})$,
+\begin{equation}
+   \bwtransV{\ltrmeas, \ell}{t}{\ltrstate_{t+1}}{\vecidx{\ltrstate}{t}{\ell}} = \normpdf(\vecidx{\ltrstate}{t}{\ell}; \mathsf{K}_{t|\tau_\ell} \tilde\ltrmeas_\ell + (1 - \mathsf{K}_{t|\tau_\ell}) \vecidx{\bwmeanV_{t+1}(\ltrstate_{t+1})}{}{\ell}, \mathsf{K}_{t|\tau_\ell} \sigma^2 _{t|\tau_\ell}) \eqsp,
+\end{equation}
+and
+\begin{equation}
+   \uweight{}{t}(\ltrstate_{t+1}) = \textstyle\prod_{\ell = 1}^{\tau(t)} {\normpdf(\tilde\ltrmeas_\ell; \vecidx{\bwmeanV_{t+1}(\ltrstate_{t+1})}{}{\ell}, \sigma^2 _{t+1} + \sigma^2 _{t|\tau_\ell})}\big/{\normpdf(\vecidx{\ltrstate}{t+1}{\ell}; \tilde\ltrmeas_\ell, \sigma^2 _{t|\tau_\ell})} \eqsp.
+\end{equation}
+Thus, applying  \Cref{alg:algonoiseless} with the transition kernels $\left\{ \bwtransV{}{t}{}{} \right\}_{t = \tau_1}^{n-1}$ and weight function $\{ \uweight{}{t} \}_{t = \tau_1}^{n-1}$ yields the particle approximation $\filter{\tau_1}{N}{} = N^{-1} \sum_{i = 1}^N \delta_{\particle^i _{\tau_1}}$ and that of $\filter{0}{\ltrmeas}{}$ is given by
+\[
+    \filter{0}{N}{} = \textstyle \sum_{i = 1}^N \weight{i}{0} \delta_{\particle^i _0} \eqsp, \quad \mathrm{where} \quad \particle^i _0 \sim \bwtransV{}{0|\tau}{\particle^i _{\tau_1}}{\cdot }\eqsp, \quad \weight{i}{0} = \frac{\pot{0}{\lmeas}{\particle^i _0} \big/ \pot{\tau_1}{\lmeas}{\particle^i _{\tau_1}}}{\sum_{j = 1}^N \pot{0}{\lmeas}{\particle^j _0} \big/ \pot{\tau_1}{\lmeas}{\particle^j _{\tau_1}}} \eqsp.
+\]
+% As in \cref{sec:noisy}, we can consider
+% the noisy problem as a sequence of noiseless observations of the variables $\trstate_{\tau_i}$ for $i \in \intvect{1}{\dimtr}$. Thus,
+% for $s \in \intvect{\tau_i}{\tau_{i+1}}$ we consider the potentials generated by all the observations $\lstate_{\tau_1}, \cdots, \lstate_{\tau_i}$.
+% Once the potentials are defined \eqref{eq:potential:coordinate:noisy}, we derive the expression for the proposal kernel $\bwopt{s}{\ltrmeas, \ell}{}{}$ and weight functions $\uweight{\ell}{s}$.
+% Consider $\ell \in \intvect{1}{\dimtr}$, $s \in \intvect{\tau_\ell}{n}$ and $\sigma_{\delta} > 0$. Define $\sigma^2 _{s|\tau_\ell} = 1 - (1 - \sigma_{\delta}^2)\alpha_{s} / \alpha_{\tau_\ell}$ and write $\overline{\boldsymbol{\mu}}_{s|s+1}(\ltrstate_{s+1}) \eqdef \boldsymbol{\mu}_{s+1}(\ltopstate_{s+1}, \topxpred{0|s+1}(\m{V} \ltrstate_{s+1}))$, $\underline{\boldsymbol{\mu}}_{s|s+1}(\ltrstate_{s+1}) \eqdef \boldsymbol{\mu}_{s+1}(\lbottomstate_{s+1}, \bottomxpred{0|s+1}(\m{V} \ltrstate_{s+1}))$ and so $\cat{\overline{\boldsymbol{\mu}}_{s|s+1}(\ltrstate_{s+1})}{\underline{\boldsymbol{\mu}}_{s|s+1}(\ltrstate_{s+1})}$ is the mean of the backward kernel $\bwtransV{}{s}{}{}$.
+% The density of the $\ell$-th coordinate of the proposal kernel is
+% \begin{equation*}
+%   \bwopt{s}{\ltrmeas, \ell}{\ltrstate_{s+1}}{\vecidx{\ltrtopstate}{s}{\ell}}
+%     \propto \normpdf\left(\alpha_{s}^{1/2}\vecidx{\ltrmeas}{}{\ell}; \vecidx{\ltrtopstate}{s}{\ell}, \sigma^2 _{s|\tau_\ell}\right)
+%     \normpdf\left(\vecidx{\ltrtopstate}{s}{\ell}; \overline{\boldsymbol{\mu}}_{s|s+1}(\ltrstate_{s+1})[\ell], \sigma_{s+1}^2  \right) \eqsp,
+% \end{equation*}
+% and the weight function is $\uweight{}{s}(\ltrstate_{s+1}) = \prod_{\ell=\tau(s)}^{1} \uweight{\ell}{s}(\ltrstate_{s+1})$ (we recall that $\tau(s) = \max \{ k \in [1:\dimtr]: s - \tau_k \geq 0\}$) where
+% \begin{equation*}
+%     \uweight{\ell}{s}(\ltrstate_{s+1}) \\
+%     \propto \frac{\int\normpdf\left(\alpha_{s}^{1/2}\vecidx{\ltrmeas}{}{\ell}; \vecidx{\ltrtopstate}{s}{\ell}, \sigma^2 _{s|\tau_\ell} \right) \normpdf\left(\vecidx{\ltrtopstate}{s}{\ell}; \overline{\boldsymbol{\mu}}_{s|s+1}(\ltrstate_{s+1})[\ell], \sigma_{s+1}^2  \right)}{\normpdf\left(\alpha_{s+1}^{1/2}\vecidx{\ltrmeas}{}{\ell}; \vecidx{\ltrtopstate}{s+1}{\ell}, \sigma^2 _{s|\tau_\ell}\right)} \eqsp.
+% \end{equation*}
+% Therefore, letting $\mathsf{k}_{s,\ell} \eqdef \sigma^2 _{s+1} / (\sigma^2 _{s+1} + \sigma^2 _{s|\tau_\ell})$ and $\tilde{\sigma}_{s, \ell}^2 \eqdef \sigma^2 _{s|\tau_\ell} \mathsf{k}_{s,\ell}$, we have
+% \begin{align*}
+%     \bwopt{s}{\ltrmeas, \ell}{\ltrstate_{s+1}}{\vecidx{\ltrtopstate}{s}{\ell}} & = \normpdf\left(\vecidx{\ltrtopstate}{s}{\ell}; \mathsf{k}_{s,\ell} \alpha^{1/2} _s \vecidx{\ltrmeas}{}{\ell} + (1 - \mathsf{k}_{s,\ell}) \overline{\boldsymbol{\mu}}_{s|s+1}(\ltrstate_{s+1})[\ell], \tilde{\sigma}_{s, \ell}^2\right) \eqsp,\\
+%     \uweight{\ell}{s}(\ltrstate_{s+1}) & = \frac{\normpdf\left(\alpha_{s}^{1/2}\vecidx{\ltrmeas}{}{\ell}; \overline{\boldsymbol{\mu}}_{s|s+1}(\ltrstate_{s+1})[\ell], \sigma_{s+1}^2 + \sigma^2 _{s|\tau_\ell}\right)}{\normpdf\left(\alpha_{s+1}^{1/2}\vecidx{\ltrmeas}{}{\ell}; \vecidx{\ltrtopstate}{s+1}{\ell}, \sigma^2 _{s+1|\tau_\ell}\right)} \eqsp.
+% \end{align*}
+% The proposal kernel is thus
+% \[
+%   \bwopt{s}{\ltrmeas}{\ltrstate_{s+1}}{\ltrstate_s} = \bwtransV{}{s}{\ltrstate_{s+1}}{\ltrbottomstate_s} \prod_{k = \tau(s) +1}^\dimtr \bwopt{s}{k}{\ltrstate_{s+1}}{\vecidx{\ltrstate}{s}{k}} \prod_{\ell=1}^{\tau(s)} \bwopt{s}{\ltrmeas, \ell}{\ltrstate_{s+1}}{\vecidx{\ltrtopstate}{s}{\ell}} \eqsp.
+%   \]

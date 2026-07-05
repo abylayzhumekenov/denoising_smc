@@ -1,0 +1,159 @@
+We begin by the case $\noisestd=0$. As the first $\dimorig$ coordinates are observed exactly, we aim at infering the remaining coordinates of $\state$,%of the random variable,
+which correspond to $\bottomstate$.
+As such, given an observation $\lmeas$, we aim at sampling from the posterior $\smash{\filter{0}{\lmeas}{\lbottomstate_0}} \propto \bwmarg{0}{\cat{\lmeas}{\lbottomstate_0}}$ with integral form
+\begin{equation} 
+    \label{eq:posterior:integral_form}
+    \filter{0}{\lmeas}{\lbottomstate_0} \propto \textstyle \int \bwmarg{n}{\lstate_n} \left\{ \prod_{s = 1}^{n-1} \bwtrans{}{s}{\lstate_{s+1}}{\lstate_s} \right\} \bwtrans{}{0}{\lstate_1}{\cat{\lmeas}{\lbottomstate_0}} \rmd \lstate_{1:n} \eqsp.
+\end{equation}
+To solve this problem, we propose to use SMC algorithms \cite{doucet2001sequential, infhidden, chopin2020introduction}, where a set of $N$ random samples, referred to as particles, is iteratively updated to approximate the posterior distribution. The updates involve, at iteration $s$, selecting promising particles from the pool of particles $\pchunk{\particle_{s+1}}{1}{N} = (\particle^1 _{s+1}, \dotsc, \particle^N _{s+1})$ based on a weight function $\uweight{}{s}$, and then apply a Markov transition $\bwopt{s}{\lmeas}{}{}$ to obtain the samples $\pchunk{\particle_{s}}{1}{N}$.
+    The transition $\bwopt{s}{\lmeas}{\lstate_{s+1}}{\lstate_s}$ is designed to follow the backward process while guiding the $\dimorig$ top coordinates of the pool of particles $\pchunk{\particle_s}{1}{N}$ towards the measurement $\lmeas$.
+%Before we proceed to define the transition kernels, note that under the backward dynamics \eqref{eq:bwker:defn}, $\topstate_t$ and $\bottomstate_t$ are independent conditionally on $\state_{t+1}$ with transition kernels respectively
+Note that under the backward dynamics \eqref{eq:bwker:defn}, $\topstate_t$ and $\bottomstate_t$ are independent conditionally on $\state_{t+1}$ with transition kernels respectively
+        $\tbwtrans{}{t}{\lstate_{t+1}}{\ltopstate_{t}}  \eqdef \normpdf(\ltopstate_{t}; \tbwmean_{t+1}(\lstate_{t+1}), \sigma^2 _{t+1} \Id_{\dimorig})$ and $
+        \bbwtrans{}{t}{\lstate_{t+1}}{\lbottomstate_{t}}  \eqdef \normpdf(\lbottomstate_{t}; \bbwmean_{t+1}(\lstate_{t+1}), \sigma^2 _{t+1} \Id_{\dimx - \dimorig})$
+    where $\tbwmean_{t+1}(\lstate_{t+1}) \in \rset^{\dimorig}$ and $\bbwmean_{t+1}(\lstate_{t+1}) \in \rset^{\dimx - \dimorig}$ are such that $\bwmean_{t+1}(\lstate_{t+1}) = \cat{\tbwmean_{t+1}(\lstate_{t+1})}{\bbwmean_{t+1}(\lstate_{t+1})}$ and the above kernels satisfy $\bwtrans{}{t}{\lstate_{s+1}}{\lstate_s} = \tbwtrans{}{t}{\lstate_{t+1}}{\ltopstate_{t}} \bbwtrans{}{t}{\lstate_{t+1}}{\lbottomstate_{t}}$. We consider the following proposal kernels for $t \in [1:n]$,
+\begin{equation} 
+    \label{eq:optkernel}
+    \bwopt{s}{\lmeas}{\lstate_{t+1}}{\lstate_t} \propto \bwtrans{}{t}{\lstate_{t+1}}{\lstate_t} \tfwtrans{t|0}{\lmeas}{\ltopstate_t} \eqsp, \quad \mathrm{where} \quad \tfwtrans{t|0}{\lmeas}{\ltopstate_t} \eqdef \normpdf(\ltopstate_t; \alphacumprod{t}{}^{1/2} \lmeas, (1 - \alphacumprod{t}{}) \Id_{\dimorig}) \eqsp,
+\end{equation}
+and $\bwopt{n}{\lmeas}{}{}(\lstate_n) \propto \bwmarg{n}{\lstate_n} \tfwtrans{n|0}{\lmeas}{\ltopstate_n}$. For the final step, we define $\bbwopt{0}{\lmeas}{\lstate_1}{\lbottomstate_0} = \bbwtrans{}{0}{\lstate_1}{\lbottomstate_0}$. Using standard Gaussian conjugation formulas, we obtain
+\begin{align*}
+\bwopt{t}{\lmeas}{\lstate_{t+1}}{\lstate_t} & = \bbwtrans{}{t}{\lstate_{t+1}}{\lbottomstate_t} \cdot \normpdf\left(\ltopstate_t; \mathsf{K}_t \alpha^{1/2} _t \lmeas + (1 - \mathsf{K}_t) \tbwmean_{t+1}(\lstate_{t+1}), (1 - \alphacumprod{t}{}) \mathsf{K}_t \cdot \Id_{\dimorig} \right) \eqsp,\\
+\bwmarg{n}{\lstate_n} & = \normpdf(\lbottomstate_n; 0_{\dimx - \dimorig}, \Id_{\dimx - \dimorig})  \cdot \normpdf(\ltopstate_n; \mathsf{K}_n \alphacumprod{n}{}^{1/2} \lmeas, (1 - \alphacumprod{n}{}) \mathsf{K}_n \cdot \Id_{\dimorig})
+\end{align*}
+where $\mathsf{K}_{t} \eqdef \sigma^2 _{t+1} \big/ (\sigma^2 _{t+1} + 1 - \alpha_t)$. For this procedure to target the posterior $\smash{\filter{0}{\lmeas}{}}$, the weight function $\uweight{}{s}$ is chosen as follows; we set $
+    \uweight{}{n-1}(\lstate_n) \eqdef \int \bwtrans{}{n-1}{\lstate_{n}}{\lstate_{n-1}} \tfwtrans{n-1|0}{\lmeas}{\ltopstate_{n-1}} \rmd \lstate_{n-1}
+     = \normpdf\left(\alpha_{n-1}^{1/2} \lmeas; \tbwmean_{n}(\lstate_n), \sigma_{n}^2 + 1 - \alpha_s\right)$
+and for $\smash{t \in [1:n-2]}$,
+\begin{equation}
+    \label{eq:weightfunc}
+    \uweight{}{t}(\lstate_{t+1}) \eqdef  \frac{\int \tbwtrans{}{t}{\lstate_{t+1}}{\ltopstate_{t}} \tfwtrans{t|0}{\lmeas}{\ltopstate_{t}} \rmd \lstate_{t}}{\tfwtrans{t+1|0}{\lmeas}{\ltopstate_{t+1}}}
+    = \frac{\normpdf\left(\alpha_{t}^{1/2} \lmeas; \tbwmean_{t+1}(\lstate_{s+1}), (\sigma_{t+1}^2 + 1 - \alpha_t) \Id_{\dimorig}\right)}{\normpdf\left(\alpha_{t+1}^{1/2}\lmeas; \ltopstate_{t+1}, (1 - \alpha_{t+1}) \Id_{\dimorig} \right)} \eqsp.
+\end{equation}
+For the final step, we set $\uweight{}{0}(\lstate_1) \eqdef \tbwtrans{}{0}{\ltopstate_1}{\lmeas} \big/ \tfwtrans{1|0}{\lmeas}{\ltopstate_1}$. 
+The overall SMC algorithm targeting $\filter{0}{\lmeas}{}$ using the instrumental kernel \eqref{eq:optkernel} and weight function \eqref{eq:weightfunc} is summarized in \Cref{alg:algonoiseless}.
+%\vspace{-.3cm}
+\begin{algorithm2e}
+    \small
+    \caption{\algo\ ($\sigma = 0$)}
+    \label{alg:algonoiseless} 
+    \KwInput{Number of particles $N$}
+    \KwOutput{$\pchunk{\particle _0}{1}{N}$}
+    \tcp{\scriptsize{Operations involving index $i$ are repeated for each $i \in [1:N]$}}
+    $\overline{z}^i _{n} \sim \normpdf(\mathbf{0}_{\dimorig}, \idm_{\dimorig}), \quad \underline{z}^i _{n} \sim \normpdf(\mathbf{0}_{\dimx - \dimorig}, \idm_{\dimx - \dimorig}), \quad \tparticle^i _n = \mathsf{K}_n \alphacumprod{n}{}^{1/2} \lmeas + (1 - \alphacumprod{n}{}) \mathsf{K} _n \overline{z}^i _n , \quad \particle^i _n = \cat{\tparticle^i _n}{\underline{z}^i _n}$;\\
+    \For{$s \gets n-1:0$}{
+        \If{$s = n-1$}{
+            $\uweight{}{n-1}(\particle^i _n) = \normpdf\big(\alphacumprod{n}{}^{1/2} \lmeas; \topvec{\bwmean}_{n}(\particle^i _n), 2 - \alphacumprod{n}{} \big)$;
+        }
+        \Else{
+            $\uweight{}{s}(\particle^i _{s+1}) = \normpdf\left(\alphacumprod{s}{}^{1/2} \lmeas; \topvec{\bwmean}_{s+1}(\particle^i _{s+1}), \sigma_{s+1}^2 + 1 - \alphacumprod{s}{}\right) \big/ \normpdf\left(\alphacumprod{s+1}{}^{1/2}\lmeas; \tparticle^i _{s+1}, 1 - \alphacumprod{s+1}{} \right)$;
+        }
+        $\anc{i}{s+1} \sim \categorical\big(\{ \uweight{}{s}(\particle^{j} _{s+1}) / \sum_{k = 1}^N \uweight{}{s}(\particle^{k} _{s+1})\} _{j = 1} ^N \big), \quad \overline{z}^i _{s} \sim \normpdf(\mathbf{0}_{\dimorig}, \idm_{\dimorig}), \quad \underline{z}^i _{s} \sim \normpdf(\mathbf{0}_{\dimx - \dimorig}, \idm_{\dimx - \dimorig})$;\\
+        $\tparticle^i _s = \mathsf{K}_s \alphacumprod{s}{}^{1/2} \lmeas + (1 - \mathsf{K}_s) \topvec{\bwmean}_{s+1}(\particle^i _{s+1}) + (1 - \alpha_s)^{1/2} \mathsf{K}^{1/2} _s \overline{z}^i _{s}, \quad \bparticle^{i}_{s} = \botvec{\bwmean}_{s+1}(\particle^i _{s+1}) + \sigma _{s+1} \underline{z}^i _{s}$;\\
+        Set $\particle^i _s = \cat{\tparticle^i _s}{\bparticle^i _s}$;
+    }
+    \end{algorithm2e}
+We now provide a justification to \Cref{alg:algonoiseless}. Let $\{ \pot{s}{\lmeas}{} \}_{s = 1} ^{n}$ be a sequence of positive functions. Consider the sequence of distributions $\left\{\smash{\filter{s}{\lmeas}{}}\right\}_{s=1}^{n}$ defined as follows; $\filter{n}{\lmeas}{\lstate_n} \propto \bwmarg{n}{\lstate_n} \pot{n}{\lmeas}{\lstate_n}$ and for $t \in [1:n-1]$
+\begin{equation}
+    \filter{t}{\lmeas}{\lstate_{t}}
+     \propto \textstyle \int {\pot{t+1}{\lmeas}{\lstate_{t+1}}}^{-1}{\pot{t}{\lmeas}{\lstate_t}} \bwtrans{}{t}{\lstate_{t+1}}{\lstate_{t}}  \filter{t+1}{\lmeas}{\rmd \lstate_{t+1}} \eqsp,  \label{eq:FKrecursion}
+\end{equation}
+By construction, the time $t$ marginal \eqref{eq:FKrecursion} is $\filter{t}{\lmeas}{\lstate_t} \propto \bwmarg{t}{\lstate_t} \pot{t}{\lmeas}{\lstate_t}$ for all $t \in [1:n]$.
+Then, using $\smash{\filter{1}{\lmeas}{}}$ and \eqref{eq:posterior:integral_form}, we have that $\filter{0}{\lmeas}{\lbottomstate_0} \propto  \int  {\pot{1}{\lmeas}{\lstate_1}}^{-1}{\tbwtrans{}{0}{\ltopstate_1}{\lmeas}} \bbwtrans{}{0}{\lstate_1}{\lbottomstate_0}  \filter{1}{\lmeas}{\rmd \lstate_1}$.
+
+The recursion \eqref{eq:FKrecursion} suggests a way of obtaining a particle approximation of $\filter{0}{\lmeas}{}$; by sequentially approximating each $\filter{t}{\lmeas}{}$ we can effectively derive a particle approximation of the posterior.% using \eqref{eq:time0flow}.
+To construct the intermediate particle approximations we use the framework of \emph{auxiliary particle filters} (APF) \cite{pitt1999filtering}.
+We focus on the case $\pot{t}{\lmeas}{\lstate_t} = \tfwtrans{t|0}{\lmeas}{\ltopstate_t}$ which corresponds to \Cref{alg:algonoiseless}. The initial particle approximation $\filter{n}{\lmeas}{}$ is obtained by drawing $N$ i.i.d. samples $\pchunk{\particle_{n}}{1}{N}$ from $\bwopt{n}{\lmeas}{}{}$ and setting $\filter{n}{N}{} = N^{-1} \sum_{i = 1}^N \delta_{\particle^{i} _{n}}$ where $\delta_\particle$ is the Dirac mass at $\xi$.
+Assume that the empirical approximation of $\filter{t+1}{\lmeas}{}$ is $\filter{t+1}{N}{} = N^{-1} \sum_{i = 1}^N \delta_{\particle^{i} _{t+1}}\eqsp,$ where $\pchunk{\particle_{t+1}}{1}{N}$ are $N$ random variables.
+Substituting $\smash{\filter{t+1}{N}{}}$ into the recursion \eqref{eq:FKrecursion} and introducing the instrumental kernel \eqref{eq:optkernel}, we obtain the mixture
+\begin{equation} 
+\label{eq:particleapprox:intermediate}
+    \widehat\phi^N _t (\lstate_t) = \textstyle  \sum_{i = 1}^N {\uweight{}{t}(\particle^{i} _{t+1})}  \bwopt{t}{\lmeas}{\particle^i _{t+1}}{\lstate_t} \big / \sum_{j = 1}^N  \uweight{}{t}(\particle^{j} _{t+1}) \eqsp.
+\end{equation}
+Then, a particle approximation of \eqref{eq:particleapprox:intermediate} is obtained by  
+sampling $N$ conditionally i.i.d. ancestor indices  $\anc{1:N}{t+1} \iid \categorical(\{ \uweight{}{t}(\particle^{i} _{t+1}) / \sum_{j = 1}^N \uweight{}{t}(\particle^{j} _{t+1})\} _{i = 1} ^N)$, 
+and then propagating each ancestor particle $\particle^{I^i _{t+1}} _{t+1}$ according to the instrumental kernel \eqref{eq:optkernel}. 
+ The final particle approximation is given by
+$\filter{0}{N}{} = N^{-1} \sum_{i = 1}^N \delta_{\bparticle^{i} _{0}},$ where $\smash{\bparticle^{i} _{0} \sim \bbwtrans{}{0}{\particle^{\anc{i}{0}} _1}{\cdot}}$, $\smash{\anc{i}{0} \sim \categorical(\{ \uweight{}{0}(\particle^{k} _{1}) \big/ \sum_{j = 1}^N \uweight{}{0}(\particle^j _1) \} _{k = 1} ^N)}$.
+ The sequence of distributions $\{ \bwmarg{t}{} \}_{t=0}^{n}$ approximating the marginals of the forward process initialized at $\bwmarg{0}{}$ defines a path that bridges between $\bwmarg{n}{}$ and the prior $\bwmarg{0}{}$ such that the discrepancy between $\bwmarg{t}{}$ and $\bwmarg{t+1}{}$ is small. SMC samplers based on this path are robust to multi-modality and offer an interesting alternative to the geometric and tempering paths traditionally used in the SMC literature, see \cite{dai2022invitation}. Our proposals $\filter{t}{\lmeas}{\lstate_t} \propto \bwmarg{t}{\lstate_t} \tfwtrans{t|0}{\lmeas}{\ltopstate_t}$ inherit the behavior of $\{ \bwmarg{t}{} \}_{t \in \nset}$ and bridge the initial distribution $\filter{n}{\lmeas}{}$ and posterior $\filter{0}{\lmeas}{}$. Indeed, as $\lmeas$ is a noiseless observation of $\state_0 \sim \bwmarg{0}{}$, we may consider $\smash{\alphacumprod{t}{}^{1/2} \lmeas + (1 - \alphacumprod{t}{})^{1/2} \noise_t}$, with $\noise_t \sim \normpdf(\mathbf{0}_{\dimorig}, \Id_{\dimorig})$, as a noisy observation of $X_t \sim \bwmarg{t}{}$ and thus, $\filter{t}{\lmeas}{}$ is the associated posterior.  We illustrate this intuition by considering the following Gaussian mixture (GM) example. We assume that $\bwmarg{0}{\lstate_0} = \sum_{i = 1}^M w_i \cdot \normpdf(\lstate_0; \mu_i, \Id_{\dimx})$ where $M > 1$ and $\{ w_i \}_{i = 1}^M$ are drawn uniformly on the simplex. The marginals of the forward process are available in closed form and are given by $\bwmarg{t}{\lstate_t} = \sum_{i = 1}^M w_i \cdot \normpdf(\lstate_t; \alphacumprod{t}{}^{1/2} \mu_i, \Id_{\dimx})$, which shows that the discrepancy between $\bwmarg{t}{}$ and $\bwmarg{t+1}{}$ is small as long as $\alphacumprod{t}{}^{1/2} - \alphacumprod{t+1}{}^{1/2} \approx 0$. The posteriors $\{ \filter{t}{\lmeas}{} \}_{t \in [0:n]}$ are also available in closed form and displayed in \Cref{fig:bridge_samples}, which illustrates that our choice of potentials ensures that the discrepancy between consecutive posteriors is small.
+\begin{figure}
+    \centering
+    \begin{tabular}{c}
+        \begin{tabular}{
+            M{0.1125\linewidth}@{\hspace{-0.22\tabcolsep}}
+            M{0.1125\linewidth}@{\hspace{-0.22\tabcolsep}}
+            M{0.1125\linewidth}@{\hspace{-0.22\tabcolsep}}
+            M{0.1125\linewidth}@{\hspace{-0.22\tabcolsep}}
+            M{0.1125\linewidth}@{\hspace{-0.22\tabcolsep}}
+            M{0.1125\linewidth}@{\hspace{-0.22\tabcolsep}}
+            M{0.1125\linewidth}@{\hspace{-0.22\tabcolsep}}
+            M{0.1125\linewidth}@{\hspace{-0.22\tabcolsep}}
+        }
+        \small{$t = 450$} &  \small{$t = 100$} &  \small{$t = 80$} & \small{$t = 70$} & \small{$t=50$} & \small{$t=20$} & \small{$t=15$} & \small{$t=5$} \\
+            \includegraphics[width=\sizebridgefig]{images/bridge_distributions/gaussian_mixture_mcgdiff_bridgedistr_step50.pdf}
+            & \includegraphics[width=\sizebridgefig]{images/bridge_distributions/gaussian_mixture_mcgdiff_bridgedistr_step400}
+            & \includegraphics[width=\sizebridgefig]{images/bridge_distributions/gaussian_mixture_mcgdiff_bridgedistr_step420.pdf}
+            & \includegraphics[width=\sizebridgefig]{images/bridge_distributions/gaussian_mixture_mcgdiff_bridgedistr_step430.pdf}
+            & \includegraphics[width=\sizebridgefig]{images/bridge_distributions/gaussian_mixture_mcgdiff_bridgedistr_step450.pdf}
+            & \includegraphics[width=\sizebridgefig]{images/bridge_distributions/gaussian_mixture_mcgdiff_bridgedistr_step480.pdf}
+            & \includegraphics[width=\sizebridgefig]{images/bridge_distributions/gaussian_mixture_mcgdiff_bridgedistr_step485.pdf}
+            & \includegraphics[width=\sizebridgefig]{images/bridge_distributions/gaussian_mixture_mcgdiff_bridgedistr_step495.pdf}
+        \end{tabular}
+    \end{tabular}
+    \caption{Display of samples from $\protect\filter{t}{\lmeas}{\lstate_t} \propto \protect\bwmarg{t}{\lstate_t} \protect\tfwtrans{t|0}{\lmeas}{\ltopstate_t}$ for the GM prior. In yellow the samples from $\protect\filter{t}{\lmeas}{}$, in purple those from the prior and in light blue those from the posterior $\protect\filter{0}{\lmeas}{}.$ $n$ is set to $500$.} 
+    \label{fig:bridge_samples}
+\end{figure}
+% The potential $\pot{t}{\lmeas}{\lstate_t} = \tfwtrans{t|0}{\lmeas}{\ltopstate_t}$, and hence Equations \eqref{eq:FKrecursion} and \eqref{eq:time0flow}, is motivated by considering the posterior of the state under the forward process \eqref{eq:forward_def} $\fwdfilter{t}{\lmeas}{\lstate_t} \eqdef  \int \filter{0}{\lmeas}{\lbottomstate_0} \fwtrans{t|0}{\cat{\lmeas}{\lbottomstate_0}}{\lstate_t} \ \rmd \lbottomstate_0$. Indeed, first note that the bridge kernel decomposes across the dimensions as follows,
+% \begin{align*} 
+%     \revbridge{t-1|t, 0}{\lstate_t,\lstate_0}{\lstate_{t-1}} = \trevbridge{t-1|t, 0}{\ltopstate_t,\ltopstate_0}{\ltopstate_{t-1}} \brevbridge{t-1|t, 0}{\lbottomstate_t,\lbottomstate_0}{\lbottomstate_{t-1}}
+% \end{align*}
+% where 
+% \begin{align*}
+%     \trevbridge{t|t+1, 0}{\ltopstate_{t+1},\ltopstate_0}{\ltopstate_{t}} & = \normpdf(\ltopstate_{t}; \bridgemean_t(\ltopstate_0, \ltopstate_{t+1}), \sigma^2 _{t+1} \Id_{\dimorig}) \eqsp,\\ \brevbridge{t-1|t, 0}{\lbottomstate_t,\lbottomstate_0}{\lbottomstate_{t-1}} & = \normpdf(\lbottomstate_{t-1}; \bridgemean_t(\lbottomstate_0, \lbottomstate_t), \sigma^2 _t \Id_{\dimx - \dimorig}) \eqsp,
+% \end{align*}
+% and $\bridgemean_{t+1}$ is defined in \eqref{eq:bridgeker:mean}. It is then easily seen that 
+% \begin{align*} 
+%     \tfwtrans{t|0}{\ltopstate_0}{\ltopstate_t} & = \int \trevbridge{t|t+1, 0}{\ltopstate_{t+1},\ltopstate_0}{\ltopstate_{t}} \tfwtrans{t+1|0}{\ltopstate_0}{\rmd \ltopstate_{t+1}} \\
+%     \bfwtrans{t|0}{\lbottomstate_0}{\lbottomstate_t} & = \int \brevbridge{t|t+1, 0}{\lbottomstate_{t+1},\lbottomstate_0}{\lbottomstate_{t}} \bfwtrans{t+1|0}{\lbottomstate_0}{\rmd \lbottomstate_{t+1}} \eqsp,
+% \end{align*}
+% where $\bfwtrans{t|0}{}{}$ is defined analoguously to $\tfwtrans{t|0}{}{}$ in \eqref{eq:optkernel}. Hence, using that $\fwtrans{t|0}{\lstate_0}{\lstate_t} = \tfwtrans{t|0}{\ltopstate_0}{\ltopstate_t} \bfwtrans{t|0}{\lbottomstate_0}{\lbottomstate_t}$, we see that 
+% \begin{align*}
+%     \fwdfilter{t}{\lmeas}{\lstate_{t}} & = \int \filter{0}{\lmeas}{\rmd \lbottomstate_0} \tfwtrans{t|0}{\lmeas}{\ltopstate_t} \brevbridge{t|t+1, 0}{\lbottomstate_{t+1}, \lbottomstate_0}{\lbottomstate_t} \tfwtrans{t+1|0}{\lbottomstate_0}{\rmd \lbottomstate_{t+1}} \\
+%     & = \int \filter{0}{\lmeas}{\rmd \lbottomstate_0} \tfwtrans{t|0}{\lmeas}{\ltopstate_t} \brevbridge{t|t+1, 0}{\lbottomstate_{t+1}, \lbottomstate_0}{\lbottomstate_t} \fwtrans{t+1|0}{\cat{\lmeas}{\lstate_0}}{\rmd \lstate_{t+1}} \eqsp.
+% \end{align*}
+% Finally, replacing $\lbottomstate_0$ by the vector made of the last $\dimx - \dimorig$ coordinates of its prediction $\xpred{0|s+1}(\lstate_{s+1})$, which we denote by $\bottomxpred{0|s+1}(\lstate_{s+1})$, we see that $\fwdfilter{s}{\lmeas}{}$ satisfies 
+% \begin{equation}
+%     \label{eq:approximate_recursion}
+%     \fwdfilter{s}{\lmeas}{\lstate_s} \approx \int \tfwtrans{s|0}{\lmeas}{\ltopstate_s} \bbwtrans{}{s}{\lstate_{s+1}}{\lbottomstate_s} \fwdfilter{s+1}{\lmeas}{\rmd \lstate_{s+1}} \eqsp.
+% \end{equation}
+% According to this recursion, the transition from $\lbottomstate_{s}$ should follow the backward process conditioned by $\lstate_{s+1}$, while that from $\ltopstate_{s}$ should follow the forward one conditioned on the measurement $\lmeas$ at time $0$. \Cref{eq:FKrecursion} reflects this behaviour, while \eqref{eq:time0flow} ensures that the procedure ultimately produces the posterior as the final marginal.
+The idea of using the forward diffused observation to guide the observed part of the state, as we do here through $\tfwtrans{t}{\lmeas}{\ltopstate_t}$, has been exploited in prior works but in a different way. For instance, in \cite{song2020score,song2022solving} the observed part of the state is directly replaced by the forward noisy observation and, as it has been noted \cite{trippe2023diffusion}, this introduces an irreducible bias. Instead, \algo\ weights the backward process by the density of the forward one conditioned on $\lmeas$, resulting in a natural and consistent algorithm.
+
+We now establish the convergence of \algo\ with a general sequence of \emph{potentials} $\{ \pot{s}{\lmeas}{} \}_{s = 1} ^n$. We consider the following assumption on the sequence of potentials $\{ \pot{t}{\lmeas}{} \}_{t = 1} ^n$. 
+\begin{hypA} 
+    \label{assp:bounded_weights}
+$\displaystyle \sup_{\lstate \in \R^{\dimx}} \tbwtrans{}{0}{\lstate}{\lmeas} / \pot{1}{\lmeas}{\lstate} < \infty$ and $\displaystyle\sup_{\lstate \in \R^{\dimx}} \int \pot{t}{\lmeas}{\lstate_{t}} \bwtrans{}{t}{\lstate}{\lstate_{t}} \rmd \lstate_{t} \big/ \pot{t+1}{\lmeas}{\lstate} < \infty$ for all $t \in [1:n-1]$.
+\end{hypA}
+The following exponential deviation inequality is standard and is a direct application of \cite[Theorem 10.17]{douc2014nonlinear}. In particular, it implies a $\bigo(1 / \sqrt{N})$ bound on the mean squared error $\| \filter{0}{N}{h} - \filter{0}{\lmeas}{h} \|_2$.
+\begin{proposition} Assume \assp{\ref{assp:bounded_weights}}. There exist constants $c_{1,n}, c_{2,n} \in (0, \infty)$ such that, for all $N \in \nset$, $\varepsilon > 0$ and bounded function $h : \rset^{\dimx} \mapsto \rset$,
+$
+    \pP \left[ \big| \filter{0}{N}{h} - \filter{0}{\ltrmeas}{h} \big| \geq \varepsilon \right] \leq c_{1,n} \exp(- c_{2,n} N \varepsilon^2 \big/ |h|^2 _\infty )
+$
+where $|h|_\infty \eqdef \sup_{x \in \rset^{\dimx}} |h(x)|$.
+\end{proposition}
+We also furnish our estimator with an explicit non-asymptotic bound on its bias. Define $\smash{\bfilter{0}{N}{} = \pE \big[ \filter{0}{N}{} ]}$ where $\filter{0}{N}{} = N^{-1} \sum_{i = 1}^N \delta_{\bparticle^i _0}$ is the particle approximation produced by \Cref{alg:algonoiseless} and the expectation is with respect to the law of $(\particle^{1:N}_{1:n}, \anc{1:N}{0:n-1})$.
+Define for all $t \in [1:n]$, $\filter{t}{\star}{\lstate_t} \propto \bwmarg{t}{\lstate_t} \int \delta_\lmeas(\rmd \ltopstate_0) \bwtrans{}{0|t}{\lstate_t}{\lstate_0} \rmd \lbottomstate_0 \eqsp,$ where $\bwtrans{}{0|t}{\lstate_t}{\lstate_0} \eqdef \int \left\{ \prod_{s = 0} ^{t-1} \bwtrans{}{s}{\lstate_{s+1}}{\lstate_s} \right\} \rmd \lstate_{1:t-1}$.
+\begin{proposition} \label{lem:kldiv:filtering}
+   It holds that
+    \begin{equation}
+        \kldivergence{\filter{0}\lmeas{}}{\bfilter{0}{N}{}} \leq \mathsf{C}^{\lmeas} _{0:n}(N-1)^{-1} + \mathsf{D}^{\lmeas} _{0:n} N^{-2} \eqsp,
+    \end{equation}
+    where  $\mathsf{D}^\lmeas _{0:n} > 0$,
+    $\mathsf{C}^\lmeas _{0:n} \eqdef 
+            \textstyle\sum_{t = 1} ^n \int \frac{\normconst_t / \normconst_0}{\pot{t}{\lmeas}{z_t}} \left\{ \int \delta_{\lmeas}(\rmd \ltopstate_0)  \bwtrans{}{0|t}{z_t}{x_0} \rmd \lbottomstate_0 \right\} \filter{t}{\star}{\rmd z_t} $
+    and $\normconst_t \eqdef \int \pot{t}{\lmeas}{\lstate_t} \bwmarg{t}{\rmd \lstate_t}$ for all $t \in [1:n]$ and $\normconst_0 \eqdef \int \delta_\lmeas(\rmd \ltopstate_0) \bwmarg{0}{\lstate_0} \rmd \lbottomstate_0$. If furthermore \assp{\ref{assp:bounded_weights}} holds then both $\mathsf{C}^{\lmeas} _{0:n}$ and $\mathsf{D}^{\lmeas} _{0:n}$ are finite.
+\end{proposition}
+The proof of \Cref{lem:kldiv:filtering} is postponed to \Cref{proof:kldiv:filtering}. \assp{\ref{assp:bounded_weights}} is an assumption on the equivalent of the weights $\{\uweight{}{t}\}_{t = 0}^n$ with a general sequence of potentials $\{ \pot{t}{\lmeas}{}\}_{t = 1} ^n$ and is not restrictive as it can be satisfied by setting for example $\pot{s}{\lmeas}{\lstate_s} = \tfwtrans{s|0}{\lmeas}{\ltopstate_s} + \delta$ where $\delta > 0$. The resulting algorithm is then only a slight modification of the one described above, see \Cref{sec:proof_lems} for more details. 
+It is also worth noting that \Cref{lem:kldiv:filtering} combined with Pinsker's inequality implies that the bias of \algo\ goes to $0$ with the number of particle samples $N$ for fixed $n$. We have chosen to present a bound in Kullback--Leibler (KL) divergence, inspired by \cite{andrieu2018uniform, huggins2019sequential}, as it allows an explicit dependence on the modeling choice $\{ \pot{s}{\lmeas}{} \}_{s = 1} ^n$, see \Cref{lem:closed_form_bound}.
+Finally, unlike the theoretical guarantees established for \smcdiff\ in \cite{trippe2023diffusion}, proving the asymptotic exactness of our methodology w.r.t. to the generative model posterior does not require having $\bwmarg{s+1}{\lstate_{s+1}} \bwtrans{}{s}{\lstate_{s+1}}{\lstate_{s}} = \bwmarg{s}{\lstate_s} \fwtrans{s+1}{\lstate_s}{\lstate_{s+1}}$ for all $\smash{s \in [0:n-1]}$, %i.e. that the one step forward kernel is the time reversal of the backward one,
+which does not in hold in practice. %As such, \smcdiff\ exhibits a non-vanishing asymptotic bias.

@@ -1,0 +1,347 @@
+% !TEX root = main.tex
+
+
+
+\usepackage{centernot}
+\usepackage{amsthm}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{dsfont}
+\usepackage{appendix}
+
+
+
+
+\DeclareRobustCommand{\mb}[1]{\ensuremath{\mathbf{\boldsymbol{#1}}}}
+% \DeclareRobustCommand{\mb}[1]{\mathbold{#1}}
+
+\DeclareRobustCommand{\KL}[2]{\ensuremath{\textrm{KL}\left[#1\;\|\;#2\right]}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+
+
+
+\newcommand\independent{\protect\mathpalette{\protect\independenT}{\perp}}
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+
+\renewcommand{\mid}{~\vert~}
+\newcommand{\prm}{\:;\:}
+
+\newcommand{\mbw}{\mb{w}}
+\newcommand{\mbW}{\mb{W}}
+
+\newcommand{\mbx}{\mb{x}}
+\newcommand{\mbX}{\mb{X}}
+
+\newcommand{\mby}{\mb{y}}
+\newcommand{\mbY}{\mb{Y}}
+
+\newcommand{\mbz}{\mb{z}}
+\newcommand{\mbZ}{\mb{Z}}
+\newcommand{\mbT}{\mb{T}}
+\newcommand{\mbA}{\mb{A}}
+\newcommand{\mba}{\mb{a}}
+
+\newcommand{\mbI}{\mb{I}}
+\newcommand{\mbone}{\mb{1}}
+
+\newcommand{\mbL}{\mb{L}}
+
+\newcommand{\mbtheta}{\mb{\theta}}
+\newcommand{\mbTheta}{\mb{\Theta}}
+\newcommand{\mbomega}{\mb{\omega}}
+\newcommand{\mbOmega}{\mb{\Omega}}
+\newcommand{\mbsigma}{\mb{\sigma}}
+\newcommand{\mbSigma}{\mb{\Sigma}}
+\newcommand{\mbphi}{\mb{\phi}}
+\newcommand{\mbPhi}{\mb{\Phi}}
+
+\newcommand{\mbalpha}{\mb{\alpha}}
+\newcommand{\mbbeta}{\mb{\beta}}
+\newcommand{\mbgamma}{\mb{\gamma}}
+\newcommand{\mbeta}{\mb{\eta}}
+\newcommand{\mbmu}{\mb{\mu}}
+\newcommand{\mbrho}{\mb{\rho}}
+\newcommand{\mblambda}{\mb{\lambda}}
+\newcommand{\mbzeta}{\mb{\zeta}}
+
+\newcommand\dif{\mathop{}\!\mathrm{d}}
+\newcommand{\diag}{\textrm{diag}}
+\newcommand{\supp}{\textrm{supp}}
+
+\newcommand{\V}{\mathbb{V}}
+\newcommand{\bbH}{\mathbb{H}}
+
+\newcommand{\bbN}{\mathbb{N}}
+\newcommand{\bbZ}{\mathbb{Z}}
+\newcommand{\bbR}{\mathbb{R}}
+\newcommand{\bbS}{\mathbb{S}}
+
+\newcommand{\cL}{\mathcal{L}}
+\newcommand{\cD}{\mathcal{D}}
+
+\newcommand{\cN}{\mathcal{N}}
+\newcommand{\cT}{\mathcal{T}}
+\newcommand{\Gam}{\textrm{Gam}}
+\newcommand{\InvGam}{\textrm{InvGam}}
+
+% \newcommand{\qedsymbol}{\rule{0.7em}{0.7em}}
+
+\newcommand{\g}{\, | \,}
+\newcommand{\s}{\, ; \,}
+
+\newcommand{\indpt}{\protect\mathpalette{\protect\independenT}{\perp}}
+%\newcommand{\E}[2]{\mathbb{E}_{#1}\left[#2\right]}
+
+\def\checkmark{\tikz\fill[scale=0.4](0,.35) -- (.25,0) -- (1,.7) -- (.25,.15) -- cycle;} 
+
+
+\usepackage{booktabs,arydshln}
+\makeatletter
+\def\adl@drawiv#1#2#3{%
+        \hskip.5\tabcolsep
+        \xleaders#3{#2.5\@tempdimb #1{1}#2.5\@tempdimb}%
+                #2\z@ plus1fil minus1fil\relax
+        \hskip.5\tabcolsep}
+\newcommand{\cdashlinelr}[1]{%
+  \noalign{\vskip\aboverulesep
+           \global\let\@dashdrawstore\adl@draw
+           \global\let\adl@draw\adl@drawiv}
+  \cdashline{#1}
+  \noalign{\global\let\adl@draw\@dashdrawstore
+           \vskip\belowrulesep}}
+\makeatother
+
+\newenvironment{proofsk}{%
+  \renewcommand{\proofname}{Proof sketch}\proof}{\endproof}
+
+
+
+% ===== useful
+
+\newcommand{\inner}[2]{#1 \cdot #2}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\half}{\frac{1}{2}}
+\newcommand{\new}{\mathrm{new}}
+\newcommand{\const}{\mathrm{const.}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\ddx}[1]{\frac{\partial}{\partial #1}}
+\newcommand{\dfdx}[2]{\textstyle \frac{\partial #1}{\partial #2}}
+
+
+\newcommand{\bas}[1]{\begin{align*}#1\end{align*}}
+\newcommand{\bac}[1]{\begin{equation}\begin{aligned}#1\end{aligned}\end{equation}}
+\newcommand{\ba}[1]{\begin{align}#1\end{align}}
+\newcommand{\beq}[1]{\begin{equation}#1\end{equation}}
+\newcommand{\bsplt}[1]{\begin{split}#1\end{split}}
+
+\newcommand{\norm}[1]{\left\lVert#1\right\rVert}
+\newcommand{\ip}[2]{\langle #1,#2 \rangle}
+\newcommand{\idx}[1]{\{1,2,\cdots,#1\}}
+\newcommand{\pde}[1]{\frac{\partial}{\partial #1}}
+\newcommand{\distas}[1]{\mathbin{\overset{#1}{\kern\z@\sim}}}
+
+\newcommand{\one}{\mathbf{1}}
+\newcommand{\zero}{\mathbf{0}}
+\newcommand{\indep}{\rotatebox[origin=c]{90}{$\models$}}
+\newcommand{\abs}[1]{\lvert #1\rvert}
+
+% ===== probability
+
+
+\def\independenT#1#2{\mathrel{\rlap{$#1#2$}\mkern2mu{#1#2}}}
+
+\newcommand{\EE}[2]{\mathbb{E}_{#1}\left[#2\right]}
+\newcommand{\var}[1]{\textrm{Var}\left[#1\right]}
+\newcommand{\h}[1]{\mathbb{H}\left( #1 \right)}
+\newcommand{\kl}[1]{\mathrm{KL}\left(#1\right)}
+\newcommand{\ind}{\mathbb{1}}
+\newcommand{\rmp}{\mathrm{p}}
+\newcommand{\rmq}{\mathrm{q}}
+\newcommand{\prob}{\mathrm{P}}
+
+
+% ===== distributions
+
+\newcommand{\mult}{\mathrm{Mult}}
+\newcommand{\dir}{\mathrm{Dir}}
+\newcommand{\discrete}{\mathrm{Discrete}}
+\newcommand{\Bern}{\mathrm{Bernoulli}}
+\newcommand{\DP}{\mathrm{DP}}
+\newcommand{\GP}{\mathrm{GP}}
+\newcommand{\Bet}{\mathrm{Beta}}
+\newcommand{\pois}{\mathrm{Pois}}
+
+% ===== calligraphy
+
+
+
+% ===== bold mathematics
+
+
+\newcommand{\Amat}[0]{{{\bf A}}}
+\newcommand{\Bmat}[0]{{{\bf B}}}
+\newcommand{\Cmat}[0]{{{\bf C}} }
+\newcommand{\Dmat}{{\bf D}}
+\newcommand{\Emat}[0]{{{\bf E}}}
+\newcommand{\Fmat}[0]{{{\bf F}} }
+\newcommand{\Gmat}[0]{{{\bf G}} }
+\newcommand{\Hmat}[0]{{{\bf H}} }
+\newcommand{\Imat}{{\bf I}}
+\newcommand{\Jmat}[0]{{{\bf J}} }
+\newcommand{\Kmat}[0]{{{\bf K}} }
+\newcommand{\Lmat}[0]{{{\bf L}}}
+\newcommand{\Mmat}{{\bf M}}
+\newcommand{\Nmat}[0]{{{\bf N}}}
+\newcommand{\Omat}[0]{{{\bf O}}}
+\newcommand{\Pmat}[0]{{{\bf P}}}
+\newcommand{\Qmat}[0]{{{\bf Q}} }
+\newcommand{\Rmat}[0]{{{\bf R}}}
+\newcommand{\Smat}[0]{{{\bf j}}}
+\newcommand{\Tmat}[0]{{{\bf T}}}
+\newcommand{\Umat}[0]{{{\bf U}}}
+\newcommand{\Vmat}[0]{{{\bf V}}}
+\newcommand{\Wmat}[0]{{{\bf W}}}
+\newcommand{\Xmat}[0]{{{\bf X}}}
+\newcommand{\Ymat}[0]{{{\bf Y}}}
+\newcommand{\Zmat}{{\bf Z}}
+
+
+\newcommand{\av}[0]{{\boldsymbol{a}}}
+\newcommand{\bv}[0]{{\boldsymbol{b}}}
+\newcommand{\cv}[0]{{\boldsymbol{c}}}
+\newcommand{\dv}{\boldsymbol{d}}
+\newcommand{\ev}[0]{{\boldsymbol{e}} }
+\newcommand{\fv}[0]{{\boldsymbol{f}} }
+\newcommand{\gv}[0]{{\boldsymbol{g}} }
+\newcommand{\hv}[0]{{\boldsymbol{h}} }
+\newcommand{\iv}[0]{{\boldsymbol{i}} }
+\newcommand{\jv}[0]{{\boldsymbol{j}} }
+\newcommand{\kv}[0]{{\boldsymbol{k}} }
+\newcommand{\lv}[0]{{\boldsymbol{l}}}
+\newcommand{\mv}[0]{{\boldsymbol{m}}}
+\newcommand{\nv}[0]{{\boldsymbol{n}}}
+\newcommand{\ov}[0]{{\boldsymbol{o}} }
+\newcommand{\pv}[0]{{\boldsymbol{p}}}
+\newcommand{\qv}[0]{{\boldsymbol{q}} }
+\newcommand{\rv}{\boldsymbol{r}}
+\newcommand{\sv}{\boldsymbol{s}}
+%\newcommand{\sv}[0]{{\boldsymbol{j}}}
+\newcommand{\tv}[0]{{\boldsymbol{t}} }
+\newcommand{\uv}{\boldsymbol{u}}
+\newcommand{\vv}{\boldsymbol{v}}
+\newcommand{\wv}{\boldsymbol{w}}
+\newcommand{\xv}{\boldsymbol{x}}
+\newcommand{\yv}{\boldsymbol{y}}
+\newcommand{\zv}{\boldsymbol{z}}
+\newcommand{\cdotv}{\boldsymbol{\cdot}}
+
+\newcommand{\Gammamat}[0]{{\boldsymbol{\Gamma}} }
+\newcommand{\Deltamat}[0]{{\boldsymbol{\Delta}} }
+\newcommand{\Thetamat}{\boldsymbol{\Theta}}
+\newcommand{\Betamat}{\boldsymbol{\Beta}}
+\newcommand{\Lambdamat}{\boldsymbol{\Lambda}}
+\newcommand{\Ximat}[0]{{\boldsymbol{\Xi}} }
+\newcommand{\Pimat}[0]{{\boldsymbol{\Pi}} }
+\newcommand{\Sigmamat}[0]{{\boldsymbol{\Sigma}}}
+\newcommand{\Upsilonmat}[0]{{\boldsymbol{\Upsilon}} }
+\newcommand{\Phimat}{\boldsymbol{\Phi}}
+\newcommand{\Psimat}{\boldsymbol{\Psi}}
+\newcommand{\Omegamat}[0]{{\boldsymbol{\Omega}}}
+
+\newcommand{\alphav}{\boldsymbol{\alpha}}
+\newcommand{\betav}[0]{{\boldsymbol{\beta}}}
+\newcommand{\gammav}[0]{{\boldsymbol{\gamma}} }
+\newcommand{\deltav}[0]{{\boldsymbol{\delta}} }
+\newcommand{\epsilonv}{\boldsymbol{\epsilon}}
+\newcommand{\zetav}[0]{{\boldsymbol{\zeta}} }
+\newcommand{\etav}[0]{{\boldsymbol{\eta}}}
+\newcommand{\ellv}[0]{{\boldsymbol{\ell}}}
+\newcommand{\thetav}{\boldsymbol{\theta}}
+\newcommand{\iotav}[0]{{\boldsymbol{\iota}}}
+\newcommand{\kappav}[0]{{\boldsymbol{\kappa}} }
+\newcommand{\lambdav}[0]{{\boldsymbol{\lambda}}}
+\newcommand{\muv}[0]{{\boldsymbol{\mu}}}
+\newcommand{\nuv}[0]{{\boldsymbol{\nu}}}
+\newcommand{\xiv}[0]{{\boldsymbol{\xi}} }
+\newcommand{\omicronv}[0]{{\boldsymbol{\omicron}} }
+\newcommand{\piv}{\boldsymbol{\pi}}
+\newcommand{\rhov}[0]{{\boldsymbol{\rho}} }
+\newcommand{\sigmav}[0]{{\boldsymbol{\sigma}} }
+\newcommand{\tauv}[0]{{\boldsymbol{\tau}} }
+\newcommand{\upsilonv}[0]{{\boldsymbol{\upsilon}} }
+\newcommand{\phiv}{\boldsymbol{\phi}}
+\newcommand{\chiv}[0]{{\boldsymbol{\chi}} }
+\newcommand{\psiv}{\boldsymbol{\psi}}
+\newcommand{\varthetav}{\boldsymbol{\vartheta}}
+\newcommand{\omegav}[0]{{\boldsymbol{\omega}}}
+
+\newcommand{\bR}{\mathbb{R}}
+\newcommand{\bE}{\mathbb{E}}
+\newcommand{\bN}{\mathbb{N}}
+\newcommand{\cE}{\mathcal{E}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\G}{\mathcal{G}}
+
+\newcommand{\grad}{\nabla}
+
+
+
+% Brian's macros
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Var}{\mathrm{Var}}
+\usepackage{cancel}
+%\def\Q{\mathbb{Q}}
+\def\Q{Q}
+\def\P{\mathbb{P}}
+\def\inv{^{-1}}
+\def\X{\mathcal{X}}
+\def\M{\mathcal{M}}
+\def\I{\mathbb{I}}
+\def\pinv{p_{\mathrm{inv}}}
+\def\pref{p_{\mathrm{ref}}}
+\def\pmodel{p_{\theta}}
+\def\pmodelapprox{\tilde{p}_{\theta}}
+%\def\denoiser{\mu_\theta}
+%\def\pmodel{p}
+%\def\pmodelapprox{\tilde{p}}
+%\def\denoiser{\mu}
+\def\denoiser{{\hat x}_\theta }
+\def\scoremodel{s_\theta}
+\newcommand{\dt}[2]{#1^{#2}}
+\newcommand{\xt}{\dt{x}{t}}
+\newcommand{\xtpo}{\dt{x}{t+1}}
+\newcommand{\xprev}{\dt{x}{t-1}}
+\newcommand{\xtmo}{\xprev}
+\newcommand{\xT}{\dt{x}{T}}
+\newcommand{\xzero}{\dt{x}{0}}
+%\newcommand{\plikelihood}[2]{f_{#1}(#2)}
+\newcommand{\plikelihood}[2]{p_{y|\xzero}({#1}|{#2})}
+\newcommand{\proposalVar}{\tilde \sigma^2}
+%\newcommand{\plikelihood}[2]{p({#1};{#2})}
+
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+
+
+\newcommand{\methodname}{Twisted Diffusion Sampler}
+\newcommand{\methodshort}{TDS}
+
+\def\psivar{\bar \sigma^2}
+
+\def\truelabel{z^{(0)}}
+
+% SMC
+\newcommand{\proposal}{r}
+\newcommand{\weight}{w}
+\newcommand{\target}{\nu}
+\newcommand{\mask}{\mathbf{M}}
+\newcommand{\umask}{\mathbf{\bar M}}
+
+% SMC twisted
+\newcommand{\twist}{\tilde p_\theta} % please use \pTwist instead
+\newcommand{\twistfcn}{\tilde p}
+\newcommand{\pTwist}{\tilde p_\theta} % please use this one for consistency
+\newcommand{\wTwist}{w}
+\newcommand{\tTwist}{\nu}

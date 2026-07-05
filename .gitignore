@@ -1,0 +1,38 @@
+# Large data / model files
+data/testing/
+pretrained-models/
+*.pkl
+*.mat
+*.npy
+*.npz
+
+# Images / figures
+*.jpg
+*.jpeg
+*.png
+*.gif
+*.bmp
+*.pdf
+*.eps
+
+# Python bytecode
+__pycache__/
+*.pyc
+*.pyo
+
+# macOS
+.DS_Store
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+
+# Runtime artifacts
+*.log
+outputs/
+results/
+logs/
+checkpoints/
+runs/
+wandb/

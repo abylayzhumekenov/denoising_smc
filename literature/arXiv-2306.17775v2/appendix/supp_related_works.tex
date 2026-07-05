@@ -1,0 +1,45 @@
+\section{Related work}\label{sec:related-works}
+%\BLT{This section could be moved to the appendix if needed.}
+There has been much recent work on conditional generation using diffusion models.
+These prior works demand either task specific conditional training,
+or involve unqualified approximations and can suffer from poor performance in practice.
+We discuss additional related work in \Cref{sec:additional_related_work}.
+
+\textbf{Gradient guidance.}
+We use \emph{gradient guidance} to refer to a general approach that incorporates conditioning information with gradients through the neural network $\denoiser(\xt).$
+For example, in an inpainting setting, \citet{hovideo} propose a Gaussian approximation $\mathcal{N}(y\mid \denoiser(\xt)^\mask, \alpha)$ to $\pmodel(y \mid \xt)$. This approximation motivates a modified transition distribution as in \Cref{eq:diffusion-twisted-proposals}, with the corresponding approximation to the conditional score as 
+%corresponding to an approximation of the conditional score as
+$
+s_\theta(\xt,y ) = s_\theta(\xt) - \nabla_{\xt} \| y - \denoiser(\xt)_M\|^2/\alpha.
+$
+This approach coincides exactly with TDS applied to the inpainting task when a single particle is used.
+Similar Gaussian approximations have been used by \citep{chung2022diffusion,song2023pseudoinverse} for other inverse problems.
+
+Gradient guidance can also be used with non-Gaussian approximations;
+e.g.\ using $\plikelihood{y}{\denoiser (\xt}) \approx \pmodel (y \mid \xt)$ for a given likelihood $\plikelihood{y}{\xzero}.$
+This choice again recovers TDS with one particle. 
+
+Empirically, these heuristics can have unreliable performance, e.g. in image inpainting problems \citep{zhang2023towards}.
+By comparison, TDS enjoys the benefits of gradient guidance by using it in proposals, while also providing a mechanism to eliminate approximation error by simulating additional particles.
+%A limitation of this class of methods is its sensitivity to required hyperparameters (often referred to as the \emph{guidance scale}) that influence the approximation which they sample. 
+
+\textbf{Replacement method.}
+The replacement method \citep{song2020score} is a method introduced for image inpainting using only unconditional diffusion models.
+The idea is to replace the observed dimensions of intermediate samples $\xt_\mask$, with a noisy version of observation $\xzero_\mask$.
+However, it is a heuristic approximation and can lead to inconsistency between inpainted region and observed region \citep{lugmayr2022repaint}. 
+Additionally, the replacement method applies only to inpainting problems.
+While recent work has extended the replacement method to linear inverse problems \citep[e.g.][]{kawar2022denoising},
+the approach provides no accuracy guarantees. It is unclear how to extend these methods to arbitrary differentiable likelihoods.
+
+\textbf{SMC samplers for diffusion models.}
+Most closely related to the present work is SMC-Diff \citep{trippe2022diffusion},
+which uses SMC to provide asymptotically accurate conditional samples for the inpainting problem.
+However, this prior work 
+(i) is limited to the inpainting case, and
+(ii) provides asymptotic guarantees only under the assumption that the learned diffusion model exactly matches the forward noising process, which is rarely satisfied in practice.
+Also, SMC-Diff does not leverage twisting functions.
+
+In concurrent work, \citet{cardoso2023monte} propose MCGdiff, an alternative SMC algorithm that uses the framework of auxiliary particle filtering \citep{pitt1999filtering} to provide asymptotically exact conditional inference.  Compared to TDS, MCGdiff avoids computing gradients of the denoising network but applies only to linear inverse problems, with inpainting as a special case.
+%In concurrent work, \citet{cardoso2023monte} propose an alternative SMC algorithm for conditional generation, MCGdiff. MCGdiff applies to linear inverse problems (with inpainting as a special case) and uses the framework of auxiliary particle filtering \citep{pitt1999filtering} to provide asymptotically exact inferences without relying on strong assumptions on the diffusion model.
+%But compared to TDS, MCGdiff does not benefit from gradient guidance and (besides inpainting) does not apply to the conditional considered. While MCGdiff avoids computing gradients of the denoising network, TDS is not restricted to linear inverse problems and benefits from gradient guidance.
+

@@ -1,0 +1,183 @@
+
+\section{Methodology}
+
+\begin{figure*}[!tb]
+    \centering
+    \includegraphics[width=0.95\linewidth]{figures/recon_plots/recon_darcy_seed0.pdf}
+
+    \vspace{4pt}
+
+    \includegraphics[width=0.95\linewidth]{figures/recon_plots/error_darcy_seed0.pdf}
+    \caption{
+    The top two rows show contour plot of the generated PDE solutions and coefficients using different methods. 
+    The bottom two rows show the corresponding (relative) error when compared to the ground truth (GT). 
+    We especially observe that the most erroneous part are around the edges. 
+    This is consistent with the common problem of diffusion models that they tend to smooth out the high-frequency information of the generated samples. 
+    }
+    \label{fig:darcy_panels}
+\end{figure*}
+
+\subsection{PDE Residual Likelihoods}
+In the context of PDEs, we can express our likelihood as the mean squared error (MSE) of the sparse observations for both $a$ and $u$ as well as the PDE equation residuals. That is, we define the \emph{PDE residual likelihood}:
+\begin{align}
+    \log p(y \mid x)  = 
+    &- \beta\left(\frac{1}{n} ||u_{obs} - \mathcal{M}_u \odot x||^2_2\right) \nonumber \\
+    &- \gamma\left(\frac{1}{n} ||a_{obs}  - \mathcal{M}_a \odot x||^2_2\right) \nonumber \\
+    &- \omega\left(\frac{1}{m} ||f(c, \tau, x)||^2_2\right) + c,  
+    \label{eq:likelihoods_expanded}
+\end{align}
+where $\mathcal{M}_{u, a}$ are the corresponding binary masks indicating the spatial coordinates of the observations, $n$ is the number of observations, $m$ is the number of pixels and $\odot$ is the Hadamard/element-wise product. 
+This likelihood jointly incorporates the governing PDE as a physics constrain, and the sparse observation as a data constrain.
+
+To enable approximate likelihood evaluations at intermediate time steps we follow \citet{wu2023-TDS} and evaluate the likelihood at reconstructed samples. That is, we define the intermediate approximate likelihood at diffusion time $t$ as: 
+\begin{align}
+    &p_t^\theta(y \mid x_t, \sigma_t) = \int p(y \mid x_0) p_\theta(x_0 \mid x_t) d x_0 \nonumber \\
+    &\qquad\;\approx p(y \mid x_0 = D_\theta(x, \sigma_t)) =: \Tilde{p}_\theta(y \mid x_t),
+\end{align}
+and as a result, at time $0$ we have $\Tilde{p}_\theta(y \mid x_0) = p(y \mid x_0)$. 
+
+In the following sections, we show how we can incorporate this likelihood along with different proposals into the SMC framework, by designing suitable $\lbrace M_k, G_k \rbrace_{k=0}^K$. 
+
+\subsection{Guided Euler--Maruyama as a Proposal for an SMC Sampler}
+To numerically sample the SDE \eqref{eq:reverse_sde_noise_form}, a common approximation is the Euler--Maruyama method:  
+\begin{align}
+    x_{k-1} &= x_{k} -(\sigma_{k-1}^2 - \sigma_{k}^2)\nabla_{x_{k}}\log p_{k-1}(x_{k}, \sigma_{k}) \nonumber \\
+    &+ \sqrt{\sigma_{k-1}^2 - \sigma_{k}^2} \, z,
+    \label{eq:EM_score}
+\end{align}
+where $z \sim \mathcal{N}(0, I)$, and the discretization time interval is implicitly accounted in the schedule sequence $\sigma_k$. We denote this transition as $\pem(x_{k-1} \mid x_{k}) = \mathcal{N}(x_k \mid \mu_{\text{model}}, \, (\sigma_{k-1}^2 - \sigma_{k}^2) \, I)$. Using the Euler--Maruyama method to simulate from $k=K$ to $k=0$ we obtain a trajectory distributed according to 
+$\pem(x_{0:K}).$
+
+If we use the guided score \eqref{eq:guidance_sde_noise} in place of the unconditional score in equation~\eqref{eq:EM_score}, we obtain the guided Euler-Maruyama (GEM) update:
+\begin{align}
+    x_{k-1} &= x_{k} -(\sigma_{k-1}^2 - \sigma_{k}^2)\frac{x_{k} - D_{\theta}(x_{k}, \sigma_{k})}{\sigma_{k}^2} 
+     \nonumber \\
+    &- (\sigma_{k-1}^2 - \sigma_{k}^2) \nabla_{x_{k}} \log \Tilde{p}_\theta(y \mid x_k) \nonumber \\
+    &+ \sqrt{\sigma_{k-1}^2 - \sigma_{k}^2} \, z.
+    \label{eq:EM_denoiser_guided_constant}
+\end{align}
+Pseudocode for this method is shown in Appendix~\ref{app:pseudocodes_gem}. 
+The GEM update \eqref{eq:EM_denoiser_guided_constant} defines a Markov transition kernel $\Tilde{p}_{\theta}(x_{k-1} \mid x_{k}, y) = \mathcal{N}(x_k \mid \mu_{\text{prop}}, \, (\sigma_{k-1}^2 - \sigma_{k}^2) \,  I)$ that can be used as a proposal for SMC. 
+Specifically, we choose the proposal $M_{k-1}(x_{k-1} \mid x_{k}) = \Tilde{p}_{\theta}(x_{k-1} \mid x_{k}, y)$, and the weight update 
+%
+\begin{align}
+    G_{k-1}(x_{k}, x_{k-1}) =  \,
+    \frac{\Tilde{p}_{\theta}(y \mid x_{k-1})}{\Tilde{p}_{\theta}(y \mid x_{k})} \,
+    \frac{\pem(x_{k-1} \mid x_{k})}{\Tilde{p}_{\theta}(x_{k-1} \mid x_{k}, y)}
+    \label{eq:weight_update_full} 
+    %&= w_{k-1}G_k(x_{k-1}, x_k, y)
+\end{align}
+%
+This was used in the Twisted Diffusion Sampler~\citep[TDS,][]{wu2023-TDS}, and we can verify using the FK formula \eqref{eq:FK_formula} and substituting in our proposal and weight update that, the marginal distribution we target at each iteration is: 
+\begin{align}
+    \nu_{k-1}(x_{k-1:K}) &\propto \Tilde{p}_{\theta}(y \mid x_{k-1}) \pem(x_{k-1:K}) \nonumber \\
+    \nu_{0:K}(x_{0:K}) &= \pem(x_{0:K} \mid y).
+    \label{eq:FK_target_normal}
+\end{align}
+
+\subsection{Second-Order Stochastic Guided Proposal}
+Although Euler--Maruyama is common, it is not the most efficient SDE integrator and \citet{karras2022elucidatingdesignspacediffusionbased} propose using 2nd order 
+stochastic sampling process. % other than the Euler--Maruyama. 
+First, the noise scale is jittered and then the
+ODE dynamics via the denoiser are run, i.e.\ we run the following set of
+equations:
+\begin{align}
+    &\hat{\sigma}_{k} \leftarrow \sigma_{k} + \gamma_{k}\,\sigma_{k}, \\
+    &\hat{x}_{k} = x_{k} + \sqrt{\hat{\sigma}^{2}_{k} - \sigma^{2}_{k}}\,\psi,
+       \quad \psi \sim \mathcal{N}(0, I), \\
+    &x_{k-1} = \hat{x}_{k} + \bigl(\sigma^{2}_{k-1} - \hat{\sigma}^{2}_{k}\bigr)
+       \frac{\hat{x}_{k} - D_{\theta}(\hat{x}_{k}, \hat{\sigma}_{k})}{\hat{\sigma}^{2}_{k}},
+       \label{eq:edm_original_sub}
+\end{align}
+where $\gamma_{k}$ is a constant used to reach a higher noise level. The full details of this can be found in \citet{karras2022elucidatingdesignspacediffusionbased}. Notice how this algorithm adds noise before computing the denoised mean. Including guidance information as outlined previously, \eqref{eq:edm_original_sub} becomes:
+\begin{align}
+    x_{k-1} &= \hat{x}_{k} + \bigl(\sigma^{2}_{k-1} - \hat{\sigma}^{2}_{k}\bigr)
+    \frac{\hat{x}_{k} - D_{\theta}(\hat{x}_{k}, \hat{\sigma}_{k})}{\hat{\sigma}^{2}_{k}} \nonumber \\
+    & - \bigl(\sigma^{2}_{k-1} - \hat{\sigma}^{2}_{k}\bigr) \nabla_{\hat{x}_{k}} \log \Tilde{p}_\theta(y \mid \hat{x}_{k}).
+    \label{eq:SOSaG_proposal}
+\end{align}
+
+This method uses a second-order correction method to improve
+sampling quality. This was also implemented in the DiffusionPDE framework
+\citep{huang2024diffusionpdegenerativepdesolvingpartial}, albeit with a deterministic (ODE-based) formulation. We also use the 2nd order correction as part of our proposal but, importantly, with the stochastic jittering.
+%, shown in Appendix~\ref{app:pseudocodes_sosag}. 
+We refer to this proposal as the Second-Order Stochastic Guided (SOSaG) proposal. 
+
+Although the SOSaG integrator is shown to be empirically powerful, it is not straightforward to incorporate it as the proposal $M$ in SMC. 
+The reason is that the weight computation in equation~\eqref{eq:weight_update_full} requires a point-evaluable proposal density which is not the case for SOSaG. 
+Clearly, unlike Euler--Maruyama, now $x_{k-1}$ conditioned on $x_{k}$ does not retain the Gaussianity after passing through the non-linear denoiser.
+However, we can instead work on a new Feynman--Kac model $\overline{\nu}_{0:K}$ with components defined in a ``bootstrap'' fashion, which we call psuedo-bootstrap (pBS):
+%
+\begin{equation*}
+    \begin{split}
+        \overline{M}_{k-1}(x_{k-1} \mid x_{k}) &= \overline{p}_\theta(x_{k-1} \mid x_{k}, y), \\
+        \overline{G}_{k-1}(x_k, x_{k-1}) &= \frac{\Tilde{p}_{\theta}(y \mid x_{k-1})}{\Tilde{p}_{\theta}(y \mid x_{k})},
+    \end{split}
+\end{equation*}
+%
+where $\overline{p}_\theta(x_{k-1} \mid x_{k}, y)$ denotes the distribution of SOSaG proposal described in equation~\eqref{eq:SOSaG_proposal}. At the terminal time $k=0$, this new model recovers $\overline{\nu}_0(x_0) = \overline{p}_\theta(x_0 \mid y) \, p_{\theta}(y\mid x_0)$, where $\overline{p}_\theta(x_0 \mid y)$ is an approximate posterior distribution obtained by simulating the SOSaG proposal without SMC correction (see Appendix~\ref{app:pBS_explained} for the derivation). 
+Although this new target is no longer the same as the original in \eqref{eq:FK_target_normal}, it is motivated in this PDE context, as we explain in the following. 
+
+\begin{table*}[ht]
+\centering
+\caption{Comparison of different models on five PDE problems (in $L_2$ relative error, except in the Darcy inverse problem where error rate is reported).}
+\label{tab:pde_results}
+
+\resizebox{0.85\textwidth}{!}{%
+\begin{tabular}{l cc cc cc cc cc}
+\toprule
+\multirow{2}{*}{\textbf{Method}} &
+\multicolumn{2}{c}{\textbf{Darcy}} &
+\multicolumn{2}{c}{\textbf{Poisson}} &
+\multicolumn{2}{c}{\textbf{Helmholtz}} &
+\multicolumn{2}{c}{\textbf{NS}} &
+\multicolumn{2}{c}{\textbf{NS (BCs)}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+& \textbf{Fwd} & \textbf{Inv}
+& \textbf{Fwd} & \textbf{Inv}
+& \textbf{Fwd} & \textbf{Inv}
+& \textbf{Fwd} & \textbf{Inv}
+& \textbf{Fwd} & \textbf{Inv} \\
+\midrule
+\multicolumn{11}{c}{\textit{ODE-Based Methods}} \\
+\midrule
+DiffPDE  & 5.58          & 8.31          & 8.67           & \textbf{19.88} & 17.49 & 19.14          & 4.27          & \textbf{9.34} & 2.78 & 3.43          \\
+\midrule
+\multicolumn{11}{c}{\textit{1st Order Stochastic Methods}} \\
+\midrule
+GEM      & 5.28          & 7.34          & \textbf{6.53}  & 22.28          & 11.22 & 19.30          & \textbf{4.16} & 10.10         & 2.31 & 2.36          \\
+GEM-TDS & 5.52          & 9.00          & 16.44          & 35.27          & 21.75 & 22.69          & 4.18          & 10.85         & 2.96 & 3.52          \\
+GEM-pBS   & 4.49          & 5.74          & 8.73           & 22.01          & \textbf{9.01} & \textbf{18.89} & 4.27 & 10.12         & \textbf{2.01} & 2.32 \\
+\midrule
+\multicolumn{11}{c}{\textit{2nd Order Stochastic Methods}} \\
+\midrule
+SOSaG      & 4.47          & 8.00          & 7.88           & 25.55          & 11.71 & 20.70          & 4.18          & 11.10         & 2.52 & 3.23          \\
+SOSaG-pBS  & \textbf{3.96} & \textbf{5.28} & 8.68           & 24.61          & 12.99 & 20.50          & 4.22          & 11.24         & 2.08 & \textbf{2.17} \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+\subsection{Bridging between pBS and PINNs}
+When using the pBS framework, our target distribution is altered so it is multiplied by an extra likelihood factor. Theoretically, we could choose to use any multiple of the likelihood depending on our belief in the diffusion prior and the PDE residual likelihood: 
+\begin{align}
+    \overline{\nu}_{0:K}(x_{0:K}) \propto \overline{p}_\theta(x_{0} \mid y) \Tilde{p}_{\theta}(y\mid x_0)^\rho,
+    \label{app:pbs_tempered_target}
+\end{align}
+
+where $\overline{p}_\theta(x_{0} \mid y)$ is the final marginal of the SOSaG proposal, $\rho$ is often called the \emph{tempering} parameter \citep{neal2001annealed, buchholz2021adaptive}. 
+In our case, the temperature is simply $\rho = 1$. 
+%The full derivation of this can be found in Appendix~\ref{app:twisted_intermediate}.
+As $\rho$ increases, the target is dominated by the likelihood which approaches a pure maximum likelihood estimation (MLE) task which is the framework PINNs use. 
+This is essentially changing the precision of the PDE residual likelihood. 
+This also gives us a way to control our prior belief. It is unlikely that our diffusion prior will perfectly model probability distribution of the PDE governing the data. Therefore, a traditional SMC sampling method will approach the desired target, but this target may not be the optimal-in-practice solution to our problem. Empirically, we find that this produces better results and therefore it motivates that the ``true target'' is different than the one converged upon by Equation~\eqref{eq:FK_target_normal}. 
+
+\subsection{SMC and Evolutionary Algorithms} 
+\label{sec:smc-ea}
+
+A common criticism of SMC, especially when sampling from diffusion models is the effective sample size (ESS) degenerates as $k\to0$ \citep{wu2023-TDS, corenflos2024conditioning, zhao2025generativediffusionposteriorsampling}, often only leaving a single particle with a weight that contributes towards the target estimate, despite having relatively high ESS at the beginning. 
+However conversely, it has also largely been empirically shown that SMC samplers still work well albeit the particle coalescence issue. To generate diverse samples, \citet{dou2024diffusion, Trippe2023diffusion} run the SMC independently many times, usually with a low number of particles and keeping a single particle per iteration. This results in a biased, but empirically effective, approximation of the SMC target distribution.
+
+The efficacy of this approach can be understood as a form of evolutionary algorithm~\citep{back1993overview, yu2010introduction}, where the weights represent the survival probabilities, the proposal stands for mutation, and the resampling act as a selection function.  Evolutionary algorithms are inspired by biological models, and they have been largely shown to work in many machine learning problems~\citep{wang2024application, novikov2025alphaevolvecodingagentscientific, jiang2026smcevolveprincipledscientificdiscovery}. 
+As such, the effectiveness of SMC samplers for diffusion models albeit the \emph{statistical} degeneracy, may still be justified 
+on these grounds. We have expanded further upon this discussion in Appendices~\ref{app:clarification-target} and \ref{app:smc_ea_tempering}. 

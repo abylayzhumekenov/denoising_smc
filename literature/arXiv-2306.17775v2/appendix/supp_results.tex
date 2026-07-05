@@ -1,0 +1,392 @@
+\section{Empirical results additional details}\label{sec:supp_results}
+
+
+\input{appendix/supp_synthetic}
+
+\subsection{Image conditional generation experiments}
+We perform extensive ablation studies on class-conditional generatoin task and inpainting task using the small-scale MNIST dataset ($28\times 28 \times 1$ dimensions) in \Cref{supp:subsubsec:mnist-class} and \Cref{supp:subsubsec:mnist-inpainting}. And we show TDS's applicability to higher-dimensional datasets, namely CIFAR10 ($32\times \times 3$ dimensions) and ImageNet256 ($256\times 256 \times 3$ dimensions) in \Cref{supp:subsubec:inet-and-cifar}.
+
+
+\subsubsection{Class-conditional generation on MNIST}
+\label{supp:subsubsec:mnist-class}
+
+\paragraph{Set-up.} For MNIST, we set up a diffusion model using the variance preserving framework. The model architecture is based on the guided diffusion codebase\footnote{\url{https://github.com/openai/guided-diffusion}} with the following specifications: number of channels = 64, attention resolutions = "28,14,7", number of residual blocks = 3, 
+learn sigma (i.e. to learn the variance of $\pmodel(\xprev \mid \xt)$) = True,  resblock updown = True, dropout = 0.1, variance schedule = "linear". We trained the model  for 60k epochs with a batch size of 128 and a learning rate of $10^{-4}$ on 60k MNIST training images. The model uses $T=1,000$ for training and $T=100$ for sampling.  
+
+The classifier used for class-conditional generation and evaluation is a pretrained ResNet50 model.\footnote{Downloaded from \url{https://github.com/VSehwag/minimal-diffusion}}
+This classifier is trained on the same set of MNIST training images used by diffusion model training. 
+
+
+In addition we include a
+variation called \textit{TDS-truncate} that truncates the TDS procedure at $t = 10$ and returns the prediction $\denoiser (\dt{x}{10})$. 
+
+\paragraph{Sample plots.} 
+To supplement the sample plot conditioned on class $7$ in \Cref{subfig:mnist-class-sample}, we present samples conditioned on each of the remaining 9 classes and from other methods. We observe that samples from Gradient Guidance have noticeable artifacts, whereas the other 4 methods produce authentic and
+correct digits. However, most samples from IS or TDS-IS are identical due to the collapse of importance weights. By contrast, samples from
+TDS and TDS-truncate have greater diversity, with the latter exhibiting slightly more variations
+%These results exhibit the same characteristics of relative diversity and quality discussed in \Cref{subsec:exp-mnist}.
+
+\begin{figure}
+  \centering
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label0-P64-resampleP16-showmethodnameFalse.pdf}     
+\end{subfigure}\hfill 
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label1-P64-resampleP16-showmethodnameFalse.pdf}     
+\end{subfigure}\hfill 
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label2-P64-resampleP16-showmethodnameFalse.pdf}     
+\end{subfigure}\hfill 
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label3-P64-resampleP16-showmethodnameFalse.pdf}     
+\end{subfigure}\hfill 
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label4-P64-resampleP16-showmethodnameFalse.pdf}     
+\end{subfigure}\hfill 
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label5-P64-resampleP16-showmethodnameFalse.pdf}     
+\end{subfigure}\hfill 
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label6-P64-resampleP16-showmethodnameFalse.pdf}     
+\end{subfigure}\hfill 
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label8-P64-resampleP16-showmethodnameFalse.pdf}     
+\end{subfigure}\hfill 
+  \begin{subfigure}[t]{0.75\linewidth}
+    \centering
+   \includegraphics[width=\textwidth]{sections/figures/mnist-class/classifier-guidance-sample-comparision-label9-P64-resampleP16-showmethodnameTrue.pdf}     
+\end{subfigure}\hfill 
+\caption{MNIST class-conditional generation. 16 randomly chosen conditional samples from 64 particles in a single run, given class $y$. From top to bottom, $y=0,1,2,3,4,5,6,8,9$. }
+\end{figure}
+
+\begin{figure}[t]
+\begin{subfigure}[t]{\linewidth}
+    \centering
+    \includegraphics[width=0.9\linewidth]{sections/figures/mnist-class/sampler-comparison.pdf}
+    \caption{Classification accuracy (measured by the neural network classifier) v.s. number of particles $K$, under different twist scales. Results are averaged over 1{,}000 random runs with error bands indicating 2 standard errors. Across the panels we see that for all the methods, the larger the twist scale (i.e.\ the darker the line color), the higher the classification accuracy. For TDS and TDS-IS, this improvement is more significant for smaller value of $K$,}
+    \label{subfig:cg-twist-scale-classifier}
+    \end{subfigure}
+\begin{subfigure}[t]{\linewidth}
+    \centering
+    \includegraphics[width=0.6\linewidth]{sections/figures/mnist-class/sampler-comparison-human-rated.pdf}
+    \caption{Human-rated classification accuracy v.s. twist scale, for TDS ($K= 64, 2$), TDS-IS ($K= 64, 2$) and Gradient Guidance. Results are averaged over 640 randomly chosen samples with error bands indicating 2 standard errors. For TDS ($K=64$), increasing the twist scale generally decreases the human-rated accuracy.  For remaining methods, a moderate increase in twist scale improves the human-rated accuracy; however, excessively large twist scale can hurt the accuracy.}
+    \label{subfig:cg-twist-scale-human}    
+\end{subfigure}
+    \caption{MNIST class-conditional generation: classification accuracy under different twist scales, computed by a neural network classifier (top panel) and a human (bottom panel).}
+    \label{fig:cg-twist-scale}
+\end{figure}
+
+
+\begin{figure}[tp]
+\begin{subfigure}[t]{0.95\linewidth}
+    \centering
+    \includegraphics{sections/figures/mnist-class/twist-scale-comparision-tsmc-label6-P64.pdf}
+    \caption{TDS ($K=64$). \# of good-quality samples counted by human is 62, 61, 63, 60, 62, from left to right.}
+    % number of artifacts 2, 3, 1, 4, 2
+    \label{subfig:twist-scale-sample-TDS-K64}
+\end{subfigure}
+\begin{subfigure}[t]{0.95\linewidth}
+    \centering
+    \includegraphics{sections/figures/mnist-class/twist-scale-comparision-tsmc-label6-P2.pdf}
+    \caption{TDS ($K=2$). \# of good-quality samples counted by human 49, 51, 51,  46, 45, from left to right.}
+    % number of artifacts 15, 13, 13, 18, 19
+    \label{subfig:twist-scale-sample-TDS-K2}
+\end{subfigure}
+\begin{subfigure}[t]{0.95\linewidth}
+    \centering
+    \includegraphics{sections/figures/mnist-class/twist-scale-comparision-tsis-label6-P64.pdf}
+    \caption{TDS-IS ($K=64$). \# of good-quality samples counted by a human is 62, 61, 64, 64, 61, from left to right.}
+    % number of artifacts 2, 3, 0, 0, 3
+    \label{subfig:twist-scale-sample-TDS-IS-K64}
+\end{subfigure}
+\begin{subfigure}[t]{0.95\linewidth}
+    \centering
+    \includegraphics{sections/figures/mnist-class/twist-scale-comparision-tsis-label6-P2.pdf}
+    \caption{TDS-IS ($K=2$). \# of good-quality samples counted by a human is 49, 52, 53, 52, 48, from left to right.}
+    % number of artifacts   15, 12, 11, 12, 16 
+    \label{subfig:twist-scale-sample-TDS-IS-K2}
+\end{subfigure}
+\begin{subfigure}[t]{0.95\linewidth}
+    \centering
+    \includegraphics{sections/figures/mnist-class/twist-scale-comparision-guidance-label6-P2.pdf}
+    \caption{Gradient Guidance. \# of good-quality samples counted by a human is 31, 38, 41, 39, 34, from left to right.}
+    % number of artifacts 33,26,23,25,30
+    \label{subfig:twist-scale-sample-guidance}
+\end{subfigure}
+
+\caption{MNIST class-conditional generation: random samples selected from 64 random runs conditioned on class 6 under different twist scales. Top to bottom: TDS ($K=64$), TDS ($K=2$), TDS-IS ($K=64$), TDS-IS ($K=2$) and Gradient Guidance. In general, moderately large twist scales improve the sample quality. However, overly large twist scale (e.g. 10) would distort the digit shape with more artifacts, though retaining useful features that may allow a neural network classifier to identity the class.}
+\label{fig:cg-twist-scale-samples}
+\end{figure}
+
+
+\paragraph{Ablation study on twist scales.} We consider exponentiating and re-normalizing twisting functions by a \emph{twist scale} $\gamma$, i.e. setting new twisting functions to $\pmodelapprox (y \mid \xt; \gamma) \propto \plikelihood{y}{\denoiser(\xt)}^\gamma$. In particular, when $t=0$, we set $\plikelihood{y}{ \xzero;\gamma}   \propto \plikelihood{y }{\xzero}^\gamma$. This modification suggests that the targeted conditional distribution is now  
+\begin{align}
+    \pmodel (\xzero \mid y; \gamma) \propto \pmodel( \xzero ) \plikelihood{y}{\xzero}^\gamma . 
+\end{align}
+By setting $\gamma > 1$, the classification likelihood becomes sharper, which is potentially helpful for twisting the samples towards a specific class. 
+The TDS algorithm (and likewise TDS-IS and Gradient Guidance) still apply with this new definition of twisting functions.
+The use of twist scale is similar to the \emph{guidance scale} introduced in the literature of Classifier Guidance, which is used to multiply the gradient of the log classification probability \citep{dhariwal2021diffusion}. 
+
+
+In \Cref{fig:cg-twist-scale}, we examine the effect of varying twist scales on classification accuracy of TDS, TDS-IS and Gradient Guidance. We consider two ways to evaluate the accuracy. First, \emph{classification accuracy} computed by a \emph{neural network classifier}, where the evaluation setup is the same as in \Cref{subsec:exp-mnist}. Second, the \emph{human-rated} classification accuracy, where a human (one of the authors) checks if a generated digit has the right class and does not have artifacts. 
+Since human evaluation is expensive, we only evaluate TDS, TDS-IS (both with $K= 64, 2$) and Gradient Guidance. In each  run, we randomly sample one particle out of $K$ particles according to the associated weights. We conduct 64 runs for each class label, leading to a total of 640 samples for human evaluation.
+
+
+\Cref{subfig:cg-twist-scale-classifier} depicts the classification accuracy measured by a neural network classifier. We observe that in general larger twist scale improves the classification accuracy. For TDS and TDS-IS, the improvement is more significant for smaller number of particles $K$ used. 
+
+\Cref{subfig:cg-twist-scale-human} depicts the human-rated accuracy. In this case, we find that larger twist scale is not necessarily better. A moderately large twist scale ($\gamma=2,3$) generally helps increasing the accuracy, while an excessively large twist scale ($\gamma =10$) decreases the accuracy. An exception is TDS with $K=64$ particles, where any $\gamma >1$ leads to worse accuracy compared to the case of $\gamma=1$.  Study on twist scale aside, we find that using more particles $K$ help improving human-rated accuracy (recall that Gradient Guidance is a special case of TDS with $K=1$): given the same twist scale, TDS with $K=1,2$ or 64 has increasing accuracy.  In addition, both TDS and TDS-IS with $K=64$ and $\gamma=1$ have almost perfect accuracy. The effect of $K$ on human-rated accuracy is consistent with previous findings with neural network classifier evaluation in \Cref{subsec:exp-mnist}. 
+
+We note that there is a discrepancy on the effects of twist scales between neural network evaluation and human evaluation. We suspect that when overly large twist scale is used, the generated samples may fall out of the data manifold; however, they may still retain features recognizable to a neural network classifier, thereby leading to a low human-rated accuracy but a high classifier-rated accuracy. To validate this hypothesis, 
+we present samples conditioned on class 6 in \Cref{fig:cg-twist-scale-samples}. For example, in \Cref{subfig:twist-scale-sample-guidance},  Gradient Guidance with $\gamma=1$ has 31 good-quality samples out of 64, and the rest of the samples often resamble the shape of other digits, e.g. 3,4,8; and Gradient Guidance with $\gamma=10$ has 34 good-quality samples, but most of the remaining samples resemble 6 with many artifacts. 
+
+\paragraph{Effective sample size.} Effective sample size (ESS) is a common
+metric used to diagnose the performance of SMC samplers, which is defined as 
+ $ (\sum_{k=1}^K \dt{w}{t}_k)^2 / (\sum_{k=1}^K (\dt{w}{t}_k)^2 )$ for $K$ weighted particles  $\{\xt_k, \dt{w}{t}_k\}_{k=1}^K$. 
+Note that ESS is always bounded between $0$ and $K$.
+
+\Cref{fig:mnist-class-ess} depicts the ESS trace comparison of TDS, TDS-IS, and IS. TDS has a general upward trend of ESS approaching $K = 64$. Though in the final few steps ESS of TDS drops by a half, it is still higher than that of TDS-IS and IS that deteriorates to around 1 and 6 respectively. In practice, one can use the TDS-truncate variant introduced above to avoid the ESS drop in the final few steps. 
+
+\begin{figure}
+\centering
+ %   \begin{subfigure}[t]{0.46\linewidth}
+  %  \centering
+    \includegraphics[width=0.4\textwidth]{sections/figures/mnist-class/class-ess-legendTrue.pdf}
+      \caption{ESS trace avg. over 100 runs ($K=64$)}%for SMC-based methods averaged over 100 runs.}
+      \label{fig:mnist-class-ess}
+  %\end{subfigure}%\hfill 
+  %\caption{Caption}
+  %  \label{fig:class-cond-ess-all}
+\end{figure}
+
+
+\subsubsection{Image inpainting on MNIST}
+\label{supp:subsubsec:mnist-inpainting}
+The inpainting task is to sample images from $\pmodel(\xzero \mid \xzero_\mask=y)$ given observed part $\xzero_\mask = y$. Here we segment $\xzero=[\xzero_\mask, \xzero_\umask]$ into observed dimensions $\mask$ and unobserved dimensions $\umask$, 
+as described in  \Cref{subsec:conditioning-problems}. 
+
+In this experiment, we consider two types of observed dimensions: (1) $\mask$ = ``half'', where the left half of an image is observed, and (2) $\mask$ = ``quarter'', where the upper left quarter of an image is observed. 
+
+We run TDS, TDS-IS, Gradient Guidance,  SMC-Diff, and Replacement method to inpaint 10{,}000 validation images. We also include TDS-truncate that truncates the TDS procedure at $t = 10$ and returns $\denoiser(\dt{x}{10})$. 
+ 
+%Similar to the class-conditional generation task, we can use a twist scale to exponentiate the twisting functions. In the inpainting case, it is equivalent to changing the variance of the twisting function   in \cref{eqn:inpaint_twist} by $\gamma_t$. Denote the new variance by $\tilde \gamma_t$. By default TDS sets $\tilde \gamma_t := (\tilde \sigma_t^2 \tau^2)/(\tilde \sigma_t^2 + \tau^2)$, where $\tilde \sigma_t^2:=(1-\bar \alpha_t)/\bar \alpha_t$ and $\tau^2=0.12$ is the population variance of $\xzero$ estimated from training data. 
+
+
+\paragraph{Twisting function variance schedule.} We use a flexible variance schedule $\{\hat \sigma_t^2\}$ to extend the twisting functions in \cref{eqn:inpaint_twist} to  
+\begin{align}
+ \pTwist (y \mid \xt, \mask) &\coloneqq \mathcal{N}(y \mid \denoiser(\xt)_\mask, \hat \sigma_t^2). 
+\end{align}
+Ideally, $\hat \sigma_t^2$ should match $\Var_{\pmodel} [y \mid \xt, \mask]$. In TDS, we choose $\hat \sigma_t^2 = \frac{ (\bar \sigma_t^2 / \bar \alpha_t ) \cdot \tau^2}{ \bar \sigma_t^2 / \bar \alpha_t + \tau^2}$ where $\tau^2 = 0.12$  is the estimated sample variance of the training data (averaged over pixels). This choice is inspired from \citet[Appendix A.3]{song2023pseudoinverse}: if the data distribution is $q(\xzero) = \mathcal{N}(0, \tau^2)$, and $q(\xt \mid \xzero) = \mathcal{N}(\xt \mid \sqrt{\bar \alpha_t} \xzero, \sigma_t^2)$, then by Bayes rule $\Var_q[\xzero \mid \xt] =  \frac{ (\bar \sigma_t^2 / \bar \alpha_t ) \cdot \tau^2}{ (\bar \sigma_t^2 / \bar \alpha_t) + \tau^2}$. 
+
+Changing $\hat \sigma_t^2$ has a similar effect as using a twist scale to exponentiate the twisting functions in \Cref{supp:subsubsec:mnist-class}. In particular, for a Gaussian distribution, exponentiating the distribution corresponds to re-scaling the variance: $\mathcal{N}(x\mid \mu, (\sigma/\sqrt{\gamma})^2)  \propto \mathcal{N}(x\mid \mu, \sigma^2)^{\gamma}$.
+
+
+
+
+%By default TDS sets $\tilde \gamma_t := (\tilde \sigma_t^2 \tau^2)/(\tilde \sigma_t^2 + \tau^2)$, where $\tilde \sigma_t^2:=(1-\bar \alpha_t)/\bar \alpha_t$ and $\tau^2=0.12$ is the population variance of $\xzero$ estimated from training data. 
+
+
+
+
+\paragraph{Metrics.} We consider 3 metrics. (1) We use the effective sample size (ESS) to compare the particle efficiency among different SMC samplers (namely TDS, TDS-IS, and SMC-Diff).
+
+(2) In addition, we ground the performance of 
+a sampler in the downstream task of classifying a partially observed image $\xzero_\mask = y$: we use a classifier to predict the class $\hat z$ of an inpainted image $\xzero$, and compute the accuracy against the true class $z^*$ of the unmasked image ($z^*$ is provided in MNIST dataset). This prediction is made by the same classifier used in \Cref{subsec:exp-mnist}. 
+
+Consider $K$ weighted particles $\{ \xzero_k; \dt{w}{0}_k\}_{k=1}^K$ drawn from a sampler conditioned on $\xzero_\mask = y$ and assume the weights are normalized. 
+%Notice that $ \sum_{k=1}^K \dt{w}{0}_k\delta_{\xzero_k} (\xzero) \approx \pmodel(\xzero_0\mid \xzero_\mask = y)$. This observation motivates us to define a metric, 
+We define the \emph{Bayes accuracy} (BA) as 
+\begin{align}\label{eq:BA}
+    \mathds{1} \left\{ \hat z(y)= z^* \right\}, \quad  
+   \mathrm{ with } \quad \hat z (y): = \argmax_{z=1:10} \sum_{k=1}^K \dt{w}{0}_k p(z;\xzero_k),  
+\end{align}
+where $\hat z(y)$ is viewed as an approximation to the Bayes optimal classifier $\hat z^* (y)$ given by 
+\begin{align}\label{eq:bayes_opt_classifier}
+\begin{split}
+    \hat z^*(y) & := \argmax_{z=1:10} \pmodel(z \mid \xzero_\mask = y) = \argmax_{z=1:10} \int \pmodel(\xzero \mid \xzero_\mask = y) p(z;  \xzero )d\xzero.
+\end{split}
+\end{align}
+(In \cref{eq:bayes_opt_classifier} we assume the classifier $\plikelihood{\cdot}{\xzero}$ is the optimal classifier on full images.)
+
+(3) We also consider \emph{classification accuracy} (CA) defined as the following 
+\begin{align}\label{eq:CA}
+    \sum_{k=1}^K \dt{w}{0}_k \mathds{1} \{ \hat z(\xzero_k) = z^*\}, \quad \mathrm{ with } \quad \hat z(\xzero_k) := \argmax_{z=1:10} \plikelihood{z}{\xzero_k}. 
+\end{align}
+
+ BA and CA evaluate different aspects of a sampler. BA is focused on the optimal prediction among multiple particles, whereas CA is focused on the their weighted average prediction. 
+
+%Note that Guidance and Replacement with $K$ independent samples can be viewed as $K$ particles with uniform weights. Their CA is independent of $K$ in expectation which we use $K=64$ to estimate, and their BA is usually dependent on $K$. 
+
+\begin{figure}[t]
+\begin{subfigure}[t]{0.27\linewidth}
+    \centering
+    \includegraphics[width=1.0\linewidth]{sections/figures/mnist-inpainting/inpainting-half-ess-includeISFalse-includet0False.pdf}
+    \caption{$\mask$ = ``half''. ESS trace.}
+    \label{subfig:mnist-inpainting-ess-half}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.7\linewidth}
+    \centering
+    \includegraphics[width=1.0\linewidth]{sections/figures/mnist-inpainting/inpainting-half-accuracy-includeISFalse.pdf}
+    \caption{$\mask$ = ``half''. Class. accuracy (left), and Bayes accuracy (right) v.s. $K$.}
+    \label{subfig:mnist-inpainting-accuracy-half} 
+    \end{subfigure}\hfill 
+\begin{subfigure}[t]{0.27\linewidth}
+    \centering
+    \includegraphics[width=1.0\linewidth]{sections/figures/mnist-inpainting/inpainting-quarter-ess-includeISFalse-includet0False.pdf}
+     \caption{$\mask$ = ``quarter''. ESS trace.}
+     \label{subfig:mnist-inpainting-ess-quarter}
+\end{subfigure}\hfill
+\begin{subfigure}[t]{0.7\linewidth}
+    \centering
+    \includegraphics[width=1.0\linewidth]{sections/figures/mnist-inpainting/inpainting-quarter-accuracy-includeISFalse.pdf}
+    \caption{$\mask$ = ``quarter''. Class. accuracy (left), and Bayes accuracy (right) v.s.  $K$.}
+    \label{subfig:mnist-inpainting-accuracy-quarter} 
+    \end{subfigure}
+\caption{MNIST image inpainting. Results for observed dimension $\mask$ = ``half'' are shown in the top panel, and $\mask$ = ``quarter'' in the bottom panel.  
+(i) Left column: ESS traces are averaged over 100 different images inpainted by TDS, TDS-IS, and SMC-Diff, all with $K=64$ particles. 
+ TDS's ESS is generally increasing untill the final 20 steps where it drops to around 1, suggesting significant particle collapse in the end of generation trajectory. TDS-IS's ESS is always around 1. SMC-Diff has higher particle efficiency compared to TDS. 
+(ii) Right column: Classification accuracy and Bayes accuracy are averaged over 10{,}000 images.
+In general increasing the number of particles $K$ would improve the performance of all samplers. TDS and TDS-truncate have the highest accuracy among all given the same $K$. 
+(iii) Finally, comparison of top and bottom panels shows that in a harder inpainting problem where $\mask$ = ``quarter'', TDS's has a higher ESS but lower CA and BA. }
+\label{fig:mnist-inpaiting-ess-and-class-accuracy}
+\end{figure}
+
+\paragraph{Comparison results of different methods.}
+\Cref{fig:mnist-inpaiting-ess-and-class-accuracy} depicts the ESS trace, BA and CA for different samplers. 
+The overall observations are similar to the observations in the class-conditional generation task in \Cref{subsec:exp-mnist}, except that SMC-Diff and Replacement methods are not available there.  
+
+Replacement has the lowest CA and BA across all settings. Comparing TDS to SMC-Diff, we find that SMC-Diff's ESS is consistently greater than TDS; however, SMC-Diff is outperformed by TDS in terms of both CA and BA. 
+
+We also note that despite Gradient Guidance's CA is lower,  its BA is comparable to TDS. This result is due to that as long as Gradient Guidance generates a few good-quality samples out of $K$ particles, the optimal prediction can be accurate, thereby resulting in a high BA.  
+
+
+\begin{figure}[t]
+\begin{subfigure}[t]{\linewidth}
+        \centering
+    \includegraphics[width=0.9\linewidth]{sections/figures/mnist-inpainting/comparison_inpainting_half_pred_accuracy.pdf}
+    \caption{$\mask$ = ``half''. Classification accuracy under different twist scale schemes.}
+    \label{subfig:mnist-inpainting-twist-scale-mask-half}
+\end{subfigure}
+\begin{subfigure}[t]{\linewidth}
+        \centering
+    \includegraphics[width=0.9\linewidth]{sections/figures/mnist-inpainting/comparison_inpainting_quarter_pred_accuracy.pdf}
+    \caption{$\mask$ = ``quarter''. Classification accuracy under different twist scale schemes.}
+    \label{subfig:mnist-inpainting-twist-scale-mask-quarter}
+\end{subfigure}
+\caption{MNIST image inpainting: Ablation study on twist scales. Top: observed dimensions $\mask$ = ``half''. Bottom: $\mask$ = ``quarter''. In most case, the performance of our choice of twist scale is similar to that of $\Pi$GDM, and is better compared to DPS.}
+\label{fig:mnist-inpainting-twist-scale}
+\end{figure}
+
+\paragraph{Ablation study on twisting function variance schedule.}
+We compare the following three options: 
+\begin{enumerate}
+    \item DPS: $\hat \sigma_t:= 2\| \denoiser(\xt)_{\mask} - y\|_2 \sigma_t^2$, adapted from the DPS method \citep[Algorithm 1]{chung2022diffusion}, 
+    \item $\Pi$GDM: $\hat \sigma_t:=\sigma_t^2  / \sqrt{\bar \alpha_t}$, adapted from  the $\Pi$GDM method  \citep[Algorithm 1]{song2023pseudoinverse},  
+    \item TDS: $\hat \sigma_t^2 = \frac{ (\bar \sigma_t^2 / \bar \alpha_t ) \cdot \tau^2}{ (\bar \sigma_t^2 / \bar \alpha_t) + \tau^2}$ where $\tau^2 = 0.12$. 
+\end{enumerate}
+
+\Cref{fig:mnist-inpainting-twist-scale} shows the classification accuracy of TDS, TDS-IS and Gradient Guidance with different twist scale schemes.  We find that our choice  has similar performance to that of $\Pi$GDM, and outperforms DPS in most cases. Exceptions are when $\mask$ = ``quarter'' and for large $K$, TDS with twist scale choice of $\Pi$GDM or DPS has higher CA, as is shown in the left panel in  \Cref{subfig:mnist-inpainting-twist-scale-mask-quarter}.
+
+
+\subsubsection{Class-conditional generation on ImageNet and CIFAR-10}
+\label{supp:subsubec:inet-and-cifar}
+
+
+\paragraph{ImageNet.} We compare TDS (with \# of particles $K=1,16$) to Classifier Guidance (CG) using the same unconditional model from \url{https://github.com/openai/guided-diffusion/tree/main}. CG uses a classifier trained on noisy inputs taken from this repository as well. For TDS, we use the same classifier evaluated at timestep = 0 to mimic a standard trained classifier. We generate 16 images for each of the 1000 class labels, using 100 sampling steps. TDS uses a twist scale of 10, and CG uses a guidance scale of 10. Notably, given a fixed class, TDS ($K=16$) generates correlated samples in a single SMC run, and TDS ($K=1$) and CG generate 16 independent samples. 
+
+
+In \Cref{fig:inet1}, we observe that TDS can faithfully capture the class and have comparable image quality to CG’s , although with less diversity than CG and TDS ($K=1$). 
+
+\Cref{fig:inet-comparison} shows more samples given randomly selected classes. We also reported results of the unconditional model from the original paper \citep{dhariwal2021diffusion} that are evaluated on 50k samples with 250 sampling steps in \Cref{tab:inet-comparison}. TDS and CG provide similar classification accuracy. TDS has similar FIDs compared to the unconditional model and better inception score. CG’s FID and inception score are better than TDS. We suspect this difference is attributed to the sample correlation (and hence less diversity) within particles in a single run of TDS ($K=16$).
+
+
+\begin{figure}
+    \centering
+    
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/inet-samples/tds-samples-10-brambling__Fringilla_montifringilla.png}}
+        \caption{TDS (P=16)}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/inet-samples/tdsg-samples-10-brambling__Fringilla_montifringilla.png}}
+        \caption{TDS (P=1)}
+    \end{subfigure}
+    \begin{subfigure}{0.3\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/inet-samples/gd-samples-10-brambling__Fringilla_montifringilla.png}}
+        \caption{Classifier Guidance}
+    \end{subfigure}
+
+    \caption{256$\times$256 ImageNet. Samples from TDS and Classifier Guidance given class `brambling'.}
+    \label{fig:inet1}
+\end{figure}
+
+\begin{figure}
+    \centering
+    \includegraphics[scale=0.1]{sections/figures/inet-and-cifar10/inet-samples/samples-989-212-883-869-15-558-276-71-544-613-690-443-731-130-763.png}
+    \caption{256$\times$256 ImageNet. 15 random class samples. Top to bottom: TDS(P=16), TDS(P=1), Classifier Guidance.}
+    \label{fig:inet-comparison}
+\end{figure}
+
+\input{sections/figures/inet-and-cifar10/inet_comparison}
+
+
+
+\paragraph{CIFAR-10.} We ran TDS ($K=16$) with the twist scale = 1 and 100 sampling steps using diffusion model from \url{https://github.com/openai/improved-diffusion} and classifier from \url{https://github.com/VSehwag/minimal-diffusion/tree/main}. TDS generates faithful and diverse images, see \Cref{fig:cifar}. However, we found TDS can occasionally generate incorrect samples for the class ‘truck’ (the last panel in \Cref{fig:cifar}).
+
+
+
+\begin{figure}[!t]
+    \centering
+    
+    \begin{subfigure}{0.15\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/cifar10-samples/sample_label0_iter260.png}}
+        \caption{airplane}
+    \end{subfigure}
+    \begin{subfigure}{0.15\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/cifar10-samples/sample_label4_iter324.png}}
+        \caption{deer}
+    \end{subfigure}
+    \begin{subfigure}{0.15\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/cifar10-samples/sample_label7_iter327.png}}
+        \caption{horse}
+    \end{subfigure}
+    \begin{subfigure}{0.15\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/cifar10-samples/sample_label8_iter448.png}}
+        \caption{ship}
+    \end{subfigure}
+    \begin{subfigure}{0.15\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/cifar10-samples/sample_label9_iter219.png}}
+        \caption{truck}
+    \end{subfigure}
+    \begin{subfigure}{0.15\textwidth}
+        \includegraphics[width=\linewidth]{\detokenize{sections/figures/inet-and-cifar10/cifar10-samples/sample_label9_iter439.png}}
+        %\label{subfig:truck-failure-mode}
+        \caption{failure mode}
+    \end{subfigure}
+
+    \caption{CIFAR10. Samples from TDS with $K=16$  particles given different class labels (within a single SMC run). In most cases TDS generate authentic and diverse images. The last panel presents a failure mode for the class `truck'.}
+    \label{fig:cifar}
+\end{figure}
+
+Finally, we present the ESS trace plot of the three image datasets in \Cref{fig:ess-all}. We see there is a sudden ESS drop in the final stage for MINST, sometimes for CIFAR10, but usually not on ImageNet. Mechanically, the drop in ESS implies a large discrepancy between the final and intermediate target distributions. We suspect such discrepancies might arise from irregularities in the denoising network near $t=0$. In practice, one can consider early truncating the TDS procedure to prevent such ESS drops and promote particle diversity, as is studied in \Cref{supp:subsubsec:mnist-class,supp:subsubsec:mnist-inpainting}. 
+
+
+
+\begin{figure}[!t]
+        \centering
+        \includegraphics[width=0.9\linewidth]{sections/figures/inet-and-cifar10/ESS_mnist_cifar_inet.pdf}
+        \caption{2 example effective sample size traces of TDS ($K=16$, 100 sampling steps) on MNIST, CIFAR-10 and ImageNet models, respectively.}
+        \label{fig:ess-all}
+\end{figure}
+
+
+
+
+\input{appendix/supp_results_proteins}

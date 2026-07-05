@@ -1,0 +1,17 @@
+\section{Discussion}\label{sec:discussion}
+\ifnum \workshopsubmission=0
+We propose TDS, a practical and asymptotically exact conditional sampling algorithm for diffusion models. 
+We compare TDS to other approaches and demonstrate the effectiveness and flexibility of TDS on image class conditional generation and inpainting tasks. 
+On protein motif-scaffolding problems with short scaffolds, TDS outperforms the current (conditionally trained) state of the art. 
+\fi
+
+A limitation of TDS is its requirement for  additional computes to simulate multiple particles.
+While we observe improved performance with just two particles in some cases, the optimal number is problem dependent.
+Moreover, the computational efficiency depends on how closely the twisting functions approximate exact conditionals,
+which depends on the unconditional model and conditioning information.
+Lastly, choosing twisting functions for generic constraints may be challenging.
+Our future work will focus on addressing these limitations and improving the computational efficiency. 
+
+%Future works include extensions 
+%to large-scale image models and improvements on protein applications. In particular, the latter involves experimenting with a stronger unconditional protein model, and exploring the use of conditionally trained diffusion models as effective proposals for the SMC procedure. 
+%Furthermore, there is a potential for exploring TDS's applications to compositional conditional tasks. 

@@ -1,0 +1,51 @@
+\section{Background: Diffusion models and sequential Monte Carlo}\label{sec:background}
+
+
+%Our goal in this work is to sample from the conditional distribution of a fitted diffusion model $\pmodel (\xzero)$ given some conditioning information $y$, i.e. to sample from \begin{align}    \pmodel (\xzero |y) &\propto \pmodel (\xzero ) \plikelihood{y}{\xzero}\end{align}where $\plikelihood{y}{\xzero}$ is a pre-specified conditional likelihood model. 
+
+\textbf{Diffusion models.} 
+A diffusion model generates a data point $\xzero$ by iteratively refining a sequence of noisy data $\xt$, starting from pure noise $\xT$.
+This procedure parameterizes a distribution of $\xzero$ as the marginal of a length $T$ Markov chain
+\vspace{-0.5em}
+\begin{equation}\label{eqn:diffusion_marginal}
+        \pmodel(\xzero)=\int p (\xT) \prod_{t=1}^T \pmodel(\xtmo  \mid \xt)d \dt{x}{1:T},
+\end{equation}
+where $p(\xT)$ is an easy-to-sample noise distribution,
+and each $\pmodel(\xtmo \mid \xt)$ is the transition distribution defined by the $(T-t)^\mathrm{th}$ refinement step. 
+
+Diffusion models $\pmodel$ are fitted to match a data distribution $q (\xzero)$ from which we have samples.
+To achieve this goal, a \emph{forward process} $q(\xzero) \prod_{t=1}^{T} q(\xt\mid \xtmo)$ is set to gradually add noise to the data, where $q(\xt \mid \xtmo) = \mathcal{N} \left ( \xt; \xtmo ,  \sigma^2\right)$, and $\sigma^2$ is a positive variance.
+To fit a diffusion model, one finds $\theta$ such that $p_\theta(\xtmo \mid \xt) \approx q(\xtmo\mid \xt)$, which is the reverse conditional of the forward process.
+If this approximation is accomplished for all $t$, and if $T\sigma^2$ is big enough that $q(\xT)$ may be approximated as $q(\xT)\approx \mathcal{N}(0, T\sigma^2)=: p(\xT)$, then we will have $\pmodel(\xzero) \approx q(\xzero)$.
+% Note the marginal conditional is given by $q(\xt \mid \xzero) \sim \mathcal{N}(\xt ; \xzero, \bar \sigma_t^2),$ for $\bar \sigma_t^2:= \sum_{t^\prime=1}^T \sigma_{t^\prime}^2.$
+% Note that if (1) the $\bar \sigma_T$ is large enough such that $q(\xT \mid \xzero) \approx \mathcal{N}(\xT ; 0, \bar \sigma_T^2)$ we can choose $p(\xT)=\mathcal{N}(\xT ; 0, \bar \sigma_T^2),$ and 
+% (2) $\pmodel(\xt \mid \xtpo) \approx q(\xt \mid \xtpo)$ for every $t=0, 1, \dots, T-1,$ then $\pmodel(\xzero)\approx q(\xzero).$
+%The key idea behind fitting a diffusion model is to note that  if (1) the $\sigma_t$'s are large enough, $$q(\xT \mid \xzero) \sim \mathcal{N}(\xT ; \xzero, \bar \sigma_T^2)\approx \mathcal{N}(\xT ; 0, \bar \sigma_T^2), \footnote{Note that the dependence on $\xzero$ is lost for large enough $t.$ E.g. $\lim_{\bar\sigma^2 \rightarrow \infty} d_{TV}\left(\mathcal{N}(\xzero, \bar \sigma^2), \mathcal{N}(0, \bar \sigma^2)\right)= 0$.} $$ so we can choose $p(\xT)=\mathcal{N}(\xT ; 0, \bar \sigma_T^2),$ and  (2) $\pmodel(\xt \mid \xtpo) \approx q(\xt \mid \xtpo)$ for every $t=0, 1, \dots, T-1,$ then $\pmodel(\xzero)\approx q(\xzero).$
+
+In particular, when $\sigma^2$ is small enough 
+%if $\sigma_t^2$ is much smaller than $\bar \sigma_t^2 := \sum_{t^\prime=1}^t \sigma_{t^\prime}^2$ 
+then the reverse conditionals of $q$ are approximately Gaussian,
+\begin{align}\label{eq:q_reverse_conditional}
+\begin{split}
+q(\xtmo \mid \xt) 
+    &\approx \mathcal{N}\left(\xtmo; \xt + \sigma^2\nabla_{\xt} \log q(\xt), \sigma^2 \right),
+\end{split}
+\end{align}
+where $q(\xt)=\int q(\xzero) q(\xt \mid \xzero) d\xzero$ and $\nabla_{\xt} \log q(\xt)$ is known as the (Stein) score \citep{song2020score}.
+To mirror \cref{eq:q_reverse_conditional}, diffusion models parameterize $\pmodel(\xtmo \mid \xt)$ via a \emph{score network} $\scoremodel(\xt, t)$
+\begin{align}\label{eq:unconditional-diffusion-transition}
+    \pmodel(\xtmo \mid \xt) := \mathcal{N}\left(
+    \xtmo;\xt   +  \sigma^2 \scoremodel(\xt, t),\sigma^2 \right). 
+\end{align}
+When $\scoremodel (\xt, t)$ is trained to approximate $ \nabla_{\xt} \log q(\xt )$, we have $\pmodel(\xtmo \mid \xt) \approx q(\xtmo \mid \xt)$. 
+
+Notably, approximating the score is equivalent to learning a \emph{denoising} neural network $\denoiser (\xt, t)$ to approximate $\E_q[\xzero \mid \xt]$. 
+The reason is that by Tweedie's formula \citep{efron2011tweedie,robbins1992empirical} $\nabla_{\xt}\log q(\xt) = (\E_q[\xzero \mid \xt] - \xt)/t\sigma^2$ 
+and one can set $\scoremodel(\xt,t):=  (\denoiser (\xt,t)- \xt)/t\sigma^2$. 
+The neural network $\denoiser (\xt,t)$ may be learned by denoising score matching (see \citep[e.g.][]{ho2020denoising,vincent2011connection}). 
+For the remainder of paper we drop the argument $t$ in $\denoiser$ and  $\scoremodel$ when it is clear from context. 
+
+\Cref{sec:supp_method} generalizes the formulation above to diffusion process formulations that are commonly used in practice.
+
+\input{sections/smc_background}
+

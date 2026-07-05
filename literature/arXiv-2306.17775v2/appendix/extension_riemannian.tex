@@ -1,0 +1,124 @@
+\section{Riemannian \methodname{}}\label{sec:riemannian}
+
+This section provides additional details on the extension of TDS to Riemannian diffusion models introduced in \Cref{sec:method}.
+We first introduce the tangent normal distribution.
+We then provide with background on Riemannian diffusion models, which we parameterize with the tangent normal.
+Then we describe the extension of TDS to these models.
+Finally we show how \Cref{alg:TDS} modifies to this setting.
+
+\paragraph{The tangent normal distribution.}
+Just as the Gaussian is the parametric family underlying Euclidean diffusion models in \Cref{eq:unconditional-diffusion-transition}, 
+the tangent normal (see e.g.\ \citep{chirikjian2014gaussian,deriemannian})
+underlies generation in Riemannian diffusion models so we review it here.
+
+We take the tangent normal to be the distribution is implied by a two step procedure.
+Given a variable $x$ in the manifold, the first step is to sample a variable $\bar y$ in $\mathcal{T}_{x},$ the tangent space at $x;$
+if $\{h_1, \dots, h_D\}$ is an orthonormal basis of $\mathcal{T}_{x}$
+one may generate
+\begin{align}
+    \bar y = \mu + \sum_{d=1}^D \sigma \epsilon_d \cdot h_d,
+\end{align}
+with $\epsilon_d\overset{i.i.d.}{\sim}\mathcal{N}(0, 1),$
+and $\sigma^2>0$ a variance parameter. 
+The second step is to project $\bar y$ back onto the manifold to obtain
+$y = \exp_{x}\{ \bar y\}$
+where $\exp_{x}\{ \cdot \}$ denotes the exponential map at $x.$ The resulting distribution of $y$ is denoted as $\mathcal{TN}_{x}(\mu, \sigma^2)$. 
+By construction, $\mathcal{T}_x$ is a Euclidean space with its origin at $x,$
+so when $\|\mu\|_2=0, \mathcal{TN}_{x}(\mu, \sigma^2)$ is centered on $x.$
+And since the geometry of a Riemannian manifold is locally Euclidean, when $\sigma^2$ is small
+the exponential map is close to the identity map and the tangent normal is essentially a narrow Gaussian distribution in the manifold at $x.$
+Finally, we use $\mathcal{TN}_{x}(y;\mu, \sigma^2)$ to denote the density of the tangent normal evaluated at $y$.
+
+Because this procedure involves a change of variables from $\bar y$ to $y$ (via the exponential map),
+to compute the tangent normal density one computes 
+\begin{equation}\label{eq:TN_density}
+    \mathcal{TN}_{x}(y;\mu, \sigma^2) = \mathcal{N}(\exp^{-1}_x\{y\}; \mu,  \sigma^2) \left| \frac{\partial}{\partial y} \exp_x^{-1}\{y\}\right|
+\end{equation}
+where $\exp_x^{-1}\{y\}$ is the inverse of the exponential map (from the manifold into $\mathcal{T}_x$), 
+and $\left| \frac{\partial}{\partial y} \exp_x^{-1}\{y\}\right|$ is the determinant of the Jacobian of the exponential map; when the manifold lives in a higher dimensional subset of $R,$ we take 
+$\left| \frac{\partial}{\partial y} \exp_x^{-1}\{y\}\right|$ to be the product of the positive singular values of the Jacobian.
+
+\paragraph{Riemannian diffusion models and the tangent normal distribution.}
+Riemannian diffusion models proceeds through a geodesic random walk \citep{deriemannian}.
+At each step $t,$
+one first samples a variable $\dt{\bar x}{t}$ in $\mathcal{T}_{\xtpo};$
+if $\{h_1, \dots, h_D\}$ is an orthonormal basis of $\mathcal{T}_{\xtpo}$
+one may generate
+\begin{align}
+    \dt{\bar x}{t}  =\sigma_{t+1}^2 s_\theta(\dt{x}{t+1})+ \sum_{d=1}^D \sigma_{t+1} \epsilon_d \cdot h_d,
+\end{align}
+with $\epsilon_d\overset{i.i.d.}{\sim}\mathcal{N}(0, 1).$
+One then projects $\dt{\bar x}{t}$ back onto the manifold to obtain
+$\xt = \exp_{\xtpo}\{ \dt{\bar x}{t}\}$
+where $\exp_{x}\{ \cdot \}$ denotes the exponential map at $x.$
+
+This is equivalent to sampling $\xt$ from a tangent normal distribution as 
+\begin{equation}\label{eqn:reverse_transition_unconditional_riemannian}
+    \dt{x}{t} \sim p(\dt{ x}{t} \mid \xtpo) = \mathcal{TN}_{\xtpo}\left(\dt{ x}{t};\sigma_{t+1}^2 s_\theta(\dt{x}{t+1}),
+\sigma_{t+1}^2 \right).
+\end{equation}
+
+\paragraph{TDS for Riemannian diffusion models.}
+To extend TDS, appropriate analogues of the twisted proposals and weights are all that is needed.
+For this extension we require that the diffusion model is also associated with a manifold-valued denoising estimate $\denoiser$ as will be the case when, for example, $\scoremodel(\xt, t) := \nabla_{\xt} \log q(\xt \mid \xzero=\denoiser)$ for $\denoiser = \denoiser(\xt, t).$
+In contrast to the Euclidean case, a relationship between a denoising estimate and a computationally tractable score approximation may not always exist for arbitrary Riemannian manifolds;
+however for Lie groups when the the forward diffusion is the Brownian motion, tractable score approximations do exist \citep[Proposition 3.2]{yim2023se}.
+
+For the case of positive and differentiable $\plikelihood{y}{\xzero},$ we again choose twisting functions $\twist(y\mid \xt):= \plikelihood{y}{\denoiser(\xt)}.$
+
+Next are the inpainting and inpainting with degrees of freedom cases.
+Here, assume that $\xzero$ lives on a multidimensional manifold (e.g.\ $SE(3)^N$)
+and the unmasked observation $y=\xzero_\mask$ with $\mask \subset \{1, \dots, N\}$ on a lower-dimensional sub-manifold (e.g.\ $SE(3)^{|\mask|},$ with $|\mask|<N$).
+In this case, twisting functions are constructed exactly as in \Cref{subsec:conditioning-problems}, 
+except with the normal density in \Cref{eqn:inpaint_twist} replaced with a Tangent normal as
+\begin{align}
+\twist(y\mid \xt) {=} \mathcal{TN}_{\denoiser(\xt)_\mask}( y ; 0, \bar \sigma_t^2).
+\end{align}
+
+For all cases, we propose the twisted proposal as
+\begin{equation}\label{eqn:likelihood_approx_riemannian_supp}
+    \pTwist(\dt{ x}{t} \mid \xtpo, y) {=} \mathcal{TN}_{\xtpo}\left(\dt{ x}{t};\sigma_{t+1}^2 s_\theta(\dt{x}{t+1}, y), \tilde\sigma_{t+1}^2 \right)
+\end{equation}
+%where $\bar y := \exp_{\denoiser(\dt{x}{t})_\umask}^{-1}(y)\in \mathcal{T}_{\denoiser(\dt{x}{t})_\umask}$ 
+%is $\dt{x}{0}$ mapped into $\mathcal{T}_{\denoiser(\dt{x}{t})}$ by the inverse of the exponential map at $\denoiser(\dt{x}{t})_\umask,$
+where as in the Euclidean case  $s_\theta(\dt{x}{t}, y)=s_\theta(\dt{x}{t}) + \nabla_{\dt{x}{t}} \log \tilde p(y \mid \dt{x}{t})$.
+
+
+Weights at intermediate steps are computed as in the Euclidean case (\Cref{eq:diffusion-twisted-weigthing-functions}): 
+%However, 
+%since the tangent normal includes a projection step back to the manifold, its density involves not only usual Gaussian density but also the Jacobian of the exponential map to account for the change of variables.
+%For example, in the case that the ambient dimension of the manifold and the tangent space are the same dimension,
+%$$
+%\mathcal{TN}_{x}(x^\prime;\mu, \sigma^2)= \mathcal{N}(\exp^{-1}_x\{x^\prime\}; \mu, \sigma^2)\left|\frac{\partial}{\partial x} \exp_x^{-1}\{x^\prime\}\right|,
+%$$
+%where $\exp^{-1}_x\{x^\prime\}$ is the inverse of the exponential map at $x$ from the manifold into $\mathcal{T}_x,$
+%and 
+%$\left|\frac{\partial}{\partial x} \exp_x^{-1}\{x^\prime\}\right|$ is the determinant of its Jacobian.
+%The weights are then computed as
+\begin{align}\label{eq:diffusion-twisted-weigthing-functions-riemannian}
+    \weight_t (\xt , \xtpo ):&= \frac{\pmodel (\xt \mid \xtpo) \twist(y \mid \xt)}{\twist(y \mid \xtpo) \pTwist(\xt \mid \xtpo, y)} \\
+    &= \frac{\mathcal{TN}_{\xtpo}(\xt; \sigma_{t+1}^2\scoremodel(\xtpo), \sigma_{t+1}^2) \twist(y \mid \xt)
+    }{\twist(y \mid \xtpo) \mathcal{TN}_{\xtpo}(\xt; \sigma_{t+1}^2\scoremodel(\xtpo, y), \tilde\sigma_{t+1}^2)}.
+\end{align}
+While the proposal and target contribute identical Jacobian determinant terms that cancel out, they remain in the twisting functions.
+
+
+\paragraph{Adapting the TDS algorithm to the Riemannian setting.}
+To translate the TDS algorithm to the Riemannian setting we require only two changes.
+
+The first is on \Cref{alg:TDS} 
+\Cref{alg_line:conditional_score}.
+Here we assume that the unconditional score is computed through the transition density function: 
+\begin{align}
+\scoremodel(\xtpo) := \nabla_{\xtpo} \log q_{t+1{|}0}(\xtpo\mid \denoiser) \quad \mathrm{\ for\ } \denoiser = \denoiser(\xtpo).
+\end{align}
+Note that the gradient above ignores the dependence of $\denoiser$ on $\xtpo$. 
+
+%\BLT{Is it clear that the gradient above ignores the dependence of $\denoiser$ on $\xt$?}
+The conditional score approximation in \Cref{alg_line:conditional_score} is then replaced with 
+$$
+\tilde s_k \leftarrow \pTwist (\cdot \mid \xtpo_k, y):= \nabla_{\xtpo_k} \log q_{t+1{|} 0}(\xtpo_k\mid \denoiser) + \nabla_{\xtpo_k} \log \tilde p_k^{t+1} \quad \mathrm{ \ for\  } \denoiser = \denoiser(\xtpo_k).
+$$
+Notably, $\tilde s_k$ is a $\mathcal{T}_{\xtpo_k}$-valued Riemannian gradient.
+
+The second change is to make the proposal on \Cref{alg:TDS} \Cref{alg_line:proposal} a tangent normal, as defined in \cref{eqn:likelihood_approx_riemannian_supp}.

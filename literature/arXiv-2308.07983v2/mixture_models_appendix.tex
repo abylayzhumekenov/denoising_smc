@@ -1,0 +1,532 @@
+\subsubsection{GMM}
+For a given dimension $\dimx$, we consider $\fwmarg{\mathrm{data}}{}$ a mixture of $25$ Gaussian random variables.
+The Gaussian random variables have mean $\boldsymbol{\mu}_{i, j} \eqdef (8i, 8j, \cdots, 8i, 8j) \in \rset^\dimx$ for $(i, j) \in \{-2, -1, 0, 1, 2\}^2$ and unit variance.
+The mixture (unnormalized) weights $\omega_{i, j}$ are independently drawn according to a $\chi^2$ distribution.
+The $\kappa$ paramater of \algo\ is $\kappa^2 = 10^{-4}$.
+We use $20$ steps of \ddim\ for the numerical examples and for all algorithms.
+\paragraph{Score:}
+Note that $\fwmarg{s}{\lstate_s} = \int \fwtrans{s|0}{\lstate_0}{\lstate_s}\fwmarg{\mathrm{data}}{\lstate_0} \rmd \lstate_0$. As $\fwmarg{\mathrm{data}}{}$ is a mixture of Gaussians, $\fwmarg{s}{\lstate_s}$ is also a mixture of Gaussians with means $\alpha_s^{1/2} \boldsymbol{\mu_{i, j}}$ and unitary variances.
+Therefore, using automatic differentiation libraries, we can calculate $\nabla \log \fwmarg{s}{\lstate_s}$.
+Setting $\epsprop{\lstate_s, s}{} = -(1 - \alpha_s)^{1/2} \nabla \log \fwmarg{s}{\lstate_s}$ leads to the optimum of \eqref{eq:optimal-denoising}.
+\paragraph{Forward process scaling:}
+We chose the sequence of $\{\beta_s\}_{s=1}^{1000}$ as a linearly decreasing sequence between $\beta_1=0.2$ and $\beta_{1000} = 10^{-4}$.
+\paragraph{Measurement model:}
+For a pair of dimensions $(\dimx, \dimtr)$ the measurement model $(\lmeas, \m{A}, \noisestd)$ is drawn as follows:
+\begin{itemize}
+    \item $\m{A}$: We first draw $\tilde{\m{A}} \sim \ndist{\m{0}_{\dimtr \times \dimx}}{\idm_{\dimtr \times \dimx}}$ and compute the SVD decomposition of $\tilde{A} = \m{U} \m{S} \m{V}^T$. Then, we sample for $(i, j) \in \{-2, -1, 0, 1, 2\}^2$, $s_{i,j}$ according to a uniform in $[0, 1]$. Finally, we set $\m{A} = \m{U} \operatorname{Diag}(\{s_{i,j}\}_{(i, j) \in \{-2, -1, 0, 1, 2\}^2}) \m{V}^T$.
+    \item $\noisestd$: We draw $\noisestd$ uniformly in the interval $[0, \operatorname{max}(s_1, \cdots, s_\dimtr)]$.
+    \item $\lmeas$: We then draw $\lstate_{*} \sim \fwmarg{\mathrm{data}}{}$ and set $\lmeas \eqdef \m{A} \lstate_{*} + \noisestd \epsilon$ where $\epsilon \sim \ndist{\m{0}_{\dimtr}}{\idm_{\dimtr}}$.
+\end{itemize}
+\paragraph{Posterior:}
+Once we have drawn both $\fwmarg{\mathrm{data}}{}$ and $(\lmeas, \m{A}, \noisestd)$, the posterior can be exactly calculated using Bayes formula and gives a mixture of Gaussians with mixture components $c_{i, j}$ and associated weights $\tilde{\omega}_{i, j}$
+\begin{align*}
+    c_{i, j} & \eqdef \ndist{\Sigma \left(\m{A}^T \lmeas / \noisestd^2 + \boldsymbol{\mu}_{i, j}\right)}{\Sigma} \eqsp,\\
+    \tilde{\omega}_i &\eqdef \omega_i \normpdf(\lmeas;\m{A}\boldsymbol{\mu}_{i,j}, \sigma^2\idm_{\dimx} + \m{A} \m{A}^T)\eqsp,
+\end{align*}
+where $\Sigma \eqdef \left(\idm_{\dimx} + \noisestd^{-2} \m{A}^T \m{A}\right)^{-1}$.
+\paragraph{Variational Inference:}
+The \rnvp\ entries in the numerical examination are obtained by Variational Inference using the \rnvp\ architecture for the normalizing flow from \cite{Dinh:2017}.
+Given a normalizing flow $\nf{\phi}$ with $\phi \in \rset^{j}, j \in \nsetpos$, the training procedure consists of optimizing the ELBO, i.e., solving the optimization problem
+\begin{equation}
+    \label{eq:nf_optim}
+    \phi_{*} = \argmax_{\phi \in \rset^j} \sum_{k=1}^{N_{nf}}\log|\mathrm{J}\nf{\phi}(\epsilon_i)| + \log\datadistr(\nf{\phi}(\epsilon_i)) \eqsp,
+\end{equation}
+where $N_{nf} \in \nsetpos$ is the minibatch-size, $\mathrm{J}\nf{\phi}$ the Jacobian of $\nf{\phi}$ w.r.t $\phi$, and $\chunk{\epsilon}{1}{N_{nf}} \sim \normdist(0, \id)^{\otimes N_{nf}}$.
+All the experiments were performed using a $10$ layers \rnvp. \Cref{eq:nf_optim} is solved using Adam algorithm \cite{Kingma:2015} with a learning rate of $10^{-3}$
+and $200$ iterations with $N_{nf} = 10$.
+The losses for each pair $(\dimx, \dimtr)$ is shown in \cref{fig:loss_gmm_rnvp}, where one can see that the majority of the losses have converged.
+\begin{figure}%[h]
+    \centering
+    \begin{tabular}{c}
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        & $\dimx=1$ & $\dimx=2$ & $\dimx=4$ & \\
+        \rotatebox[origin=c]{90}{$\mathsf{KL}$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_1_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_2_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_4_rnvp_losses}
+        &  \rotatebox[origin=c]{-90}{$\dimtr=8$}\\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$\mathsf{KL}$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_1_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_2_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_4_rnvp_losses}
+        &  \rotatebox[origin=c]{-90}{$\dimtr=80$}\\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$\mathsf{KL}$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_1_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_2_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_4_rnvp_losses}
+        &  \rotatebox[origin=c]{-90}{$\dimtr=800$}\\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    Iteration
+    \end{tabular}
+    \caption{Evolution of $\mathsf{KL}$ with the number of iterations for all pairs of $(\dimx, \dimtr)$ tested in the GMM case.}
+    \label{fig:loss_gmm_rnvp}
+\end{figure}
+\paragraph{Choosing \ddim\ timesteps for a given measurement model:}
+Given a number of \ddim\ samples $R$, we choose the timesteps $1=t_1 < \cdots < t_R = 1000 \in \intvect{1}{1000}$ as to try to satisfy the two following constraints:
+\begin{itemize}
+    \item For all $i \in \intvect{1}{\dimtr}$ there exists a $t_j$ such that $\noisestd \alpha_{t_j}^{1/2} \approx (1 - \alpha_{t_j})^{1/2} s_i$,
+    \item For all $i \in \intvect{1}{R-1}$, $\alpha_{t_i}^{1/2} - \alpha_{t_{i+1}}^{1/2} \approx \delta$ for some $\delta > 0$.
+\end{itemize}
+The first constraint comes naturally from the definition of $\tau_i$. Since the potentials have mean $\alpha_{t_i}^{1/2} \lmeas$, the second condition constrains the intermediate laws remain ``close''. An algorithm that approximately satisfies both constraints is given below.
+\begin{algorithm2e}[H]
+    \caption{Timesteps choice}
+    \label{alg:timesteps}
+    \KwInput{Number of \ddim\ steps $R$, $\noisestd$, $\{s_i\}_{i=1}^{\dimtr}$, $\{\alpha_i\}_{i=1}^{1000}$}
+    \KwOutput{$\{t_j\}_{j=1}^{R}$}
+    Set $S_{\tau} = \{\}$.\\
+    \For{$j \gets \intvect{1}{\dimtr}$}{
+        Set $\tilde{\tau}_j = \argmin_{\ell \in \intvect{1}{1000}} |\noisestd \alpha_\ell^{1/2} - (1 - \alpha_{\ell})^{1/2}) s_j|$.\\
+        Add $\tilde{\tau}_j$ to $S_{\tau}$ if $\tilde{\tau}_j \notin S_{\tau}$.
+    }
+    Set $n_{m} = R - \#S_{\tau} - 1$ and $\delta = (\alpha_{1}^{1/2} - \alpha_{1000}^{1/2}) / n_{m}$.\\
+    Set $t_1 = 1$, $e = 1$ and $i_e = 1$.
+    \For{$\ell \gets \intvect{2}{1000}$}{
+        \uIf{$\alpha_{e}^{1/2} - \alpha_{\ell}^{1/2} > \delta$ or $\ell \in S_{\tau}$}{
+            Set $e = \ell$, $i_e = i_e + 1$ and $\tau_{i_e} = \ell$.
+        }
+    }
+    Set $\tau_R = 1000$.
+\end{algorithm2e}
+\paragraph{Additional numerics:}
+We now proceed to illustrate in \Cref{fig:gmm:20:8,fig:gmm:20:80,fig:gmm:20:800} the first 2 components for one of the measurement models for all the different combinations of $(\dimx, \dimtr)$ combinations used in \cref{table:gmm:sw}.
+\begin{figure}%[h]
+    \centering
+    \begin{tabular}{c}
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        & \algo & \ddrm & \dps & \rnvp \\
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_1_1_25_2_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_1_1_25_2_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_1_1_25_2_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_1_1_25_2_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_2_2_25_16_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_2_2_25_16_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_2_2_25_16_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_2_2_25_16_RNVP}
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_4_4_25_11_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_4_4_25_11_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_4_4_25_11_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/8_4_4_25_11_RNVP}
+    \end{tabular}\\\addlinespace[-2.8pt]
+    $x_1$
+    \end{tabular}
+    \caption{First two dimensions for the GMM case with $\dimx = 8$. The rows represent $\dimtr = 1, 2, 4$ respectively.
+    The blue dots represent samples from the exact posterior, while the red dots correspond to samples generated by each of the algorithms used (the names of the algorithms are given at the top of each column).}
+    \label{fig:gmm:20:8}
+\end{figure}
+\begin{figure}%[h]
+    \centering
+    \begin{tabular}{c}
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        & \algo & \ddrm & \dps & \rnvp \\
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_1_1_25_10_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_1_1_25_10_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_1_1_25_10_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_1_1_25_10_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_2_2_25_20_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_2_2_25_20_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_2_2_25_20_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_2_2_25_20_RNVP}
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_4_4_25_24_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_4_4_25_24_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_4_4_25_24_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/80_4_4_25_24_RNVP}
+    \end{tabular}\\\addlinespace[-2.8pt]
+    $x_1$
+    \end{tabular}
+    \caption{First two dimensions for the GMM case with $\dimx = 80$. The rows represent $\dimtr = 1, 2, 4$ respectively.
+    The blue dots represent samples from the exact posterior, while the red dots correspond to samples generated by each of the algorithms used (the names of the algorithms are given at the top of each column).}
+    \label{fig:gmm:20:80}
+\end{figure}
+\begin{figure}%[h]
+    \centering
+    \begin{tabular}{c}
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        & \algo & \ddrm & \dps & \rnvp \\
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_1_1_25_20_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_1_1_25_20_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_1_1_25_20_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_1_1_25_20_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_2_2_25_21_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_2_2_25_21_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_2_2_25_21_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_2_2_25_21_RNVP}
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$x_2$}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_4_4_25_25_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_4_4_25_25_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_4_4_25_25_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/gaussian/800_4_4_25_25_RNVP}
+    \end{tabular}\\\addlinespace[-2.8pt]
+    $x_1$
+    \end{tabular}
+    \caption{First two dimensions for the GMM case with $\dimx = 800$. The rows represent $\dimtr = 1, 2, 4$ respectively.
+    The blue dots represent samples from the exact posterior, while the red dots correspond to samples generated by each of the algorithms used (the names of the algorithms are given at the top of each column).}
+    \label{fig:gmm:20:800}
+\end{figure}
+We also show in \cref{fig:gmm:coordinate:100:dim_y:4} the evolution of each observed coordinate in the noise case with $\dimtr=4$. We can see that it follows closely the forward path of the diffused observations indicated by the blue line.
+\begin{figure}[H]
+\centering
+\begin{tabular}{@{} r M{0.4\linewidth}@{\hspace{0\tabcolsep}} M{0.4\linewidth}@{\hspace{0\tabcolsep}} @{} r}
+    $\vecidx{\ltopstate}{s}{1}$
+  & \includegraphics[width=\hsize]{images/optimal/gmm/inverse_problem_example_coordinate_0}
+  &  \includegraphics[width=\hsize]{images/optimal/gmm/inverse_problem_example_coordinate_1}  & $\vecidx{\ltopstate}{s}{2}$\\
+  $\vecidx{\ltopstate}{s}{3}$
+  & \includegraphics[width=\hsize]{images/optimal/gmm/inverse_problem_example_coordinate_2}
+  &\includegraphics[width=\hsize]{images/optimal/gmm/inverse_problem_example_coordinate_3} &   $\vecidx{\ltopstate}{s}{4}$\\\addlinespace[-1.25ex]
+   & $s$ &$s$ \\\addlinespace[-1ex]
+\end{tabular}
+\caption{Illustration of the particle cloud of the $4$ first observed coordinate in the case $(\dimtr, \dimx) = (4, 800)$ with $100$ \ddim\ steps. The red points represent the particle cloud, while the purple points at the origin represent the posterior distribution. The blue curve corresponds to the curve $s \rightarrow \alpha_s^{1/2}\vecidx{\ltrmeas}{}{\ell}$ and the blue dot on the curve to $\alpha_{\tau_\ell}^{1/2}\vecidx{\ltrmeas}{}{\ell}$.}
+\label{fig:gmm:coordinate:100:dim_y:4}
+\end{figure}
+\Cref{table:extension_gmm_sw} is an extended version of \cref{table:gmm:sw}.
+\DTLloaddb{app_comparison_gmm_sw_20}{data/gaussian/25_20_inverse_problem_comparison.csv}
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|c|c|c|c|c|}%
+        \hline
+        $d$ & $d_y$ & \algo & \ddrm & \dps & \rnvp \\
+        \hline
+        \DTLforeach*{app_comparison_gmm_sw_20}{
+            \dim=D_X,
+            \ydim=D_Y,
+            \distours=MCG_DIFF,
+            \distoursnum=MCG_DIFF_num,
+            \distddrm=DDRM,
+            \distddrmnum=DDRM_num,
+            \distdps=DPS,
+            \distdpsnum=DPS_num,
+            \distrnvp=RNVP,
+            \distrnvpnum=RNVP_num}{
+            \dim & \ydim &
+            \DTLgminall{\rowmin}{\distoursnum,\distddrmnum,\distdpsnum,\distrnvpnum}%
+            \dtlifnumeq{\distoursnum}{\rowmin}{\bf}{}\distours &
+            \dtlifnumeq{\distddrmnum}{\rowmin}{\bf}{}\distddrm &
+            \dtlifnumeq{\distdpsnum}{\rowmin}{\bf}{}\distdps &
+            \dtlifnumeq{\distrnvpnum}{\rowmin}{\bf}{}\distrnvp\DTLiflastrow{}{\\
+            }}
+        \\\hline
+    \end{tabular}%
+    \caption{Extended GMM sliced wasserstein table.}
+    \label{table:extension_gmm_sw}
+\end{table}
+\subsubsection{FMM}
+A funnel distribution is defined by the following density
+\begin{equation*}
+    \normdist(x_1; 0, 1) \prod_{i=1}^{d} \normdist{}{}(x_i; 0, \exp(x_1 / 2)) \eqsp.
+\end{equation*}
+To generate a Funnel mixture model of $20$ components in dimension $d$,
+we start by firstly sampling $(\mu_i, R_i)_{i=1}^{20}$ uniformly in $([-20, 20]^{d} \times \mathsf{SO}(R^d))^{\times 20}$. The mixture will consist of
+$20$ Funnel random variables translated by $\mu_i$ and rotated by $R_i$, with
+unnormalized weights $\omega_{i, j}$ that are independently drawn uniformly in $[0,1]$.
+
+\paragraph{Score}
+The denoising diffusion network $\epsprop{\theta}{}$ in dimension $d$ is defined as a $5$ layers Resnet network where each Resnet block consists of the chaining of three blocks where each block has the following layers:
+\begin{itemize}
+    \item Linear ($512, 1024$),
+    \item 1d Batch Norm,
+    \item ReLU activation.
+\end{itemize}
+The Resnet is preceeded by an input embedding from dimension $d$ to $512$ and in the end an output embedding layer projects the output of the resnet from $512$ to $d$.
+The time $t$ is embedded using positional embedding into dimension $512$ and is added to the input at each Resnet block.
+The network is trained using the same loss as in \cite{ho2020denoising} for $10^4$ iterations using a batch size of $512$ samples. A learning rate of $10^{-3}$ is used for the Adam optimizer \cite{Kingma:2015}.
+\Cref{fig:diffusion_learning_funnel} illustrate the outcome of the learned diffusion generative model and the target prior. In
+\cref{table:fmm_prior_sw} we show the CLT $95\%$ intervals for the SW between the learned diffusion generative model and the target prior.
+\begin{figure}
+    \begin{tabular}{c}
+        \begin{tabular}{
+            M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+            M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+            M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+            M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        }
+            & $\dimtr=2$ & $\dimtr=6$ & $\dimtr=10$ \\
+            \rotatebox[origin=c]{90}{$x_2$}
+            & \includegraphics[width=\hsize]{images/optimal/funnel/2_1_1_20_2_prior_learning}
+            & \includegraphics[width=\hsize]{images/optimal/funnel/6_5_5_20_14_prior_learning}
+            & \includegraphics[width=\hsize]{images/optimal/funnel/10_3_3_20_18_prior_learning}\\
+        \end{tabular}\\
+            $x_1$
+    \end{tabular}
+    \caption{Purple points are samples from the prior and yellow samples from the diffusion with $25$ \ddim\ steps.}
+    \label{fig:diffusion_learning_funnel}
+\end{figure}
+\DTLloaddb{app_comparison_prior_fmm_sw_100}{data/funnel/20_100_diffusion_prior.csv}
+\begin{table}
+    \centering
+    \begin{tabular}{|c|c|}%
+        \hline
+        $d$ & SW \\
+        \hline
+        \DTLforeach*{app_comparison_prior_fmm_sw_100}{
+            \dim=D_X,
+            \distdiff=diffusion}{
+            \dim & \distdiff \DTLiflastrow{}{\\
+            }}
+        \\\hline
+    \end{tabular}%
+    \caption{Sliced Wasserstein between learned diffusion and target prior.}
+    \label{table:fmm_prior_sw}
+\end{table}
+\paragraph{Forward process scaling}
+We chose the sequence of $\{\beta_s\}_{s=1}^{1000}$ as a linearly decreasing sequence between $\beta_1=0.2$ and $\beta_{1000} = 10^{-4}$.
+\paragraph{Measurement model}
+The measurement model was generated in the same way as for the GMM case.
+\paragraph{Posterior}
+The posterior samples were generated by running the No U-turn sampler (\cite{Hoffman2011}) with a chain of length $10^4$ and taking the last sample of the chain.
+This was done in parallel to generate $10^4$ samples. The mass matrix and learning rate were set by first running Stan's warmup and taking the last values of the warmup phase.
+\paragraph{Variational inference:}
+Variational inference in FMM shares the same details as the GMM case.
+The analogous of \cref{fig:loss_gmm_rnvp} is displayed at \cref{fig:loss_fmm_rnvp}.
+\begin{figure}%[h]
+    \centering
+    \begin{tabular}{c}
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        & $\dimx=1$ & $\dimx=3$ & $\dimx=5$ & \\
+        \rotatebox[origin=c]{90}{$\mathsf{KL}$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_1_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_3_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_5_rnvp_losses}
+        &  \rotatebox[origin=c]{-90}{$\dimtr=6$}\\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.3\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$\mathsf{KL}$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_1_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_3_rnvp_losses}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_5_rnvp_losses}
+        &  \rotatebox[origin=c]{-90}{$\dimtr=10$}\\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    Iteration
+    \end{tabular}
+    \caption{Evolution of $\mathsf{KL}$ with the number of iterations for all pairs of $(\dimx, \dimtr)$ tested in the FMM case.}
+    \label{fig:loss_fmm_rnvp}
+\end{figure}
+\paragraph{Additional plots:}
+We now proceed to illustrate in \Cref{fig:fmm:100:10,fig:fmm:100:6,fig:fmm:100:2} the first 2 components for one of the measurement models for all the different combinations of $(\dimx, \dimtr)$ combinations used in \cref{table:gmm:sw}.
+\begin{figure}%[h]
+    \centering
+    \begin{tabular}{c}
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        & \algo & \ddrm & \dps & \rnvp \\
+        \rotatebox[origin=c]{90}{$\operatorname{PCA}_2$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_1_1_20_19_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_1_1_20_19_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_1_1_20_19_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_1_1_20_19_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$\operatorname{PCA}_2$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_3_3_20_9_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_3_3_20_9_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_3_3_20_9_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_3_3_20_9_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$\operatorname{PCA}_2$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_5_5_20_9_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_5_5_20_9_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_5_5_20_9_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/10_5_5_20_9_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    $\operatorname{PCA}_1$
+    \end{tabular}
+    \caption{First two dimensions for the FMM case with $\dimx = 10$. The rows represent $\dimtr = 1, 3, 5$ respectively.
+    The blue dots represent samples from the exact posterior, while the red dots correspond to samples generated by each of the algorithms used (the names of the algorithms are given at the top of each column).}
+    \label{fig:fmm:100:10}
+\end{figure}
+\begin{figure}%[h]
+    \centering
+    \begin{tabular}{c}
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        & \algo & \ddrm & \dps & \rnvp \\
+        \rotatebox[origin=c]{90}{$\operatorname{PCA}_2$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_1_1_20_0_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_1_1_20_0_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_1_1_20_0_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_1_1_20_0_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$\operatorname{PCA}_2$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_3_3_20_8_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_3_3_20_8_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_3_3_20_8_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_3_3_20_8_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        \rotatebox[origin=c]{90}{$\operatorname{PCA}_2$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_5_5_20_6_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_5_5_20_6_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_5_5_20_6_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/6_5_5_20_6_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    $\operatorname{PCA}_1$
+    \end{tabular}
+    \caption{First two dimensions for the FMM case with $\dimx = 6$. The rows represent $\dimtr = 1, 3, 5$ respectively.
+    The blue dots represent samples from the exact posterior, while the red dots correspond to samples generated by each of the algorithms used (the names of the algorithms are given at the top of each column).}
+    \label{fig:fmm:100:6}
+\end{figure}
+\begin{figure}%[h]
+    \centering
+    \begin{tabular}{c}
+    \begin{tabular}{
+        M{0.04\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+        M{0.16\linewidth}@{\hspace{0\tabcolsep}}
+    }
+        & \algo & \ddrm & \dps & \rnvp \\
+        \rotatebox[origin=c]{90}{$\operatorname{PCA}_2$}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/2_1_1_20_4_MCG_DIFF}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/2_1_1_20_4_DDRM}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/2_1_1_20_4_DPS}
+        & \includegraphics[width=\hsize]{images/optimal/funnel/2_1_1_20_4_RNVP} \\
+    \end{tabular}\\\addlinespace[-2.8pt]
+    $\operatorname{PCA}_1$
+    \end{tabular}
+    \caption{First two dimensions for the FMM case with $\dimx = 2$ and $\dimtr = 1$.
+    The blue dots represent samples from the exact posterior, while the red dots correspond to samples generated by each of the algorithms used (the names of the algorithms are given at the top of each column).}
+    \label{fig:fmm:100:2}
+\end{figure}

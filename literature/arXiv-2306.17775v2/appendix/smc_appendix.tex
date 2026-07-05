@@ -1,0 +1,77 @@
+\section{Sequential Monte Carlo details}\label{sec:SMC_details}
+
+
+% Original text: 
+%However, for SMC to be practical the weights must be regular. Othewise when only a small fraction of particles receive nontrivial weights, the rest will be discarded and the procedure provides a poor approximation of the target distributions. See \Cref{sec:SMC_details} for details.  
+
+
+
+%The number of particles needed for accurate estimation of each $\target_t$ is exponential in the KL divergence between successive targets \citep{chatterjee2018sample}: \begin{align}\label{eq:kl-intermediate-targets}\mathrm{KL}(\target_{t-1} \| \target_t)=\ln \E_{\target_{t-1}}[\weight_{t-1}\inv(\xt, \xtpo)] - \E_{\target_{t-1}}[\ln \weight_{t-1}\inv(\xt, \xtpo)].\end{align}
+%This divergence will be large when a small fraction of particles receive a disproportionately large weight. Otherwise only a small fraction of the particles will receive nontrivial weights, and the rest will be discarded. In that case most particles are discarded, the procedure provides only small effective number of samples and therefore a poor approximation of the target distribution. 
+
+
+Each step of SMC involves importance sampling of a target $\target_{t-1}$ with $\target_t$ as the proposal, and so the procedure inherits the operating characteristics of importance sampling. Notably this includes an exponential dependence of the number of samples needed for accurate estimation of $\target_{t-1}$ on the Kullback-Leibler divergence of each $\target_t$ from $\target_{t-1}$ \citep{chatterjee2018sample}. In the context of  \Cref{eq:final-target}, we see that $$\mathrm{KL}(\target_{t-1} \| \target_t)=\ln \E_{\target_{t-1}}[\weight_{t-1}\inv(\xt, \xtpo)] - \E_{\target_{t-1}}[\ln \weight_{t-1}\inv(\xt, \xtpo)].$$ This divergence will be large when a small fraction of particles receive a disproportionately large weight.
+In that case, only a small fraction of the particles receive nontrivial weights, and the rest will be discarded. Consequently, the procedure provides only small effective number of samples and therefore a poor approximation of the target distribution. 
+
+
+
+
+\iffalse 
+Sequential Monte Carlo (SMC) is a set of techniques for inference in time-series models \citep{doucet2001sequential,naesseth2019elements,chopin2020introduction}.
+%Feynman-Kac models provide a language for constructing a sequence of probability distributions concluding at a probability distribution of interest in a manner that is amenable to computational approximations by particle filtering. 
+Any SMC algorithm may be described as an instance of a generic algorithm for inference in a Feynman-Kac (FK) model
+%We review Feynman-Kac models (following \citet{chopin2020introduction}) and present the generic particle filtering algorithm 
+\citep[Algorithm 10.1]{chopin2020introduction}.\footnote{Our presentation differs from that of \citet{chopin2020introduction} only in that it is stated in reverse time in order to mirror the time reversal in the diffusion model.}
+%We then state a theorem on its asymptotic accuracy.
+%Together, this theorem and algorithm make clear the requirements for a Feynman-Kac model to be used for asymptotically accurate conditional sampling.
+This algorithm requires three ingredients.
+First are an \emph{initial distribution} $M_T(\dt{x}{T})$ and \emph{transition kernels} $M_t(\dt{x}{t}\mid \dt{x}{t+1})$ for $t=T-1, \dots, 0$
+that define proposal distributions for an ensemble of \emph{particles},  $\{ x^{(t)}_n\}_{n=1}^N$.
+Second are positive real valued \emph{potential functions} $G_T(\dt{x}{T})$ and $G_t(\dt{x}{t}, \dt{x}{t+1})$ for $t=T-1, \dots, 0$ that define weights for the particles.
+A \emph{sequence of Feynman-Kac models} is then defined as the sequence of distributions across $t,$
+\begin{equation}\label{eqn:feynman_kac_sequence}
+    \Q_t(\dt{x}{t:T})=L_t\inv 
+        \left\{M_T(d\dt{x}{T}) \prod_{s=t}^{T-1} M_s(\dt{x}{s}\mid  \dt{x}{s+1})\right\}
+        \left\{G_T(\dt{x}{T})\prod_{s=t}^{T-1} G_s(\dt{x}{s}, \dt{x}{s+1})\right\}
+    ,
+\end{equation}
+where $L_t\inv$ is a normalizing constant.%,
+\begin{equation}
+L_t =  \int_{\dt{x}{0:t}} \left\{ G_T()\prod_{s=T-1}^t G_s(\dt{x}{s+1}, \dt{x}{s})\right\}
+\left\{M_T(d\dt{x}{T}) \prod_{s=T-1}^t M_s(\dt{x}{s+1}, d \dt{x}{s})\right\}.
+\end{equation}
+
+The third ingredient is a resampling function (e.g.\ systematic resampling).
+The generic particle filtering algorithm with $N$ particles is given by \cref{alg:FeymanKac_PF}.
+The defining property that connects \Cref{alg:FeymanKac_PF} and the sequence of Feynman-Kac models is given by \Cref{theorem:FeynmanKac_PF}.
+It provides that in the limit that many particles are used, 
+the output of \Cref{alg:FeymanKac_PF} permits arbitrarily accurate estimates of expectations under each $\Q_t.$
+
+
+\begin{algorithm}
+\caption{Sequential Monte Carlo \citep[Algorithm 10.1]{chopin2020introduction}}\label{alg:FeymanKac_PF}
+\begin{algorithmic}
+\LineComment Input: $N (\#\mathrm{particles}),\{M_t \}_{t=0}^{T}$ and $ \{G_t \}_{t=0}^{T}$
+\LineComment Operations involving index $n$ are performed for each particle $n = 1,\dots, N.$
+\State $\dt{x_n}{T} \sim M_T(\dt{x}{T})$
+\State $\dt{w_n}{T} \gets G_T(\dt{x}{T})$
+\State $\dt{W_n}{T} \gets\dt{w_n}{T} / \sum_{m=1}^N \dt{w_m}{T}$
+\State $\dt{A_{1:N}}{T} \sim \texttt{resample}(\dt{W_n}{T})$
+\For{$t=T-1, \dots, 0$} 
+    %\State $\dt{A_{1:N}}{t} \sim \texttt{resample}(\dt{W_n}{t+1})$ \Comment{User-defined resampling}
+    \State $\dt{x_n}{t} \sim M_t(\dt{x_{\dt{A_n}{t+1}}}{t}\mid \dt{x}{t+1})$
+    \State $\dt{w_n}{t} \gets G_t(\dt{x_{\dt{A_n}{t+1}}}{t+1}, \dt{x_n}{t})$
+    \State $\dt{W_n}{t} \gets\dt{w_n}{t} / \sum_{m=1}^N \dt{w_m}{t}$
+    \State $\dt{A_{1:N}}{t} \sim \texttt{resample}(\dt{W_n}{t})$
+\EndFor 
+\end{algorithmic}
+\end{algorithm}
+\begin{theorem}[Almost sure convergence of estimates {{\citep[Proposition 11.4]{chopin2020introduction}}}]\label{theorem:FeynmanKac_PF}
+Assume the potential functions $G_t$ are bounded and multinomial resampling is used,
+for every continuous and bounded function $\phi,$
+$$
+\sum_{n=1}^N \dt{W_n}{t}\phi(\dt{x_n}{t}) \overset{a.s.}{\rightarrow} \int_{\dt{x}{t}} \phi(\dt{x}{t}) \Q_t(\dt{x}{t})d\dt{x}{t},
+$$
+where $\overset{a.s.}{\rightarrow}$ denotes almost sure convergence in the limit that $N$ tends to infinity.
+\end{theorem}
+\fi 

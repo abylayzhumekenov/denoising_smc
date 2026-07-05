@@ -1,0 +1,20 @@
+\section{Additional Related Work}\label{sec:additional_related_work}
+% Conditional training
+%\paragraph{Conditionally trained models.}
+%Much prior work relies on conditional training or fine-tuning for conditional generation. For example, conditional training for text-conditional image generation can involve augmenting the diffusion model to accommodate learned text embeddings as additional inputs ($y$), assembling a data set of paired image and text pairs, and performing denoising training with $y$ provided (\citep{ramesh2022hierarchical}). This strategy amounts to amortization of the conditional generation problem, and has been used for inpainting problems as well with random masks \citep{saharia2022palette,watson2022broadly}. A limitation of these approaches is that they demand the time and expertise needed to (1) construct a satisfactory set of conditional training examples and (2) design and train a neural network that can accomplish the conditional inference task.
+
+\textbf{Training with conditioning information.}
+Several approaches involve training a neural network to directly sample from a conditional diffusion models.
+These approaches include
+(i) conditional training with embeddings of conditioning information, e.g.\ for denoising images \citep{saharia2022image}, and text-to-image generation \citep{ramesh2022hierarchical},
+(ii) conditioning training with a subset of the state space, e.g.\ for protein design \citep{watson2022broadly}, and 
+image inpainting \citep{saharia2022palette},
+(iii) classifier-guidance \citep{dhariwal2021diffusion,song2020score}, an approach for generating samples of a desired class, which requires training a time-dependent classifier to approximate, for each $t,\ \pmodel (y\mid \xt)$, and training such a time-dependent classifier may be inconvenient and costly), and % or even impossible if, for example, one does not have access to labeled data. }
+(iv) classifier-free guidance \citep{ho2022classifier}, an approach that builds on classifier-guidance without training a classifier, and instead trains a diffusion model with class information as  additional input.
+
+
+\textbf{Langevin and Metropolis-Hastings steps.}
+Some prior work has explored using Markov chain Monte Carlo steps in sampling schemes to better approximate conditional distributions.
+For example unadjusted Langevin dynamics \citep{hovideo,song2020score} or Hamiltonian Monte Carlo \citep{du2023reduce} in principle permit asymptotically exact sampling in the limit of many steps.
+However these strategies are only guaranteed to target the conditional distributions of the joint model under the (unrealistic) assumption that the unconditional model exactly matches th forward process, and in practice adding such steps can worsen the resulting samples, presumably as a result of this approximation error \citep{karras2022elucidating}.
+By contrast, TDS does not require the assumption that the learned diffusion model exactly matches the forward noising process.

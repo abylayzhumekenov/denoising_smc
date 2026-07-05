@@ -1,0 +1,135 @@
+\section{\methodname{} additional details}\label{sec:supp_method}
+In this section we provide additional details on TDS.
+\Cref{sec:VP_VE_TDS} describes its generalization to alternative common formulations of diffusion models.
+\Cref{sec:TDS_hyperparams} describes the choices of proposal variance and resampling strategy.
+\Cref{sec:twisted_intermediates_derivation} provides a derivation of \Cref{eq:twisted-intermediates}.
+\Cref{sec:supp_method_inpaint_alt_final_step} describes modifications to the final step of TDS in inpainting and inpainting with degrees of freedom applications.
+And \Cref{sec:theorem_statement_and_proof} provides a full statement and proof of \Cref{prop:twisted_SMC}.
+
+
+\subsection{Diffusion models with non-constant noise variance and variance-preserving scaling}\label{sec:VP_VE_TDS}
+TDS as developed in \Cref{sec:method} assumed noise with constant variance $\sigma^2$ added at each timestep.
+This choice corresponds to a particular discretization of a ``variance exploding'' (VE) diffusion model \citep{song2020score}.
+Here we describe generalizations of TDS to non-constant variance schedules,
+and to variance preserving (VP) diffusion models \citep{ho2020denoising}.
+We adopt the VP formulation in our experiments;
+though it introduces additional notation, it is known to work well in practice \citep{song2020score}.
+
+\paragraph{TDS algorithm for variance exploding diffusion models.}
+VE diffusion models define the forward process $q$ by 
+\begin{align}\label{eq:VE-forward-q}
+    q(\dt{x}{1:T} \mid \xzero) := \prod_{t=1}^T q(\xt \mid \xprev), \qquad q(\xt \mid \xprev) := \mathcal{N}(\xt; \xprev, \sigma_t^2). 
+\end{align}
+where $\sigma_t^2$ is an increasing sequence of variances such that $q(\xT) \approx \mathcal{N}(0,\bar \sigma_T^2)$, with  $\bar \sigma_t^2 :=\sum_{t^\prime=1}^t \sigma_{t^\prime}^2$ for $t=1,\cdots, T$.  And so one can set $p(\xT) =  \mathcal{N}(0,\bar \sigma_T^2)$ to match $q(\xT)$.
+Notably, \Cref{eq:VE-forward-q} implies the conditional $q(\xt \mid \xzero) = \mathcal{N}(\xt; \xzero, \bar\sigma_t^2)$. 
+
+The reverse diffusion process $\pmodel$ is parameterized as  
+\begin{align}
+    \pmodel(\dt{x}{0:T}) :=p(\xT) \prod_{t=T}^{1}\pmodel(\xprev \mid \xt), \qquad 
+    \pmodel(\xprev \mid \xt ) := \mathcal{N}(\xprev; \xt + \sigma_t^2 \scoremodel (\xt, t), \sigma_t^2)
+\end{align}
+where the score network $\scoremodel$ is modeled through a denoiser network $\denoiser$ by $\scoremodel(\xt, t) := (\denoiser (\xt, t; \theta) - \xt )/\bar \sigma_t^2$.
+Note that the constant schedule is a special case where $\sigma_t^2=\sigma^2$, and $\bar \sigma_t^2=t\sigma^2$ for all $t$. 
+
+The TDS algorithm for general VE models is described in \Cref{alg:TDS}, where $t\sigma^2$ in \Cref{alg_line:conditional_score} is replaced by $\bar \sigma_t^2$ and $\sigma^2$ in \Cref{alg_line:proposal} is replaced by $\sigma_t^2$. 
+
+
+
+\paragraph{Extension to variance preserving diffusion models.}  Another widely used diffusion framework is variance preserving (VP) diffusion models \citep{ho2020denoising}. VP models define the forward process $q$ by 
+\begin{align}\label{eq:VP-forward-q}
+q(\dt{x}{1:T} \mid \xzero):=\prod_{t=1}^T q(\xt \mid \dt{x}{t-1}), \qquad 
+    q(\xt \mid \dt{x}{t-1}) := \mathcal{N}(\xt; \sqrt{1-\sigma_t^2}\dt{x}{t-1}, \sigma_t^2)
+\end{align}
+where $\sigma_t^2$ is  a sequence of increasing variances chosen such that $q(\xT) \approx \mathcal{N}(0,1)$, and so one can set $p(\xT) = \mathcal{N}(0,1)$. Define $\alpha_t := 1-\sigma_t^2$,  $\bar \alpha_t := \prod_{t^\prime=1}^t\alpha_{t^\prime}$, and $\bar \sigma_t^2:=1-\bar \alpha_t$. 
+Then the marginal conditional of \cref{eq:VE-forward-q} is $q(\xt \mid \xzero) = \mathcal{N}(\xt; \sqrt{\bar \alpha_t} \xzero, \bar \sigma_t^2)$. The reverse diffusion process $\pmodel$ is parameterized as  
+\begin{align}
+    \pmodel(\dt{x}{0:T}) :=p(\xT) \prod_{t=T}^{1}\pmodel(\xprev \mid \xt), \quad 
+    \pmodel(\xprev \mid \xt ) := \mathcal{N}(\xprev; \frac{1}{\sqrt{\alpha_t}}\xt + \frac{\sigma_t^2}{\sqrt{\alpha_t}} \scoremodel (\xt, t), \sigma_t^2)
+\end{align}
+where $\scoremodel$ is now defined through the denoiser $\denoiser$ by $\scoremodel(\xt, t) := (\sqrt{\bar \alpha_t} \denoiser (\xt, t; \theta) - \xt )/\bar \sigma_t^2$.
+
+
+TDS in \Cref{alg:TDS} extends to VP models as well,
+where the conditional score approximation in \Cref{alg_line:conditional_score} 
+is changed to  
+$\tilde s_k \leftarrow (\sqrt{\bar \alpha_{t+1} }\denoiser(\xtpo_k) - \xtpo_k)/\bar \sigma_{t+1}^2 + \nabla_{\xtpo_k} \log \tilde p_k^{t+1}$, 
+and the proposal in \Cref{alg_line:proposal} is changed to 
+$\xt_k \sim \pTwist (\cdot \mid \xtpo_k, y) :=\mathcal{N}\left(\frac{1}{\sqrt{\alpha_{t+1}}}\xtpo_k + \frac{\sigma_{t+1}^2}{\sqrt{\alpha_{t+1}}} \tilde s_k, \tilde \sigma^2 \right).$
+
+
+\subsection{TDS parameters}\label{sec:TDS_hyperparams}
+\paragraph{Proposal variance.}
+The proposal distribution in  \Cref{alg_line:proposal} of \Cref{alg:TDS} is associated with a variance parameter $\tilde \sigma^2$.
+In general, this parameter can be dependent on the time step, i.e.\ replacing $\tilde \sigma^2$ 
+ by some $\tilde \sigma_{t+1}^2$ in \Cref{alg_line:proposal}. 
+Unless otherwise specified, we set $\tilde \sigma_{t+1}^2:=\mathrm{Var}_{\pmodel}[\dt{x}{t} \mid \xtpo]$ the variance of the unconditional diffusion model (typically learned along with the score network during training). 
+
+\paragraph{Resampling strategy.} The mulinomial resampling strategy in \Cref{alg_line:resampling} of \Cref{alg:TDS} can be replaced by other strategies, see \cite[Chapter 2]{naesseth2019elements} for an overview.
+In our experiments, we use the systematic resampling strategy.
+
+In addition, one can consider setting an effective sample size (ESS) threshold (between 0 and 1), and only when the ESS is smaller than this threshold, the resampling step is triggered. 
+ESS thresholds for resampling are commonly used to improve efficiency of SMC algorithms \citep[see e.g.][Chapter 2.2.2]{naesseth2019elements},
+but for simplicity we use TDS with resampling at every step unless otherwise specified.
+
+
+\subsection{Derivation of \Cref{eq:twisted-intermediates}}\label{sec:twisted_intermediates_derivation}
+%: intermediate twisted targets approach the final target}\label{sec:intermediate_TDS_derivation}
+\Cref{eq:twisted-intermediates} illustrated how the extended intermediate targets $\target_t(\dt{x}{0:T})$ provide approximations to the final target $\pmodel(\dt{x}{0:T} \mid y)$ that become increasingly accurate as $t$ approaches 0.
+We obtain \Cref{eq:twisted-intermediates} by substituting the proposal distributions in \Cref{eq:diffusion-twisted-proposals} and weights in \Cref{eq:diffusion-twisted-weigthing-functions} into \Cref{eq:final-target} and simplifying.
+\begin{align}
+   \nu_t(\dt{x}{0:T}) &\propto
+   \left[p(\xT)\prod_{t^\prime=0}^{T-1} \pTwist(\dt{x}{t^\prime} \mid \dt{x}{t^\prime+1}, y) \right]
+   \left[
+  \tilde p(y\mid \xT) \prod_{t^\prime=t}^{T-1} 
+    \frac{\pmodel (\dt{x}{t^\prime} \mid \dt{x}{t^\prime +1}) \pTwist(y\mid \dt{x}{t^\prime})}{\pTwist(y \mid \dt{x}{t^\prime+1}) \pTwist(\dt{x}{t^\prime} \mid \dt{x}{t^\prime+1}, y)}
+   \right]\\
+   & \textrm{Rearrange \ and\ cancel\ }\pmodel \mathrm{\ and \ } \pTwist \textrm{\ terms.}\\ 
+   &= \left[ p(\xT) \prod_{t^\prime=t}^{T-1} \pmodel(\dt{x}{t^\prime} \mid  \dt{x}{t^\prime+1}) \right] \left[\tilde p_\theta(y\mid \dt{x}{t})\prod_{t^\prime=0}^{t-1} \pTwist(\dt{x}{t^\prime} \mid \dt{x}{t^\prime +1}, y)\right]\\
+   & \textrm{Group\ }\pmodel \textrm{\ terms by chain rule of probability.}\\ 
+   &=  \pmodel(\dt{x}{t:T}) \pTwist (y\mid \xt) \prod_{t^\prime=0}^{t-1} \pTwist (\dt{x}{t^\prime} \mid \dt{x}{t^\prime +1}, y)\\
+   & \textrm{Apply\ Bayes'\ rule and note that } \pmodel (y\mid \dt{x}{t:T}) = \pmodel(y\mid \xt). \\
+   &\propto \pmodel(\dt{x}{t:T}\mid y) \frac{\tilde p_\theta(y\mid \xt)}{p(y \mid \xt)} \prod_{t^\prime=0}^{t-1} \pTwist (\dt{x}{t^\prime} \mid \dt{x}{t^\prime +1}, y)\\
+%   & \textrm{Multiply\ by\  }\prod_{t^\prime=0}^{t-1} \pmodel(\dt{x}{t^\prime}\mid \dt{x}{t^\prime + 1}, y)/ \pmodel(\dt{x}{t^\prime}\mid \dt{x}{t^\prime + 1}, y)=1.\\
+ & \textrm{Note that }  \pmodel(\dt{x}{0:T} \mid y) = \pmodel (\dt{x}{t:T} \mid y)   \prod_{t=0}^{t'-1} \pmodel(\dt{x}{t^\prime}\mid \dt{x}{t^\prime + 1}, y). \\
+   &=  \pmodel(\dt{x}{0:T}\mid y) \left[\frac{\tilde p_\theta(y\mid \xt)}{p(y \mid \xt)} \prod_{t^\prime=0}^{t-1} \frac{ \pTwist (\dt{x}{t^\prime} \mid \dt{x}{t^\prime +1}, y)}{
+   \pmodel(\dt{x}{t^\prime}\mid \dt{x}{t^\prime + 1}, y)}\right].
+\end{align}
+The final line is the desired expression in \Cref{eq:twisted-intermediates}.
+\subsection{Inpainting and degrees of freedom final steps for asymptotically exact target }\label{sec:supp_method_inpaint_alt_final_step}
+The final ($t=0$) twisting function for inpainting and inpainting with degrees of freedom described in \Cref{subsec:conditioning-problems} do not satisfy the assumption of \Cref{thm:twisted_SMC_complete} that $\pTwist (y\mid \xzero)=\plikelihood{y}{\xzero}.$
+This choice introduces error in the final target of TDS relative to the exact conditional $\pmodel(\dt{x}{0:T} \mid y).$
+
+For inpainting, to maintain asymptotic exactness one may instead choose the final proposal and weights as 
+\ifnum\workshopsubmission=0
+\begin{align}\label{eqn:inpaint_final_proposal_and_weight}
+    \pTwist(\xzero \mid \dt{x}{1}, y; \mask) :=  \delta_{y}(\xzero_\mask)\pmodel(\xzero_\umask \mid \dt{x}{1}) \quad \mathrm{and} \quad \weight_0(\xzero, \dt{x}{1}) = 1.
+\end{align}
+\else
+\begin{align}\label{eqn:inpaint_final_proposal_and_weight}
+    \pTwist(\xzero \mid \dt{x}{1}, y; \mask) :=  \delta_{y}(\xzero_\mask)\pmodel(\xzero_\umask \mid \dt{x}{1})
+\end{align}
+and $\weight_0(\xzero, \dt{x}{1}) = 1.$
+\fi
+One can verify the resulting final target is $\pmodel(\xzero \mid \xzero_\mask =y)$ according to \cref{eq:final-target}.  
+
+Similarly, for inpainting with degrees of freedom, one may define the final proposal and weight as
+\ifnum\workshopsubmission=0
+\begin{equation}
+    \pTwist(\xzero \mid \dt{x}{1}, y, \mathcal{M}) :=  \sum_{\mask \in \mathcal{M}} \frac{\pmodel(\xzero_\mask \mid \dt{x}{1}, \mask)}{\sum_{\mask^\prime \in \mathcal{M}} \pmodel(\xzero_{\mask^\prime} \mid \dt{x}{1}, \mask^\prime)
+    }
+    \delta_{y}(\xzero_\mask)\pmodel(\xzero_\umask \mid \dt{x}{1}) 
+    \quad \mathrm{and} \quad \weight_0(\xzero, \dt{x}{1}) = 1.
+\end{equation}
+\else
+$\weight_0(\xzero, \dt{x}{1}) = 1$ and 
+\begin{align*}
+\begin{split}
+    &\pTwist(\xzero \mid \dt{x}{1}, y; \mathcal{M}) :=  \sum_{\mask \in \mathcal{M}} \pmodel(\xzero_\mask \mid \dt{x}{1};\mask)\delta_{y}(\xzero_\mask)\pmodel(\xzero_\umask \mid \dt{x}{1}).
+\end{split}
+\end{align*}
+\fi
+
+\input{appendix/supp_theory}
+
+\input{appendix/extension_riemannian}
+

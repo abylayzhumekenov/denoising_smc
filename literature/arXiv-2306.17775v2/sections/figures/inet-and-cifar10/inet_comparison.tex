@@ -1,0 +1,15 @@
+\begin{table}[!t]
+\centering 
+\begin{tabular}{|l|l|l|l|}
+\hline
+Method               & Classification Accuracy $\uparrow$ & FID $\downarrow$   & Inception Score $\uparrow$    \\ \hline
+TDS ($K=16$)           & 99.90\%                 & 26.65 & 64.03  \\ \hline
+TDS ($K=1$)            &  99.63\%                & 26.05 & 44.45       \\ \hline
+Classifier Guidance  & 99.17\%                 & 14.03 & 100.33 \\ \hline
+Unconditional model             & n/a                     & 26.21 & 39.70  \\ \hline
+%Unocnd. w. Guidance* & n/a                     & 12.00 & 95.41  \\ \hline
+%Cond.*               & n/a                     & 10.94 & 100.98 \\ \hline
+\end{tabular}
+\label{tab:inet-comparison}
+\caption{ImageNet. Comparison of sample quality. The top three methods are evaluated on 16k samples generated with 100 steps. The unconditional model performance is provided in \citep{dhariwal2021diffusion}, which is evaluated on 50k samples generated with 250 steps.}
+\end{table}

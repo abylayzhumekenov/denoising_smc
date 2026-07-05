@@ -1,0 +1,92 @@
+%We now extend \algo\ to a general linear Gaussian observation model.
+Consider $\ormeas = \m{A} \state + \noisestd \noise$
+where $\m{A} \in \mset{\dimorig}{\dimx}$, 
+$\noise \sim \ndist{0_{\dimorig}}{\Id_{\dimorig}}$ and $\noisestd \geq 0$ and the singular value decomposition (SVD) $\m{A} = \m{U} \m{S} \smash{\m{\overline{V}}}^T$,
+where $\m{\overline{V}} \in \mset{\dimx}{\dimtr}$, $\m{U} \in \mset{\dimorig}{\dimtr}$ are two orthonormal matrices, 
+and $\m{S} \in \mset{\dimtr}{\dimtr}$ is diagonal. 
+For simplicity, it is assumed that the singular values satisfy $s_1 > \cdots > s_\dimtr > 0$.
+Set $\dimb= \dimx - \dimtr$. 
+% For $w \in \rset^{\dimx}$,
+% we define $\overline{\mathbf{w}} =  \smash{\m{\overline{V}}}^T w \in \rset^{\dimtr}$ and
+% $\underline{\mathbf{w}} = \smash{\m{\underline{V}}}^T w \in \rset^{\dimb}$,
+% where the columns of 
+Let $\m{\underline{V}} \in \mset{\dimx}{\dimb}$ be an orthonormal matrix of which the columns complete those of $\m{\overline{V}}$ into an orthonormal basis of $\rset^{\dimx}$, i.e. $\m{\underline{V}}^T \m{\underline{V}}= \idm_{\dimb}$ 
+and $\m{\underline{V}}^T \m{\overline{V}}=\zerom{\dimb}{\dimtr}$. We define $\m{V}= [\m{\overline{V}}, \m{\underline{V}}] \in \mset{\dimx}{\dimx}$. In what follows, for a given $\ltrstate \in \rset^\dimx$ we write $\topvec{\ltrstate} \in \rset^\dimtr$ for its top $\dimtr$ coordinates and $\botvec{\ltrstate} \in \rset^\dimb$ for the remaining coordinates.
+Setting $\trstate \eqdef \m{V}^T \state$ and $\trmeas \eqdef \m{S}^{-1} \m{U}^T \ormeas$ and multiplying the measurement equation by $\m{S}^{-1} \m{U}^T$ yields
+\[ 
+    % \label{eq:obs:process_simplyfied}
+    \trmeas =  \trtopstate + \noisestd \m{S}^{-1} \tilde\noise \eqsp, \quad \widetilde{\varepsilon} \sim \ndist{0}{\idm_{\dimtr}} \eqsp.
+\]
+In this section, we focus on solving this linear inverse problem in the orthonormal basis defined by $\m{V}$ using the methodology developed in the previous sections.
+This prompts us to define the diffusion based generative model in this basis.
+As $\m{V}$ is an orthonormal matrix, the law of $\trstate_0 = \m{V}^T \state_0$ is $\bwmargV{0}{\ltrstate_0} \eqdef \bwmarg{0}{\m{V} \ltrstate_0}$.
+By definition of $\bwmargV{0}{}$ and the fact that $\|\m{V} \ltrstate \|_2 =  \| \ltrstate \|_2$ for all $\ltrstate \in \rset^{\dimx}$ we have that
+\begin{equation*}
+  \textstyle \bwmargV{0}{\ltrstate_0} = \int \bwtrans{}{0}{\lstate_1} {\m{V} \ltrstate_0} \left\{ \prod_{s = 1}^{n-1} \bwtrans{}{s}{\lstate_{s+1}}{\rmd \lstate_s} \right\} \bwmarg{n}{\rmd \lstate_n}
+  = \int \bwtransV{}{0}{\ltrstate_1}{\ltrstate_0} \left\{ \prod_{s = 1}^{n-1} \bwtransV{}{s}{\ltrstate_{s+1}}{\rmd \ltrstate_s} \right\} \bwmargV{n}{\rmd \ltrstate_n}
+\end{equation*}
+where for all $\smash{s \in [1:n]}$,
+$
+\smash{\bwtransV{}{s-1}{\ltrstate_{s}}{\ltrstate_{s-1}} \eqdef \normpdf(\ltrstate_{s-1}; \bwmeanV_{s}(\ltrstate_{s}), \sigma^2 _{s} \Id_{\dimx})}$, where $\smash{\bwmeanV_{s}(\ltrstate_{s}) \eqdef \m{V}^T \bwmean_{s}(\m{V} \ltrstate_{s})}
+$.
+The transition kernels $\{\bwtransV{}{s}{}{}\}_{s = 0} ^{n-1}$ thus define a diffusion based model in the basis $\m{V}$.
+In what follows we write $\topvec{\bwmeanV}_{s}(\ltrstate_{s})$ for the first $\dimtr$ coordinates of $\bwmeanV_{s}(\ltrstate_{s})$ and $\botvec{\bwmeanV}_{s}(\ltrstate_{s})$ the last $\dimb$ coordinates.
+We denote by $\bwmargV{s}{}$ the time $s$ marginal of the backward process.
+%  \begin{gather*} 
+%     \tfwtrans{s}{\ltrtopstate_{s-1}}{\ltrtopstate_s} = \normpdf(\ltrtopstate_s; \sqrt{1 - \beta_s} \ltrtopstate_{s-1}, \beta_s \idm_{\dimtr}) \eqsp, \quad
+%     \bfwtrans{s}{\ltrbottomstate_{s-1}}{\ltrbottomstate_s} = \normpdf(\ltrbottomstate_s; \sqrt{1 - \beta_s} \ltrbottomstate_{s-1}, \beta_s \idm_{\dimb}) \eqsp, \\
+%     \trevbridge{s|s+1, 0}{\ltrtopstate_{s+1}, \ltrtopstate_0}{\ltrtopstate_s} = \gauss\left(\ltrtopstate_{s} ; \boldsymbol{\mu}_{s+1}(\ltrtopstate_{s+1},\ltrtopstate_{0}), \sigma_{s+1}^2 \Id_{\dimtr} \right) \eqsp, \\
+%     \brevbridge{s|s+1, 0}{\ltrbottomstate_{s+1}, \ltrbottomstate_0}{\ltrbottomstate_s} = \gauss\left(\ltrbottomstate_{s} ; \boldsymbol{\mu}_{s+1}(\ltrbottomstate_{s+1},\ltrbottomstate_0), \sigma_{s+1}^2 \Id_{\dimb} \right) \eqsp. 
+%  \end{gather*}
+%     Denote $\ltrstate_s \eqdef \cat{\ltrtopstate_s}{\ltrbottomstate_s}$, so that $\lstate_s = \m{V} \ltrstate_s$. It holds that
+%     \begin{gather}
+%     \label{eq:product}
+% \textstyle    \fwtrans{s}{\ltrstate_{s-1}}{\ltrstate_{s}} =  \bfwtrans{s}{\ltrbottomstate_{s-1}}{\ltrbottomstate_s}\tfwtrans{s}{\ltrtopstate_{s-1}}{\ltrtopstate_s} \\
+%  \revbridge{s|s+1, 0}{\ltrstate_{s+1}, \ltrstate_0}{\ltrstate_{s}} =  \brevbridge{s|s+1, 0}{\ltrbottomstate_{s+1}, \ltrbottomstate_{0}}{\ltrbottomstate_s} \trevbridge{s}{\ltrtopstate_{s+1}, \ltrtopstate_{0}}{\ltrtopstate_s}.
+%     \end{gather}
+%  We define also the backward kernels as follows:
+% \begin{gather*}
+%  \tbwtrans{}{s}{\ltrstate_{s+1}}{\ltrtopstate_s} =  \trevbridge{s}{\ltrtopstate_{s+1}, \topxpred{0|s+1}(\m{V} \ltrstate_{s+1})}{\ltrtopstate_s}, \quad \bbwtrans{}{s}{\ltrstate_{s+1}}   {\ltrbottomstate_s} = \brevbridge{s|s+1, 0}{\ltrbottomstate_{s+1}, \bottomxpred{0|s+1}(\m{V} \ltrstate_{s+1})}{\ltrbottomstate_s} \\ \bwtransV{}{s}{\ltrstate_{s+1}}{\ltrstate_s} = \tbwtrans{}{s}{\ltrstate_{s+1}}{\ltrtopstate_s} \bbwtrans{}{s}{\ltrstate_{s+1}}{\ltrbottomstate_s}. 
+% \end{gather*}
+% Finally, for $s < \ell$ we define $\bwtransV{}{s|\ell}{\ltrstate_\ell}{\ltrstate_s} = \int \prod_{k = s}^{\ell-1} \bwtransV{}{k}{\ltrstate_{k+1}}{\ltrstate_k} \rmd \ltrstate_{\ell+1:s-1}$, $\bwmargV{n}{\ltrstate_n} = \normpdf{\left(\ltrstate_n; \mathbf{0}_{\dimx}, \idm_{\dimx}\right)}$ and $\bwmargV{s}{\ltrstate_s} = \int \bwtransV{}{s|n}{\ltrstate_n}{\ltrstate_s} \bwmargV{n}{\ltrstate_n}  \rmd \ltrstate_n$ for $s \in [0:n-1]$.
+\vspace{-.1cm}
+\paragraph*{Noiseless.} In this case the target posterior is $\filter{0}{\ltrmeas}{\ltrstate_0} \propto \bwmargV{0}{\cat{\ltrmeas}{\ltrbottomstate_0}}$.
+The extension of \cref{alg:algonoiseless} is straight forward;
+%The extension of the algorithm described in \cref{sec:noiseless} is thus straighforward; 
+it is enough to replace $\lmeas$ with $\ltrmeas$ (=$\m{S}^{-1} \m{U}^T \lmeas$) and the backward kernels $\left\{ \bwtrans{}{t}{}{} \right\}_{t = 0} ^{n-1}$ with $\left\{ \bwtransV{}{t}{}{} \right\}_{t = 0} ^{n-1}$.
+\vspace{-.1cm}
+\paragraph*{Noisy.} The posterior density is then $\smash{\noisyfilter{0}{\ltrmeas}{\ltrstate_0} \propto \pot{0}{\ltrmeas}{\ltrtopstate_0} \bwmargV{0}{\ltrstate_0}}$, where 
+\begin{equation} 
+  \label{eq:pot:forward}
+\pot{0}\ltrmeas{\ltrtopstate_{0}} = \textstyle \prod_{i = 1}^{\dimtr} \normpdf(\vecidx{\ltrmeas}{}{i}; \vecidx{\ltrtopstate}{0}{i}, (\noisestd / s_i)^2). 
+\end{equation}
+As in \Cref{sec:noisy}, assume that there exists $\{ \tau_i \}_{i = 1}^\dimtr \subset [1:n]$ such that $\alphacumprod{\tau_i}{} \noisestd^2 = (1 - \alphacumprod{\tau_i}{}) s^2 _i$ and define for all $i \in [1:\dimtr]$, $\smash{\tilde\ltrmeas_{i} \eqdef \alphacumprod{\tau_i}{}^{1/2} \vecidx{\ltrmeas}{}{i}}$.
+Then we can write the potential $\pot{0}{\ltrmeas}{}$ in a similar fashion to \eqref{eq:pot_as_foward} as the product of forward processes from time $0$ to each time step $\tau_i$, i.e.
+$
+   \pot{0}{\ltrmeas}{\ltrstate_0} = \textstyle \prod_{i = 1}^{\dimtr} \alphacumprod{\tau_i}{}^{1/2} \normpdf(\tilde\ltrmeas_{i}; \alphacumprod{\tau_i}{}^{1/2} \vecidx{\ltrstate}{0}{i}, (1 - \alphacumprod{\tau_i}{}))
+$.
+Writing the potential this way allows us to generalize \eqref{eq:noiseless_at_tau} as follows.
+% Let $\{ \tau_i \}_{i = 1} ^\dimtr \subset [1:n]$ with $\tau_1 < \dotsc < \tau_\dimtr$. For each $i \in [1:\top]$, define
+% \begin{equation}
+%     \label{eq:potential:coordinate:noisy}
+%     \pot{s, i}{\ltrmeas}{\vecidx{\ltrtopstate}{s}{i}} = \normpdf(\vecidx{\ltrtopstate}{s}{i}; \alpha_{s}^{1/2} \vecidx{\ltrmeas}{}{i}, (1 - (1 - \sigma^2 _\delta) \alpha_s / \alpha_{\tau_i})) 
+% \end{equation}
+% for $s \in [\tau_i, n]$, where $\sigma_{\delta}^2 > 0$ is a free hyper-parameter as in \cref{sec:noisy}. In the particular case of $\sigma^2 _\delta = 0$, $\pot{s,i}{\ltrmeas}{}$ is the density of forward process from $\tau_i$ to $s > \tau_i$ starting from $\alpha^{1/2} _{\tau_i} \vecidx{\ltrmeas}{}{i}$.
+% Then, define for $s \in [\tau_1:n]$, $\pot{s}{\ltrmeas}{\ltrtopstate_s} = \prod_{i = 1}^{\tau(s)}\pot{s, i}{\ltrmeas}{\vecidx{\ltrtopstate}{s}{i}}$ where $\tau(s) \eqdef \max \{ k \in [1:\dimtr]: s - \tau_k \geq 0\}$. 
+Denote for $\smash{\ell \in \intvect{1}{\dimx}}$, $\projidx{\ltrstate}{}{\ell} \in \R^{\dimx-1}$ the vector $\ltrstate$ with its $\ell$-th coordinate removed. Define 
+\[ 
+   \filter{\tau_1:n}{\tilde\ltrmeas}{\rmd \ltrstate_{\tau_1:n}} \propto \left\{ \textstyle \prod_{i = 1}^{\dimtr-1} \bwtransV{}{\tau_i | \tau_{i + 1}}{\ltrstate_{\tau_{i+1}}}{\ltrstate_{\tau_{i}}} \delta_{\tilde\ltrmeas_i}(\rmd \vecidx{\ltrstate}{\tau_i}{i}) \rmd \projidx{\ltrstate}{\tau_i}{i} \right\} \bwmargV{\tau_\dimtr}{\ltrstate_{\tau_\dimtr}} \delta_{\tilde\ltrmeas_\dimtr}(\rmd \vecidx{\ltrstate}{\tau_\dimtr}{\dimtr}) \rmd \projidx{\ltrstate}{\tau_\dimtr}{\dimtr} \eqsp,
+\]
+which corresponds to the posterior of a noiseless inverse problem on the joint states $\trstate_{\tau_1:n} \sim \bwmargV{\tau_1:n}{}$ with noiseless observations $\tilde\ltrmeas_{\tau_i}$ of $\trstate_{\tau_i}[i]$ for all $i \in [1:\dimtr]$.
+\begin{proposition}
+    \label{prop:noisytonoiseless}
+    Assume that $\bwmargV{s+1}{\ltrstate_{s+1}} \bwtransV{}{s}{\ltrstate_{s+1}}{\ltrstate_s} = \bwmargV{s}{\ltrstate_s} \fwtrans{s+1}{\ltrstate_s}{\ltrstate_{s+1}}$ for all $\smash{s \in [0:n-1]}$. Then it holds that $ \noisyfilter{0}{\ltrmeas}{\ltrstate_{0}} \propto \int \bwtransV{}{0|\tau_1}{\ltrstate_{\tau_1}}{\ltrstate_0} \filter{\tau_1:n}{\tilde\ltrmeas}{\rmd \ltrstate_{\tau_1:n}}$.
+\end{proposition}
+The proof of \Cref{prop:noisytonoiseless} is given in \Cref{proof:noisytonoiseless}. We have shown that sampling from $\filter{0}{\ltrmeas}{}$ is equivalent to sampling from $\filter{\tau_1:n}{\tilde\ltrmeas}{}$ then propagating the final state $\trstate_{\tau_1}$ to time $0$ according to $\bwtransV{}{0|\tau_1}{}{}$.
+Therefore, as in \eqref{eq:pot_as_foward}, we define $\{ \pot{t}{\lmeas}{} \}_{t = \tau} ^n$ and $\{ \filter{t}{\ltrmeas}{} \}_{t = \tau} ^n$ for all $\smash{t \in [\tau_1: n]}$ by $\smash{\filter{t}{\ltrmeas}{\ltrstate_t} \propto \pot{t}{\ltrmeas}{\ltrstate_t} \bwmarg{t}{\ltrstate_t}}$ and
+$\smash{\pot{t}{\ltrmeas}{\ltrstate_t} \eqdef \prod_{i = 1}^{\tau(t)} \normpdf\left(\ltrstate_t; \tilde\ltrmeas_i, 1 - (1 - \inflationstd) \alphacumprod{t}{} / \alphacumprod{\tau_i}{} \right)}$, $\smash{\inflationstd > 0}$.
+We obtain a particle approximation of $\filter{\tau_1}{\ltrmeas}{}$ using a particle filter with proposal kernel and weight function
+$
+\smash{\bwtransV{\ltrmeas}{t}{\ltrstate_{t+1}}{\ltrstate_t} \propto \pot{t}{\ltrmeas}{\ltrstate_t} \bwtrans{}{t}{\ltrstate_{t+1}}{\ltrstate_t}}$, $\smash{\uweight{}{t}(\ltrstate_{t+1}) = {\int \pot{t}{\ltrmeas}{\ltrstate_t} \bwtrans{}{t}{\ltrstate_{t+1}}{\rmd \ltrstate_t}}\big/\pot{t+1}{\ltrmeas}{\ltrstate_{t+1}}}
+$,
+which are both available in closed form.

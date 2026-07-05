@@ -1,0 +1,145 @@
+\documentclass{article}
+% \documentclass[10pt,reqno]{amsart}
+\usepackage[nonatbib, preprint]{neurips_2023}
+% \documentclass{article} % For LaTeX2e
+% \usepackage{iclr2024_conference,times}
+
+
+% \input{math_commands.tex}
+
+\usepackage{graphicx}
+\graphicspath{{..}}
+% \usepackage[authoryear]{natbib}
+\input{header}
+\input{def}
+\usepackage{geometry}
+\usepackage{appendix}
+\usepackage[parfill]{parskip}
+\geometry{
+  paper = letterpaper,  
+  margin = 1.15in,
+  includehead,
+  footskip = 1cm
+}
+
+% \iclrfinalcopy
+\newcommand{\sizebridgefig}{\hsize}
+\author{%
+  Gabriel Cardoso\\
+  CMAP, Ecole polytechnique,\\
+  % Institut Polytechnique de Paris,\\
+  IHU Liryc,\\
+  Fondation Bordeaux Université\\
+   \And
+  Yazid Janati El Idrissi \\
+  CMAP, Ecole polytechnique, \\ 
+  CITI, Télécom SudParis \\
+  % Institut Polytechnique de Paris
+    \\
+  \And
+  Sylvain Le Corff \\
+  LPSM, Sorbonne Université \\
+  \And
+  Eric Moulines \\
+  CMAP, Ecole polytechnique\\
+}
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2023}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+%     \usepackage[final]{neurips_2023}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2023}
+\begin{document}
+
+\blfootnote{Corresponding authors: \texttt{gabriel.victorino-cardoso@polytechnique.edu}, \\
+\texttt{yazid.janati@polytechnique.edu}}
+\title{Monte Carlo guided Diffusion for Bayesian linear inverse problems}
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+% \author{Gabriel Cardoso}
+% \author{Yazid Janati El Idrissi}
+% \author{Sylvain Le Corff}
+% \author{Eric Moulines}
+% \author{%
+%   Gabriel Cardoso\\
+%   CMAP,
+%   Ecole polytechnique,\\
+%   Institut Polytechnique de Paris,\\
+%   IHU Liryc,\\
+%   Fondation Bordeaux Université\\
+%    \And
+%   Yazid Janati El Idrissi \\
+%   CITI, Télécom SudParis, \\
+%   Institut Polytechnique de Paris
+%     \\
+%   \AND
+%   Sylvain Le Corff \\
+%   LPSM, Sorbonne Université \\
+%   \And
+%   Eric Moulines \\
+%   CMAP, Ecole polytechnique,\\
+%   Institut Polytechnique de Paris \\
+% }
+
+
+% \blfootnote{Corresponding authors: \texttt{gabriel.victorino-cardoso@polytechnique.edu},\\
+% \texttt{yazid.janati\_elidrissi@telecom-sudparis.eu}} 
+\maketitle
+
+\begin{abstract}
+Ill-posed linear inverse problems arise frequently in various applications, from computational photography to medical imaging.
+A recent line of research exploits Bayesian inference with informative priors to handle the ill-posedness of such problems.
+Amongst such priors, score-based generative models (SGM) have recently been successfully applied to several different inverse problems.
+In this study, we exploit the particular structure of the prior defined by the SGM to define a sequence of intermediate linear inverse problems. As the noise level decreases, the posteriors of these inverse problems get closer to the target posterior of the original inverse problem. 
+To sample from this sequence of posteriors, we propose the use of Sequential Monte Carlo (SMC) methods.
+The proposed algorithm, \algo, is shown to be theoretically grounded and we provide numerical simulations showing that it outperforms competing baselines when dealing with ill-posed inverse problems in a Bayesian setting.
+% formulate recovery in a Bayesian framework as a Feynman--Kac model adapted from the forward diffusion model used to construct score-based diffusion.
+%Ill-posed linear inverse problems that combine knowledge of the forward measurement model with prior models arise frequently in various applications, from computational photography to medical imaging. Recent research has focused on solving these problems with score-based generative models (SGMs) that produce perceptually plausible images. In this study, we exploit the particular structure of the prior defined in the SGM to formulate recovery in a Bayesian framework as a Feynman--Kac model adapted from the forward diffusion model used to construct score-based diffusion.
+%To solve this Feynman--Kac problem, we propose the use of Sequential Monte Carlo methods. The proposed algorithm, \algo, is shown to be theoretically grounded and we provide numerical simulations showing that it outperforms competing baselines when dealing with ill-posed inverse problems in a Bayesian setting.
+\end{abstract}
+\section{Introduction}
+\input{intro}
+\section{The \ouralgorithm\ algorithm}
+\input{inverse_problems_formulation}
+\paragraph{Noiseless case.}
+\label{sec:noiseless}
+\input{noiseless_new}
+\paragraph{Noisy case.}
+\label{sec:noisy}
+\input{noisy_new}
+\subsection{Extension to general linear inverse problems}
+\label{sec:gen_lin_ip}
+\input{svd.tex}
+\section{Numerics}
+\input{numerics}
+\section{Conclusion}
+\input{conclusion}
+
+\bibliographystyle{apalike}
+\bibliography{bibliography}
+
+\newpage
+\begin{appendix}
+  \section{\smcdiff\ extension}
+  \label{sec:smc_diff_ext}
+  \input{smc_diff.tex}
+  \section{Proofs}
+  \input{proofs}
+  \subsection{Algorithmic details and numerics}
+  \label{appendix:numerics}
+  \input{numerics_appendix}
+\end{appendix}
+
+\end{document} 

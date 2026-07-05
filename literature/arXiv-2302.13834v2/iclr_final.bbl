@@ -1,0 +1,407 @@
+\begin{thebibliography}{63}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Agakov \& Barber(2004)Agakov and Barber]{Agakov2004}
+Felix~V Agakov and David Barber.
+\newblock An auxiliary variational method.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2004.
+
+\bibitem[Arbel et~al.(2021)Arbel, Matthews, and Doucet]{arbel2021annealed}
+Michael Arbel, Alex Matthews, and Arnaud Doucet.
+\newblock Annealed flow transport {M}onte {C}arlo.
+\newblock In \emph{International Conference on Machine Learning}, 2021.
+
+\bibitem[Barr et~al.(2020)Barr, Gispen, and
+  Lamacraft]{barrlamacraft2020quantum}
+Ariel Barr, Willem Gispen, and Austen Lamacraft.
+\newblock Quantum ground states from reinforcement learning.
+\newblock In \emph{Mathematical and Scientific Machine Learning}, 2020.
+
+\bibitem[Beghi(1996)]{beghi1996relative}
+Alessandro Beghi.
+\newblock On the relative entropy of discrete-time {M}arkov processes with
+  given end-point densities.
+\newblock \emph{IEEE Transactions on Information Theory}, 42\penalty0
+  (5):\penalty0 1529--1535, 1996.
+
+\bibitem[Bradbury et~al.(2018)Bradbury, Frostig, Hawkins, Johnson, Leary,
+  Maclaurin, Necula, Paszke, Vander{P}las, Wanderman-{M}ilne, and
+  Zhang]{jax2018github}
+James Bradbury, Roy Frostig, Peter Hawkins, Matthew~James Johnson, Chris Leary,
+  Dougal Maclaurin, George Necula, Adam Paszke, Jake Vander{P}las, Skye
+  Wanderman-{M}ilne, and Qiao Zhang.
+\newblock {JAX}: composable transformations of {P}ython+{N}um{P}y programs,
+  2018.
+\newblock URL \url{http://github.com/google/jax}.
+
+\bibitem[Chen et~al.(2018)Chen, Rubanova, Bettencourt, and
+  Duvenaud]{chen2018neural}
+Ricky~TQ Chen, Yulia Rubanova, Jesse Bettencourt, and David~K Duvenaud.
+\newblock Neural ordinary differential equations.
+\newblock \emph{Advances in Neural Information Processing Systems}, 2018.
+
+\bibitem[Chen et~al.(2022)Chen, Chewi, Li, Li, Salim, and
+  Zhang]{ChenChewiSinhosamplingaseasyaslearningscore2022}
+Sitan Chen, Sinho Chewi, Jerry Li, Yuanzhi Li, Adil Salim, and Anru~R. Zhang.
+\newblock Sampling is as easy as learning the score: theory for diffusion
+  models with minimal data assumptions.
+\newblock \emph{arXiv preprint arXiv:22209.11215}, 2022.
+
+\bibitem[Dai~Pra(1991)]{daipra1991stochastic}
+Paolo Dai~Pra.
+\newblock A stochastic control approach to reciprocal diffusion processes.
+\newblock \emph{Applied Mathematics and Optimization}, 23\penalty0
+  (1):\penalty0 313--329, 1991.
+
+\bibitem[De~Bortoli(2022)]{debortoli2022convergence}
+Valentin De~Bortoli.
+\newblock Convergence of denoising diffusion models under the manifold
+  hypothesis.
+\newblock \emph{Transactions on Machine Learning Research}, 2022.
+
+\bibitem[De~Bortoli et~al.(2021)De~Bortoli, Thornton, Heng, and
+  Doucet]{debortoli2021diffusion}
+Valentin De~Bortoli, James Thornton, Jeremy Heng, and Arnaud Doucet.
+\newblock Diffusion {S}chr{\"o}dinger bridge with applications to score-based
+  generative modeling.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2021.
+
+\bibitem[Del~Moral et~al.(2006)Del~Moral, Doucet, and Jasra]{del2006sequential}
+Pierre Del~Moral, Arnaud Doucet, and Ajay Jasra.
+\newblock Sequential {M}onte {C}arlo samplers.
+\newblock \emph{Journal of the Royal Statistical Society: Series B (Statistical
+  Methodology)}, 68\penalty0 (3):\penalty0 411--436, 2006.
+
+\bibitem[Dinh et~al.(2014)Dinh, Krueger, and Bengio]{dinh2014nice}
+Laurent Dinh, David Krueger, and Yoshua Bengio.
+\newblock Nice: Non-linear independent components estimation.
+\newblock \emph{arXiv preprint arXiv:1410.8516}, 2014.
+
+\bibitem[Dockhorn et~al.(2022)Dockhorn, Vahdat, and Kreis]{Dockhorn2022}
+Tim Dockhorn, Arash Vahdat, and Karsten Kreis.
+\newblock Score-based generative modeling with critically-damped {L}angevin
+  diffusion.
+\newblock In \emph{International Conference on Learning Representations}, 2022.
+
+\bibitem[Doucet et~al.(2022)Doucet, Grathwohl, Matthews, and
+  Strathmann]{doucet2022annealed}
+Arnaud Doucet, Will Grathwohl, Alexander G de~G Matthews, and Heiko Strathmann.
+\newblock Score-based diffusion meets annealed importance sampling.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2022.
+
+\bibitem[F\"ollmer(1984)]{follmer1984entropy}
+Hans F\"ollmer.
+\newblock An entropy approach to the time reversal of diffusion processes.
+\newblock \emph{Lecture Notes in Control and Information Sciences},
+  69:\penalty0 156--163, 1984.
+
+\bibitem[{Geffner} \& {Domke}(2021){Geffner} and {Domke}]{Geffner:2021}
+Tomas {Geffner} and Justin {Domke}.
+\newblock {MCMC} variational inference via uncorrected {H}amiltonian annealing.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2021.
+
+\bibitem[Geffner \& Domke(2022)Geffner and Domke]{geffner2022langevin}
+Tomas Geffner and Justin Domke.
+\newblock Langevin diffusion variational inference.
+\newblock \emph{arXiv preprint arXiv:2208.07743}, 2022.
+
+\bibitem[Grathwohl et~al.(2018)Grathwohl, Chen, Bettencourt, Sutskever, and
+  Duvenaud]{grathwohl2018ffjord}
+Will Grathwohl, Ricky~TQ Chen, Jesse Bettencourt, Ilya Sutskever, and David
+  Duvenaud.
+\newblock Ffjord: Free-form continuous dynamics for scalable reversible
+  generative models.
+\newblock In \emph{International Conference on Learning Representations}, 2018.
+
+\bibitem[Greff et~al.(2019)Greff, Kaufman, Kabra, Watters, Burgess, Zoran,
+  Matthey, Botvinick, and Lerchner]{greff2019multi}
+Klaus Greff, Rapha{\"e}l~Lopez Kaufman, Rishabh Kabra, Nick Watters,
+  Christopher Burgess, Daniel Zoran, Loic Matthey, Matthew Botvinick, and
+  Alexander Lerchner.
+\newblock Multi-object representation learning with iterative variational
+  inference.
+\newblock In \emph{International Conference on Machine Learning}, 2019.
+
+\bibitem[Haussmann \& Pardoux(1986)Haussmann and Pardoux]{haussmann1986time}
+Ulrich~G Haussmann and Etienne Pardoux.
+\newblock Time reversal of diffusions.
+\newblock \emph{The Annals of Probability}, 14\penalty0 (3):\penalty0
+  1188--1205, 1986.
+
+\bibitem[Heng et~al.(2020)Heng, Bishop, Deligiannidis, and
+  Doucet]{heng2020controlled}
+Jeremy Heng, Adrian~N Bishop, George Deligiannidis, and Arnaud Doucet.
+\newblock Controlled sequential {M}onte {C}arlo.
+\newblock \emph{The Annals of Statistics}, 48\penalty0 (5):\penalty0
+  2904--2929, 2020.
+
+\bibitem[Hessel et~al.(2020)Hessel, Budden, Viola, Rosca, Sezener, and
+  Hennigan]{optax2020github}
+Matteo Hessel, David Budden, Fabio Viola, Mihaela Rosca, Eren Sezener, and Tom
+  Hennigan.
+\newblock Optax: composable gradient transformation and optimisation, in jax.,
+  2020.
+
+\bibitem[Ho et~al.(2020)Ho, Jain, and Abbeel]{ho2020denoising}
+Jonathan Ho, Ajay Jain, and Pieter Abbeel.
+\newblock Denoising diffusion probabilistic models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2020.
+
+\bibitem[Hoogeboom \& Salimans(2022)Hoogeboom and
+  Salimans]{hoogeboom2022blurring}
+Emiel Hoogeboom and Tim Salimans.
+\newblock Blurring diffusion models.
+\newblock \emph{arXiv preprint arXiv:2209.05557}, 2022.
+
+\bibitem[Hyv{\"a}rinen(2005)]{Hyvarinen:2005a}
+Aapo Hyv{\"a}rinen.
+\newblock Estimation of non-normalized statistical models by score matching.
+\newblock \emph{The Journal of Machine Learning Research}, 6:\penalty0
+  695--709, 2005.
+
+\bibitem[Jing et~al.(2022)Jing, Corso, Chang, Barzilay, and
+  Jaakkola]{jing2022torsional}
+Bowen Jing, Gabriele Corso, Jeffrey Chang, Regina Barzilay, and Tommi Jaakkola.
+\newblock Torsional diffusion for molecular conformer generation.
+\newblock \emph{arXiv preprint arXiv:2206.01729}, 2022.
+
+\bibitem[Kappen \& Ruiz(2016)Kappen and Ruiz]{kappen2016adaptive}
+Hilbert~J Kappen and Hans~Christian Ruiz.
+\newblock Adaptive importance sampling for control and inference.
+\newblock \emph{Journal of Statistical Physics}, 162\penalty0 (5):\penalty0
+  1244--1266, 2016.
+
+\bibitem[Kappen et~al.(2012)Kappen, G{\'o}mez, and Opper]{kappen2012optimal}
+Hilbert~J Kappen, Vicen{\c{c}} G{\'o}mez, and Manfred Opper.
+\newblock Optimal control as a graphical model inference problem.
+\newblock \emph{Machine learning}, 87\penalty0 (2):\penalty0 159--182, 2012.
+
+\bibitem[Karras et~al.(2022)Karras, Aittala, Aila, and
+  Laine]{karras2022elucidating}
+Tero Karras, Miika Aittala, Timo Aila, and Samuli Laine.
+\newblock Elucidating the design space of diffusion-based generative models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2022.
+
+\bibitem[Kingma \& Ba(2015)Kingma and Ba]{Kingma:2014}
+Diederik~P. Kingma and Jimmy Ba.
+\newblock Adam: {A} method for stochastic optimization.
+\newblock In \emph{International Conference on Learning Representations}, 2015.
+
+\bibitem[Kingma \& Welling(2013)Kingma and Welling]{kingma2013auto}
+Diederik~P Kingma and Max Welling.
+\newblock Auto-encoding variational {B}ayes.
+\newblock \emph{arXiv preprint arXiv:1312.6114}, 2013.
+
+\bibitem[Klebaner(2012)]{klebaner2012introduction}
+Fima~C Klebaner.
+\newblock \emph{Introduction to Stochastic Calculus with Applications}.
+\newblock Imperial College Press, 2012.
+
+\bibitem[LeCun \& Cortes(2010)LeCun and Cortes]{mnist}
+Yann LeCun and Corinna Cortes.
+\newblock {MNIST} handwritten digit database.
+\newblock http://yann.lecun.com/exdb/mnist/, 2010.
+\newblock URL \url{http://yann.lecun.com/exdb/mnist/}.
+
+\bibitem[LeCun et~al.(1998)LeCun, Bottou, Bengio, and
+  Haffner]{lecun1998gradient}
+Yann LeCun, L{\'e}on Bottou, Yoshua Bengio, and Patrick Haffner.
+\newblock Gradient-based learning applied to document recognition.
+\newblock \emph{Proceedings of the IEEE}, 86\penalty0 (11):\penalty0
+  2278--2324, 1998.
+
+\bibitem[Lee et~al.(2022)Lee, Lu, and Tan]{lee2022convergencenocondition}
+Holden Lee, Jianfeng Lu, and Yixin Tan.
+\newblock Convergence of score-based generative modeling for general data
+  distributions.
+\newblock \emph{arXiv preprint arXiv:2209.12381}, 2022.
+
+\bibitem[Leimkuhler \& Matthews(2016)Leimkuhler and
+  Matthews]{leimkuhler2016molecular}
+Ben Leimkuhler and Charles Matthews.
+\newblock \emph{Molecular Dynamics with Deterministic and Stochastic Numerical
+  Methods}.
+\newblock Springer, 2016.
+
+\bibitem[L{\'e}onard(2014{\natexlab{a}})]{leonard2013survey}
+Christian L{\'e}onard.
+\newblock A survey of the {S}chr{\"o}dinger problem and some of its connections
+  with optimal transport.
+\newblock \emph{Discrete and Continuous Dynamical Systems-Series A},
+  34\penalty0 (4):\penalty0 1533--1574, 2014{\natexlab{a}}.
+
+\bibitem[L{\'e}onard(2014{\natexlab{b}})]{leonard2014some}
+Christian L{\'e}onard.
+\newblock Some properties of path measures.
+\newblock In \emph{S{\'e}minaire de Probabilit{\'e}s XLVI}, pp.\  207--230.
+  Springer, 2014{\natexlab{b}}.
+
+\bibitem[Metz et~al.(2020)Metz, Maheswaranathan, Sun, Freeman, Poole, and
+  Sohl-Dickstein]{metz2020using}
+Luke Metz, Niru Maheswaranathan, Ruoxi Sun, C~Daniel Freeman, Ben Poole, and
+  Jascha Sohl-Dickstein.
+\newblock Using a thousand optimization tasks to learn hyperparameter search
+  strategies.
+\newblock \emph{arXiv preprint arXiv:2002.11887}, 2020.
+
+\bibitem[M{\o}ller et~al.(1998)M{\o}ller, Syversveen, and
+  Waagepetersen]{Moller:1998}
+Jesper M{\o}ller, Anne~Randi Syversveen, and Rasmus~Plenge Waagepetersen.
+\newblock Log {G}aussian {C}ox processes.
+\newblock \emph{Scandinavian Journal of Statistics}, 25\penalty0 (3):\penalty0
+  451--482, 1998.
+
+\bibitem[Neal(2001)]{neal2001annealed}
+Radford~M Neal.
+\newblock Annealed importance sampling.
+\newblock \emph{Statistics and Computing}, 11\penalty0 (2):\penalty0 125--139,
+  2001.
+
+\bibitem[Neal(2003)]{Neal:2003}
+Radford~M. Neal.
+\newblock Slice sampling.
+\newblock \emph{The Annals of Statistics}, 31:\penalty0 705--767, 06 2003.
+
+\bibitem[Nichol \& Dhariwal(2021)Nichol and Dhariwal]{nichol2021improved}
+Alexander~Quinn Nichol and Prafulla Dhariwal.
+\newblock Improved denoising diffusion probabilistic models.
+\newblock In \emph{International Conference on Machine Learning}, 2021.
+
+\bibitem[Papamakarios et~al.(2021)Papamakarios, Nalisnick, Rezende, Mohamed,
+  and Lakshminarayanan]{papamakarios2019normalizing}
+George Papamakarios, Eric Nalisnick, Danilo~Jimenez Rezende, Shakir Mohamed,
+  and Balaji Lakshminarayanan.
+\newblock Normalizing flows for probabilistic modeling and inference.
+\newblock \emph{The Journal of Machine Learning Research}, 22\penalty0
+  (1):\penalty0 2617--2680, 2021.
+
+\bibitem[Parmas et~al.(2018)Parmas, Rasmussen, Peters, and
+  Doya]{parmas2018pipps}
+Paavo Parmas, Carl~Edward Rasmussen, Jan Peters, and Kenji Doya.
+\newblock Pipps: Flexible model-based policy search robust to the curse of
+  chaos.
+\newblock In \emph{International Conference on Machine Learning}, 2018.
+
+\bibitem[Sohl-Dickstein et~al.(2015)Sohl-Dickstein, Weiss, Maheswaranathan, and
+  Ganguli]{sohl2015deep}
+Jascha Sohl-Dickstein, Eric Weiss, Niru Maheswaranathan, and Surya Ganguli.
+\newblock Deep unsupervised learning using nonequilibrium thermodynamics.
+\newblock In \emph{International Conference on Machine Learning}, 2015.
+
+\bibitem[Song et~al.(2021{\natexlab{a}})Song, Meng, and
+  Ermon]{song2020denoising}
+Jiaming Song, Chenlin Meng, and Stefano Ermon.
+\newblock Denoising diffusion implicit models.
+\newblock In \emph{International Conference on Learning Representations},
+  2021{\natexlab{a}}.
+
+\bibitem[Song et~al.(2021{\natexlab{b}})Song, Durkan, Murray, and
+  Ermon]{song2021maximum}
+Yang Song, Conor Durkan, Iain Murray, and Stefano Ermon.
+\newblock Maximum likelihood training of score-based diffusion models.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  2021{\natexlab{b}}.
+
+\bibitem[Song et~al.(2021{\natexlab{c}})Song, Sohl-Dickstein, Kingma, Kumar,
+  Ermon, and Poole]{song2020score}
+Yang Song, Jascha Sohl-Dickstein, Diederik~P Kingma, Abhishek Kumar, Stefano
+  Ermon, and Ben Poole.
+\newblock Score-based generative modeling through stochastic differential
+  equations.
+\newblock In \emph{International Conference on Learning Representations},
+  2021{\natexlab{c}}.
+
+\bibitem[Sottinen \& S{\"a}rkk{\"a}(2008)Sottinen and
+  S{\"a}rkk{\"a}]{sottinen2008application}
+Tommi Sottinen and Simo S{\"a}rkk{\"a}.
+\newblock Application of {G}irsanov theorem to particle filtering of discretely
+  observed continuous-time non-linear systems.
+\newblock \emph{Bayesian Analysis}, 3\penalty0 (3):\penalty0 555--584, 2008.
+
+\bibitem[Sountsov et~al.(2020)Sountsov, Radul, and
+  contributors]{inferencegym2020}
+Pavel Sountsov, Alexey Radul, and contributors.
+\newblock Inference gym, 2020.
+\newblock URL \url{https://pypi.org/project/inference_gym}.
+
+\bibitem[Thalmeier et~al.(2020)Thalmeier, Kappen, Totaro, and
+  G\'omez]{thalmeier2020adaptive}
+Dominik Thalmeier, Hilbert~J Kappen, Simone Totaro, and Vicenc G\'omez.
+\newblock Adaptive smoothing for path integral control.
+\newblock \emph{Journal of Machine Learning Research}, 21:\penalty0 1--37,
+  2020.
+
+\bibitem[Thin et~al.(2021)Thin, Kotelevskii, Durmus, Moulines, Panov, and
+  Doucet]{Thin:2021}
+Achille Thin, Nikita Kotelevskii, Alain Durmus, Eric Moulines, Maxim Panov, and
+  Arnaud Doucet.
+\newblock Monte {C}arlo variational auto-encoders.
+\newblock In \emph{International Conference on Machine Learning}, 2021.
+
+\bibitem[Tzen \& Raginsky(2019)Tzen and Raginsky]{tzen2019theoretical}
+Belinda Tzen and Maxim Raginsky.
+\newblock Theoretical guarantees for sampling and inference in generative
+  models with latent diffusions.
+\newblock In \emph{Conference on Learning Theory}, 2019.
+
+\bibitem[Vargas et~al.(2021)Vargas, Ovsianas, Fernandes, Girolami, Lawrence,
+  and N{\"u}sken]{vargas2021bayesian}
+Francisco Vargas, Andrius Ovsianas, David Fernandes, Mark Girolami, Neil
+  Lawrence, and Nikolas N{\"u}sken.
+\newblock Bayesian learning via neural {S}chr{\"o}dinger--{F}{\"o}llmer flows.
+\newblock \emph{arXiv preprint arXiv:2111.10510}, 2021.
+
+\bibitem[Vicol et~al.(2021)Vicol, Metz, and Sohl-Dickstein]{vicol2021unbiased}
+Paul Vicol, Luke Metz, and Jascha Sohl-Dickstein.
+\newblock Unbiased gradient estimation in unrolled computation graphs with
+  persistent evolution strategies.
+\newblock In \emph{International Conference on Machine Learning}, 2021.
+
+\bibitem[Vincent(2011)]{vincent2011connection}
+Pascal Vincent.
+\newblock A connection between score matching and denoising autoencoders.
+\newblock \emph{Neural Computation}, 23\penalty0 (7):\penalty0 1661--1674,
+  2011.
+
+\bibitem[Wainwright \& Jordan(2008)Wainwright and Jordan]{Wainwright:2008}
+Martin~J. Wainwright and Michael~I. Jordan.
+\newblock Graphical {Models}, {Exponential} {Families}, and {Variational}
+  {Inference}.
+\newblock \emph{Foundations and Trends{\textregistered} in Machine Learning},
+  1\penalty0 (1--2):\penalty0 1--305, November 2008.
+
+\bibitem[Wu et~al.(2020)Wu, K{\"o}hler, and No{\'e}]{wunoe2020stochastic}
+Hao Wu, Jonas K{\"o}hler, and Frank No{\'e}.
+\newblock Stochastic normalizing flows.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2020.
+
+\bibitem[Zhang et~al.(2021)Zhang, Sahai, and Marzouk]{zhangmarzouk2021sampling}
+Benjamin Zhang, Tuhin Sahai, and Youssef Marzouk.
+\newblock Sampling via controlled stochastic dynamical systems.
+\newblock In \emph{I (Still) Can't Believe It's Not Better! NeurIPS 2021
+  Workshop}, 2021.
+
+\bibitem[{Zhang} et~al.(2021){Zhang}, {Hsu}, {Li}, {Finn}, and
+  {Grosse}]{ZhangAIS2021}
+Guodong {Zhang}, Kyle {Hsu}, Jianing {Li}, Chelsea {Finn}, and Roger {Grosse}.
+\newblock Differentiable annealed importance sampling and the perils of
+  gradient noise.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2021.
+
+\bibitem[Zhang \& Chen(2022)Zhang and Chen]{zhangyongxinchen2021path}
+Qinsheng Zhang and Yongxin Chen.
+\newblock Path integral sampler: a stochastic control approach for sampling.
+\newblock In \emph{International Conference on Learning Representations}, 2022.
+
+\bibitem[Zhou et~al.(2016)Zhou, Johansen, and Aston]{zhou2016toward}
+Yan Zhou, Adam~M Johansen, and John~AD Aston.
+\newblock Toward automatic model comparison: an adaptive sequential monte carlo
+  approach.
+\newblock \emph{Journal of Computational and Graphical Statistics}, 25\penalty0
+  (3):\penalty0 701--726, 2016.
+
+\end{thebibliography}

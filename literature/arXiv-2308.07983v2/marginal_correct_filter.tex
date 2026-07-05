@@ -1,0 +1,464 @@
+We start by considering the \emph{noiseless} setting in which we are given an observation $\lmeas \in \rset^{\dimy}$ of the first $\dimy$ coordinates of the state $\state \in \rset^{\dimx}$. We denote $\topstate = (\vecidx{\state}{}{1}, \dotsc, \vecidx{\state}{}{\dimy})$ and $\bottomstate = (\vecidx{\state}{}{\dimy+1}, \dotsc, \vecidx{\state}{}{\dimx})$. In this setting, the posterior density is given by $\filter{0}{\lmeas}{\lbottomstate_0} \propto \bwmarg{0}{\lmeas, \lbottomstate_0}$.
+
+We address the problem of drawing approximate samples from this posterior distribution  with Sequential Monte Carlo (SMC) methods. We consider the following sequence of distributions \[ 
+    \filter{s}{\lmeas}{\lstate_s} \propto \int \filter{0}{\lmeas}{\lstate_0} \fwtrans{s|0}{\lstate_0}{\lstate_s} \rmd \lstate_0 \eqsp, \quad s \in [1:n-1] \eqsp, \quad \filter{n}{\lmeas}{\lstate_n} = \normpdf(\lstate_n; \mathbf{0}, \id_{\dimx}) \eqsp,
+    \]
+    where $\fwtrans{s|0}{\lstate_0}{\lstate_s} = \int \prod_{\ell = 1} ^s \fwtrans{\ell}{\lstate_{\ell-1}}{\lstate_\ell} \rmd \lstate_{1:s-1}$. Thus, sampling from $\filter{n}{\lmeas}{}$ and then running a SMC algorithm with distributions $\{ \filter{n - s}{\lmeas}{} \}_{s = 0} ^{n-1}$ enables approximate sampling from the posterior.
+% An SMC algorithm relies on the sequence of distributions $(\filter{s}{\lmeas}{})_{s \in[0:n]}$ with $\filter{0}\lmeas{}$ as the final distribution and such that (1) $\filter{n}{\lmeas}{}$ is tractable for sampling, and (2) sampling from $\filter{s}{\lmeas}{}$ starting from $\filter{s+1}{\lmeas}{}$ is easy. The latter is achieved either by ensuring that the discrepancy between $\filter{s+1}{\lmeas}{}$ and $\filter{s}{\lmeas}{}$ is small or by designing Markov kernels $(K_s)_{s\in[0:n-1]}$ such that $\int \filter{s+1}{\lmeas}{\rmd z} K_s(\cdot | z)$ can be used as an approximation of $\filter{s}{\lmeas}{}$ for all $s \in [0:n-1]$. While the intermediate distributions $\mu_s$ are generally not available for sampling, we can use approximate samples from $\mu_{s+1}$ to obtain approximate samples from the current distribution $\mu_s$.
+%  Unfortunately, these distributions are unavailable for density evaluation up to a normalizing constant and thus cannot straightforwardly be used in an SMCS scheme. 
+In the next section we show how these bridge distributions can nonetheless be used to define a FK model that targets the desired posterior. 
+ The resulting procedure is summarized in \Cref{alg:algopratique} and is explained throughout the next section. 
+
+% We now consider a generic sequence of bridge distributions that builds on the marginals of the diffusion model 
+% \[
+% \filter{s}{\lmeas}{\rmd \statevar{s}} \propto \pot{s}{\lmeas}{\statevar{s}} \bwmarg{s}{\rmd \statevar{s}} \eqsp, \quad \text{for all $s \in [1:n]$} \eqsp,
+% \]
+% \eric{Pb de notation avec \eqref{eq:posterior:noisy}... Attention à avoir des notations acceptables par tous}
+% where the potentials $\pot{s}{\lmeas}{}$ are positive and are yet to be designed. The core idea of our approach is to bridge consecutive marginals $\bwmarg{s+1}{}$ and $\bwmarg{s}{}$ of the diffusion model (of which the prior $\bwmarg{0}{}$  in \cref{eq:posterior:noisy,eq:posterior:noiseless} is the terminal marginal). This bridging is achieved using the transition kernel $\bwtrans{}{s}{}{}$ and with appropriately chosen potentials, we can obtain a sequence of posteriors $(\filter{s:n}\lmeas{})_{s\in[0:n]}$ that are also easy to bridge. Note that since $\bwmarg{s}{\statevar{s}} = \int \bwmarg{s+1}{\rmd \statevar{s+1}} \bwtrans{}{s}{\statevar{s+1}}{\statevar{s}}$, it is easily seen that the sequence $(\filter{s}{\lmeas}{})_s$ satisfies the following recursion;
+% for all $s \in [0:n-1]$ and $B \in \sigalgebra\big( \R^{\dimx} \big)$,
+% \begin{equation} 
+%     \label{eq:filter:recursion}
+%     \filter{s}\lmeas{B} = \frac{1}{L_{s}} \int \1_B(\statevar{s}) \filter{s+1}\lmeas{\rmd \statevar{s+1}} \bwtrans{}{s}{\statevar{s+1}}{\rmd \statevar{s}} \dubpot{s:s+1}\lmeas{\statevar{s:s+1}}\eqsp,
+% \end{equation}
+% where $\smash{\dubpot{s:s+1}{\lmeas}{\statevar{s:s+1}} =  \pot{s}{\lmeas}{\statevar{s}}} / \pot{s+1}{\lmeas}{\statevar{s+1}}$ and $L_{s}$ is its normalizing constant.
+\begin{algorithm2e}
+    \caption{\algo}
+    \label{alg:algopratique} 
+    \KwInput{Number of particles $N$}
+    \KwOutput{$\particle{1:N}{0}$, $\weight{1:N}{0}$}
+    Set $\weight{n}{1:N} = N^{-1}$. Draw $\particle{1:N}{n} \sim \normdist(0, \idm)$. \\
+    \For{$s \in \intvect{n}{1}$}{
+        Draw $\anc{i}{s-1} \sim \categorical\big(\{ \weight{i}{s-1} \}_{i = 1} ^N \big)$ and 
+        set $\uweight{i}{s-2} = 1$.\\
+        \For{$\ell \in \intvect{1}{\dimg}$}{
+            \uIf{$\ell \leq \dimy$ and $\tau_\ell \leq s$}{
+                Draw $\particle{i}{s - 1, \ell} \sim \bwopt{s-1|s, \ell}{\tilde{y}_\ell}{\particle{\anc{i}{s-1}}{s, \ell}}{\cdot}$ and set $\uweight{i}{s-2} = \uweight{i}{s-2} \uweight{i}{s-2, \ell}(\particle{i}{s-1, \ell})$.\\
+            }
+            \Else{
+                Draw $\particle{i}{s - 1, \ell} = \bwtrans{}{s, \ell}{\particle{\anc{i}{s -1}}{s-1, \ell}}{\cdot}$.
+            }
+        }
+    }
+\end{algorithm2e}
+\paragraph{A Feynman--Kac model based on the diffused posterior.}
+We now seek natural choices of FK models by first considering the following assumption which we discuss at the end of the section.
+\eric{pas une bonne idée de le mettre en hypothèse, on a l'impression que tu as besoin d'un peu moins que ça}
+% \tcr{\begin{hypA} 
+%     \label{assp:perfect}
+%         For all $\statevar{0:n} \in (\R^{\dimx})^{n+1}$,  $\bwmarg{0}{\lstate_{0}} \fwtrans{1:n|0}{\statevar{0}}{\statevar{1:n}} = \bwmarg{0:n}{\statevar{0:n}}$.
+% \end{hypA}
+% }
+\eric{ce n'est pas une hypothèse, c'est une approximation... n'a-t-on pas plutot besoin des marginales que l'on discute au dessus... on n'utilise jamais les lois jointes "globales"}
+% In order for the SMC sampler to effectively sample from the target distribution, it is important to have a small discrepancy between $\filter{s+1}{\lmeas}{}$ and $\filter{s}{\lmeas}{}$ for all $s \in [0:n-1]$. Consider the probability measures $\filter{s}{\lmeas}{\rmd \lstate_s} \propto \int \filter{0}{\lmeas}{\rmd \lstate_0} \fwtrans{s|0}{\lstate_0}{\rmd \lstate_s}$ for $s \in [1:n]$ which correspond to the marginals of the forward diffusion applied to the posterior $\filter{0}{\lmeas}{}$. By design they bridge slowly between the posterior $\filter{0}{\lmeas}{}$ and a standard Gaussian if $n$ is large enough and 
+For the sequence of diffused posteriors, we can write under 
+\assp{\ref{assp:perfect}} that $\filter{s}{\lmeas}{\rmd \lstate_s} \propto  \pot{s}{\lmeas}{\lstate_s} \bwmarg{s}{\rmd \lstate_s}$ where $\pot{s}{\lmeas}{\lstate_s} = \int \bwtrans{}{0|s}{\lstate_s}{\lstate_0} \clipleb{1:m}{\lmeas}{\rmd \lstate_0}$. Following this insight we now derive in the noiseless scenario a practical recursion for the sequence $\{ \filter{s}{\lmeas}{} \}_{s = 0} ^n$ which will guide our choice of FK in the more general case when \assp{\ref{assp:perfect}} is not satisfied.
+
+\textit{Noiseless case.} 
+% Let $\filter{s}{\lmeas}{}$ denote the time $s$ marginal of the joint posterior $\filter{0:n}{\lmeas}{\lstate_{0:n}} \propto \bwmarg{0:n}{ \lstate_{0:n}} \delta_\lmeas(\ltopstate_{0})$, which is 
+% \[ 
+% \filter{s}{\lmeas}{\lstate_s} \propto   \int \bwmarg{0:n}{\chunk{\lstate}{0}{n}} \clipleb{0}{\lmeas}{\rmd \lstate_0} \rmd \chunk{\lstate}{1}{s-1, s+1:n} \propto \bwmarg{s}{\lstate_s} \pot{s}{\lmeas}{\lstate_s}
+% \] 
+% where $\smash{\pot{s}{\lmeas}{\lstate_s} = \int \bwtrans{}{0|s}{\lstate_s}{\lstate_0} \clipleb{0}{\lmeas}{\rmd \lstate_0}}$. 
+Under \assp{\ref{assp:perfect}} we have that $\bwmarg{0:s+1}{} = \fwmarg{0:s+1}{}$ which implies in particular that $\bwtrans{}{0|s}{\lstate_s}{\lstate_0} \bwmarg{s}{\lstate_s} = \bwmarg{0}{\lstate_0} \fwtrans{s|0}{\lstate_0}{\lstate_s} = \int \bwmarg{0}{\lstate_0}  \revbridge{s|0}{\lstate_{s+1}, \lstate_0}{\lstate_s} \fwtrans{s+1|0}{\lstate_0}{\rmd \lstate_{s+1}}$ and thus 
+\begin{align*} 
+    \filter{s}{\lmeas}{\lstate_s} \propto \int \revbridge{s| 0}{\lstate_{s+1}, \lstate_0}{\lstate_s} \bwmarg{0}{\lstate_0} \fwtrans{s+1|0}{\lstate_0}{\rmd \lstate_{s+1}} \clipleb{1:\dimy}{\lmeas}{\rmd \lstate_0} \eqsp.
+\end{align*}
+Next, since $\topstate_{s}$ and $\bottomstate_{s}$ are independent conditionally on $(\topstate_{s+1}, \bottomstate_{s+1})$ and  depend only on $(\topstate_{s+1}, \topstate_{0})$ and $(\bottomstate_{s+1}, \bottomstate_{0})$ respectively (we write $\revbridge{s, \top}{}{}$ and $\revbridge{s, \bot}{}{}$ for the associated bridge kernels), we have that 
+\begin{equation}
+    \label{eq:noiseless_posterior:recursion} 
+    \filter{s}{\lmeas}{\lstate_s} \propto \int \revbridge{s|0, \top}{\ltopstate_{s+1}, \lmeas}{\ltopstate_{s}} \revbridge{s|0, \bot}{\lbottomstate_{s+1}, \lbottomstate_{0}}{\lbottomstate_{s}} \bwmarg{0}{\lstate_0} \fwtrans{0|s+1}{\lstate_0}{\rmd \lstate_{s+1}} 
+    \clipleb{1:m}{\lmeas}{\rmd \lstate_0} \eqsp.
+\end{equation} 
+Then, by replacing $\lbottomstate_{0}$ in the bridge kernel $\revbridge{s|0, \bot}{}{}$ with its prediction $\hat{\lbottomstate} _{0|s+1} (\lstate_{s+1})$ we obtain the following recursion, 
+\begin{equation} 
+    \label{eq:idealfilter}
+    \filter{s}{\lmeas}{\rmd \lstate_s} \approx \int \filter{s+1}{\lmeas}{\rmd \lstate_{s+1}} \bwtrans{}{s, \bot}{\lstate_{s+1}}{\rmd \lbottomstate_{s}} \revbridge{s|0, \top}{\ltopstate_{s+1}, \lmeas}{\rmd \ltopstate_{s}} \eqsp,
+\end{equation}
+where we have used the definition  $\bwtrans{}{s}{\lstate_{s+1}}{\lbottomstate_s} = \revbridge{s|0}{\lbottomstate_{s+1}, \hat{\lbottomstate}_{0|s+1}(\lstate_{s+1})}{\lstate_s}$, see xxx.
+Although this approximation is strictly valid only under the assumption of perfect measurements \assp{\ref{assp:perfect}}, it can still serve as a useful guide in the design of our FK model. Specifically, according to this recursion, the transition of $\lbottomstate_{s}$ should follow the backward diffusion while that of $\ltopstate_{s}$ should follow the bridge kernel conditioned on the measurement $\lmeas$. Mimicking this behavior while targeting the right posterior without \assp{\ref{assp:perfect}} can be done by considering the Feynman-Kac model defined as follows: 
+\begin{align}
+    \filter{n-1:n}{\lmeas}{\rmd \chunk{\lstate}{n-1}{n}} & \propto \bwmarg{n}{\rmd \lstate_n} \bwtrans{}{n-1, \bot}{\lstate_{n}}{\lbottomstate_{n-1}} \revbridge{n-1|0, \top}{\ltopstate_{n}, \lmeas}{\ltopstate_{n-1}} \fwtrans{n, \top}{\lmeas}{\ltopstate_n} \eqsp, \\
+    \filter{0:1}{\lmeas}{\rmd \chunk{\lstate}{0}{1}} & \propto \int \filter{1:2}{\lmeas}{\rmd \chunk{\lstate}{1}{2}} \bwtrans{}{0, \bot}{\lstate_1}{\rmd \lbottomstate_0} \delta_\lmeas(\rmd \ltopstate_0) \frac{\bwtrans{}{0, \top}{\lstate_1}{\lmeas} \bwtrans{}{1, \top}{\lstate_2}{\ltopstate_1}}{\fwtrans{1,\top}{\lmeas}{\ltopstate_1} \fwtrans{2, \top}{\ltopstate_1}{\ltopstate_2}} \eqsp, \label{eq:time1joint}
+\end{align}
+and for all $s \in [1:n-2]$,
+\begin{multline}
+    \label{eq:FKrecursion}
+    \filter{s:s+1}{\lmeas}{\rmd \lstate_{s:s+1}} \\
+     \propto \int \filter{s+1:s+2}{\lmeas}{\rmd \lstate_{s+1:s+2}} \bwtrans{}{s, \bot}{\lstate_{s+1}}{\rmd \lbottomstate_{s}} \revbridge{s|0, \top}{\ltopstate_{s+1}, \lmeas}{\rmd \ltopstate_s} \frac{\bwtrans{}{s+1, \top}{\lstate_{s+2}}{\ltopstate_{s+1}}}{\fwtrans{s+2, \top}{\ltopstate_{s+1}}{\ltopstate_{s+2}}} \eqsp.
+\end{multline}
+We show in \Cref{lem:fkposterior} in the Appendix that the $\lstate_0$ marginal in \eqref{eq:time1joint} is indeed $\filter{0}{\lmeas}{}$ and hence that the introduced FK model targets the right posterior. The particle approximation $\smash{\filter{0}{N}{} = N^{-1} \sum_{i = 1}^N \delta_{\particle{i}{0}}}$, which is detailed in \Cref{appendix:sec:FK:particle_approx}, is obtained by using Algorithm~\ref{alg:algopratique} with weight function and Markov kernel 
+\begin{align} 
+    \uweight{}{s}(\lstate_{s+1}, \lstate_s) & = \int \fwtrans{s|0, \top}{\lmeas}{\ltopstate_s} \bwtrans{}{s}{\lstate_{s+1}}{\rmd \ltopstate_s} \big/ \fwtrans{s+1|0}{\lmeas}{\ltopstate_{s+1}} \\
+    \bwopt{s}{\lmeas}{\lstate_{s+1}}{\lstate_s} & = 
+\end{align}
+% The particle approximation $\filter{n-1:n}{N}{}$ of $\filter{n-1:n}{\lmeas}{}$ is obtained by means of \emph{importance sampling} by sampling from the probability measure $\smash{\bwmarg{n}{\rmd \lstate_n} \bwopt{n-1}{\lmeas}{\lstate_{n-1}}{\rmd \lstate_n}}$ where $\smash{\bwopt{n-1}{\lmeas}{\lstate_{n-1}}{\lstate_n} \propto \fwtrans{n-1|0, \top}{\lmeas}{\ltopstate_{n-1}} \bwtrans{}{n-1}{\lstate_{n-1}}{\lstate_n}}$ which is available in closed form, and then weighting accordingly. 
+% The particle approximation is then obtained by applying Algorithm~\ref{alg:algopratique} with the auxiliary kernel $\bwopt{s}{\lmeas}{\lstate_{s+1}}{\rmd \lstate_s} \propto \bwtrans{}{s}{\lstate_{s+1}}{\rmd \lstate_s} \fwtrans{s|0, \top}{\lmeas}{\ltopstate_s}$ which is available in closed form, and weight function $\uweight{}{s}(\lstate_{s+1}) = \int \fwtrans{s|0}{\lmeas}{\lstate_s} \bwtrans{}{s}{\lstate_{s+1}}{\rmd \lstate_s} / \fwtrans{s+1|0}{\lmeas}{\lstate_{s+1}}$. 
+% Thus, we set $\pot{s}{\lmeas}{\lstate_s, \lstate_{s+1}} = \revbridge{s, \top}{\ltopstate_{s+1}, \lmeas}{\ltopstate_s}$ 
+% It can be shown under \assp{\ref{assp:perfect}} that
+% \begin{equation} 
+%     \label{eq:smcdiff_decomp}
+%     \filter{0}\lmeas{\rmd \statevar{0}} = \displaystyle \int \delta_\lmeas(\rmd \tstatevar{0}) \prod_{s = 0}^{n-1} \fwtrans{s+1,t}{\tstatevar{s}}{\rmd \tstatevar{s+1}} \filter{0:n}{}{\rmd \bstatevar{0} | \tstatevar{0:n}}  \eqsp,
+% \end{equation}
+% We note however that we do not need \cref{assp:perfect} for our algorithm to be consistent.
+
+\textit{Extension to the noisy case.} 
+We will now shift our focus to the posterior, which is defined by equation \eqref{eq:posterior:noisy}. \eric{pas clair ce qu'on veut dire !} It is worth noting that the likelihood function $\pot{0}\lmeas{}$ is closely connected to the forward recursion described in equation \eqref{eq:forward_def}. Specifically, if we make the assumption that there exists a $\tau_i$ for all $i \in \intvect{1}{m}$ such that $\sqrt{\alpha_{\tau_i}} \noisestd = \sqrt{1 - \alpha_{\tau_i}} s_i$, we can conclude that $\sqrt{\alpha_{\tau_i}} \lmeas_{i} / s_i = \sqrt{\alpha_{\tau_i}} \statevar{0, i} + \sqrt{1 - \alpha_{\tau_i}} \noise_i$ for all $i \in \intvect{1}{m}$. This, in turn, allows us to express the potential function $\pot{0}{\lmeas}{}$ in terms of forward kernels. More specifically, for all $i \in \intvect{1}{m}$, we can write $\normpdf(\lmeas_{i}; \statevar{0, i}, \noisestd^2) = \normpdf(\tilde{\lmeas}_{i}; \sqrt{\alpha{\tau_i}} \statevar{0, i}, (1 - \alpha_{\tau_i}))$, where $\tilde{\lmeas}_{i} = \sqrt{\alpha{\tau_i}} \lmeas_{i} / s_i$.
+\begin{equation}
+    \label{eq:potential:fwd_ker_decomposition}
+    \pot{0}\lmeas{\lstate_{0}}  \propto \prod_{i = 1}^{m} \fwtrans{\tau_i | 0, i}{\statevar{0,i}}{\tilde{\lmeas}_{i}} \eqsp.
+\end{equation}
+This allows us to establish that under \assp{\ref{assp:perfect}} the posterior \eqref{eq:posterior:noisy} is the time $0$ marginal posterior of an inverse problem on the joint states $\chunk{\state}{0}{n}$ with noiseless observations $(\tilde{\lmeas}_{1}, \dotsc, \tilde{\lmeas}_{m})$ at steps $(\tau_1, \dotsc, \tau_m)$.
+\begin{proposition} 
+    \label{prop:noisytonoiseless}
+    Assume \assp{\ref{assp:perfect}} and that $\tau_0 \eqdef 0 < \tau_1 < \dotsc < \tau_m$. Then it holds that 
+    \begin{equation} 
+        \noisyfilter{0}{\lmeas}{\rmd \statevar{0}} \propto \int \bwmarg{\tau_m}{\statevar{\tau_m}} \clipleb{m}{\tilde\lmeas}{\rmd \statevar{\tau_m}} \prod_{i = 0}^{m-1} \bwtrans{}{\tau_i | \tau_{i + 1}}{\statevar{\tau_{i+1}}}{\statevar{\tau_i}} \clipleb{i}{\tilde\lmeas}{\rmd \statevar{\tau_i}} \eqsp.
+    \end{equation}
+\end{proposition}
+The proof and precise definition of the joint posterior can be found in \Cref{proof:noisytonoiseless}. 
+This allows us to extend the noiseless case to adapt to \eqref{eq:posterior:noisy}. We obtain the adapted version \eqref{eq:noiseless_posterior:recursion} in Lemma~\ref{lem:decomposition_noisyposterior} which by replacing again $\lstate_0$ with its prediction $\hat{\lstate}_{0|s+1}(\lstate_{s+1})$ we obtain the following recursion for the time $s$ marginal posteriors; for all $k \in [1:m]$ (we let $\tau_{m+1} = n$) and $s \in (\tau_k, \tau_{k+1})$
+\begin{equation} 
+    \filter{s}{\lmeas}{\rmd \lstate_s} \approx \int \filter{s+1}{\lmeas}{\rmd \lstate_{s+1}} \left\{ \prod_{\ell = k+1} ^{\dimx} \bwtrans{}{s, \ell}{\lstate_{s+1, \ell}}{\rmd \lstate_{s, \ell}} \prod_{i = 1}^k \revbridge{s|\tau_i, i}{\lstate_{s+1, i}, \tilde\lmeas_i}{\rmd \lstate_{s, i}} \right\} \eqsp,
+\end{equation}
+and when $s = \tau_k$ we obtain
+\begin{equation} 
+    \label{eq:noisy:perfect:at_tau}
+    \filter{s}{\lmeas}{\rmd \lstate_s} \approx \int \filter{s+1}{\lmeas}{\rmd \lstate_{s+1}} \left\{ \prod_{\ell = k+1} ^{\dimx} \bwtrans{}{s, \ell}{\lstate_{s+1, \ell}}{\rmd \lstate_{s, \ell}} \prod_{i = 1}^{k-1} \revbridge{s|\tau_i, i}{\lstate_{s+1, i}, \tilde\lmeas_i}{\rmd \lstate_{s, i}} \right\}  \delta_{\tilde\lmeas_k}(\rmd \lstate_{s, k})\eqsp.
+\end{equation}
+Therefore, proceeding in the same way as in the noiseless case, we can mimic this model. We start first by defining for all $k \in [1:m]$ and $s \in (\tau_k, \tau_{k+1})$
+\begin{align}
+    \bbridgeker{s}{\lstate_{s+1}, \tilde\lmeas}{\rmd \lstate_{s}} \eqdef \prod_{\ell = k+1} ^{\dimx} \bwtrans{}{s, \ell}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}} \prod_{i = 1}^{k} \revbridge{s|\tau_i, i}{\lstate_{s+1, i}, \tilde\lmeas_i}{\rmd \lstate_{s, i}} \eqsp.
+\end{align}
+The case where $s = \tau_k$ requires special attention, since the ideal case \eqref{eq:noisy:perfect:at_tau} involves a $\delta_{\tilde\lmeas_\ell}$. To enforce this constraint while still being able to have a density w.r.t $\bwtrans{}{0:n}{}{}$, we consider a parameter $\lambda_\delta^2 > 0$ and define
+$\tilde{q}_{\tau_k}(\rmd \lstate_{\tau_k, k}|\lstate_{\tau_k + 1, k}, \tilde\lmeas_k) \eqdef {\normpdf(\tilde\lmeas_k; \lstate_{\tau_k, k} ,\lambda_\delta^2)\fwtrans{\tau_k+1, k}{\lstate_{\tau_k,k}}{\lstate_{\tau_k+1,k}}} / \fwtrans{\tau_k+1|\tau_k, k}{\tilde\lmeas_k}{\lstate_{\tau_k+1,k}}$. We can finally define
+\begin{multline}
+    \bbridgeker{\tau_k}{\lstate_{\tau_k+1}, \tilde\lmeas}{\rmd \lstate_{\tau_k}} \eqdef \tilde{q}_{\tau_k}(\rmd \lstate_{\tau_k, k}|\lstate_{\tau_k + 1, k}, \tilde\lmeas_k)\prod_{\ell = k+1} ^{\dimx} \bwtrans{}{\tau_k, \ell}{\lstate_{\tau_k+1}}{\rmd \lstate_{\tau_k, \ell}} \\
+    \prod_{i = 1}^{k-1} \revbridge{\tau_k|\tau_i, i}{\lstate_{\tau_k+1, i}, \tilde\lmeas_i}{\rmd \lstate_{\tau_k, i}} \eqsp.
+\end{multline}
+We are now equipped to establish the Feynman-Kac Model that mimics the ideal case. We define
+\begin{equation*}
+    \filter{n-1:n}{\lmeas}{\rmd \chunk{\lstate}{n-1}{n}} \propto \bwmarg{n}{\rmd \lstate_n} \bbridgeker{s}{\lstate_{n}, \tilde\lmeas}{\rmd \lstate_{n-1}} \prod_{i = 1}^\dimy \fwtrans{n, i}{\tilde\lmeas_i}{\lstate_{n, i}} \eqsp,
+\end{equation*}
+and for all $k \in [1:m]$ and $s \in [\tau_k, \tau_{k+1})$,
+\begin{multline}
+    \label{eq:FKrecursion}
+    \filter{s:s+1}{\lmeas}{\rmd \lstate_{s:s+1}} 
+     \propto \int \filter{s+1:s+2}{\lmeas}{\rmd \lstate_{s+1:s+2}} \bbridgeker{s}{\lstate_{s+1}, \tilde\lmeas}{\rmd \lstate_{s}}   \prod_{i=1}^{k}\frac{\bwtrans{}{s+1, i}{\lstate_{s+2}}{\lstate_{s+1,i}}}{\fwtrans{s+2, i}{\lstate_{s+1,i}}{\lstate_{s+2,i}}}  
+      \eqsp.
+\end{multline}
+Therefore, a particle approximation is then obtained by applying Algorithm~\ref{alg:algopratique} with the choice of transition kernels and weight functions illustrated in \cref{tab:wandkerns}. All of them can be calculated in close form, as shown in \cref{appendix:explicitwandker}. Note that the algorithm coincides with the noiseless case by setting $\tau_\ell = 0$ for all $\ell \in \intvect{1}{\dimy}$.
+\begin{table}[H]
+    \centering
+    \begin{tabular}{|c|c|c|c|}
+    \hline
+         & $\bwopt{s, \ell}{\tilde{\lmeas}_\ell}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}}$ & $ \uweight{}{s, \ell}(\lstate_{s+1})$ \\\hline
+        $s > \tau_\ell$ & $\bwtrans{}{s, \ell}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}} \fwtrans{s|\tau_{\ell}, \ell}{\tilde{\lmeas}_\ell}{\lstate_{s, \ell}}$ & $\frac{\int \bwtrans{}{s}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}}\fwtrans{s|\tau_{\ell}}{\tilde{\lmeas}_\ell}{\lstate_s}}{\fwtrans{s+1|\tau_{\ell}, \ell}{\lmeas}{\lstate_{s+1, \ell}}}$\\[1.5ex]\hline
+        $s = \tau_\ell$ & $\bwtrans{}{s, \ell}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}} \normpdf(\lstate_{\tau_\ell}; \tilde{\lmeas}_\ell, \lambda_{\delta}^2)$ & $\frac{\int \bwtrans{}{s}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}}\normpdf(\lstate_{\tau_\ell}; \tilde{\lmeas}_\ell, \lambda_{\delta}^2)}{\fwtrans{s+1|\tau_{\ell}, \ell}{\lmeas}{\lstate_{s+1, \ell}}}$\\[1.5ex]\hline
+        $s < \tau_\ell$& 1 & 1 \\\hline
+    \end{tabular}
+    \caption{Kernel and weight functions for each $\ell \in \intvect{1}{\dimy}$ and $s \in \intvect{1}{n}$. The explicit expression are given in \cref{appendix:explicitwandker}.}
+    \label{tab:wandkerns}
+\end{table}
+% We extend \eqref{eq:noiseless:potential} for each coordinate $\ell \in \intvect{1}{\dimy}$, leading to 
+% \begin{align*}
+%     \pot{s, \ell}{\tilde\lmeas_{\ell}}{\lstate_s, \lstate_{s+1}} &= \fwtrans{s|\tau_{\ell}, \ell}{\tilde{\lmeas}_{\ell}}{\lstate_{s, i}} \fwtrans{s+1, \ell}{\lstate_{s, \ell}}{\lstate_{s+1, \ell}} \big/ \bwtrans{}{s,\ell}{\lstate_{s+1}}{\lstate_{s,\ell}} \quad & \text{if} \quad s > \tau_{\ell} \eqsp,\\
+%     \pot{\tau_\ell, \ell}{\tilde{\lmeas}_{\tau_\ell}}{\lstate_{\tau_\ell}, \lstate_{\tau_\ell+1}} &=  \normpdf(\lstate_{\tau_\ell}; \tilde{\lmeas}_\ell, \lambda_{\delta}^2)\fwtrans{\tau_{\ell}+1, \ell}{\lstate_{\tau_{\ell}, \ell}}{\lstate_{\tau_{\ell} + 1, \ell}} \big/ \bwtrans{}{\tau_{\ell},\ell}{\lstate_{\tau_{\ell}+1}}{\lstate_{\tau_{\ell},\ell}} \quad & \text{if} \quad s = \tau_{\ell} \eqsp,
+% \end{align*}
+% with $\lambda_{\delta}^2 \in \rset_{>0}$ and $\pot{s, \ell}{\tilde\lmeas_{\ell}}{\lstate_s, \lstate_{s+1}} = 1$ if $s < \tau_{\ell}$. The parameter $\lambda_{\delta}^2$ should be chosen small to mimic the effect of the deltas in \cref{prop:noisytonoiseless}. If we consider then the potential $\pot{s}{\lmeas}{\lstate_s, \lstate_{s+1}} = \prod_{\ell=1}^{\dimy} \pot{s, \ell}{\tilde{\lmeas}_{\ell}}{\lstate_s, \lstate_{s+1}}$,  \eqref{eq:filter:recursion} becomes for all $k \in [1:m]$ and $s \in (\tau_k, \tau_{k+1})$, 
+% \begin{align*}
+%     \filter{s}{\lmeas}{\rmd \lstate_s} \propto \int \filter{s+1:s+2}{\lmeas}{\rmd (\lstate_{s+1:s+2})} &\prod_{\ell \notin \m{J}_s}\bwtrans{}{s, \ell}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}} \\
+%     &\prod_{\ell \in \m{J}_s} \revbridge{s|\tau_{\ell}, \ell}{\lstate_{s+1, \ell}, \tilde{\lmeas}_{\ell}}{\rmd \lstate_{s, \ell}} \frac{\bwtrans{}{s+1, \ell}{\lstate_{s+2}}{\lstate_{s+1, \ell}}}{\fwtrans{s+2, \ell}{\lstate_{s+1, \ell}}{\lstate_{s+2, \ell}}} \eqsp,
+% \end{align*}
+% where $\m{J}_s = \{i \in \intvect{1}{m} | \tau_{i} < s\}$. In the same way as in the noiseless case, the particle approximation is then obtained by applying Algorithm~\ref{alg:algopratique} with the auxiliary kernel $\bwopt{s, \ell}{\tilde{\lmeas}_\ell}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}} \propto \bwtrans{}{s, \ell}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}} \fwtrans{s|\tau_{\ell}, \ell}{\tilde{\lmeas}_\ell}{\lstate_{s, \ell}}$ and $\bwopt{\tau_{\ell}, \ell}{\tilde{\lmeas}_\ell}{\lstate_{\tau_{\ell}+1}}{\rmd \lstate_{\tau_{\ell}, \ell}} \propto \normpdf(\lstate_{\tau_\ell}; \tilde{\lmeas}_\ell, \lambda_{\delta}^2) \fwtrans{\tau_{\ell}|\tau_{\ell}, \ell}{\tilde{\lmeas}_\ell}{\lstate_{\tau_{\ell}, \ell}}$ which are available in closed form, and weight function $\uweight{}{s}(\lstate_{s+1}) = \prod_{\ell=1}^{\dimy} \uweight{}{s, \ell}(\lstate_{s+1})$ with $\uweight{}{s, \ell}(\lstate_{s+1}) = \int \fwtrans{s|\tau_{\ell}}{\tilde{\lmeas}_\ell}{\lstate_s} \bwtrans{}{s}{\lstate_{s+1}}{\rmd \lstate_{s, \ell}} / \fwtrans{s+1|\tau_{\ell}}{\lmeas}{\lstate_{s+1}}$. 
+% In the particular case where $\nlessc = \emptyset$ we get that $\filter{0}\lmeas{\rmd \statevar{0}} = \int \filter{\tau_1}\lmeas{\rmd \statevar{\tau_1}} \bwtrans{}{0 | \tau_1}{\statevar{\tau_1}}{\rmd \statevar{0}}$ where $\filter{\tau_1}\lmeas{\rmd \statevar{\tau_1}} \propto \bwmarg{\tau_1}{\statevar{\tau_1}} \clipleb{\m{J}_{\tau_1}}{\lmeas}{\rmd \statevar{\tau_1}}$ and thus sampling from $\filter{0}\lmeas{}$ breaks down to sampling from the noiseless inverse problem posterior $\filter{\tau_1}\lmeas{}$ and then applying the backward diffusion.
+% \begin{lemma} 
+%     % \label{lem:decomposition_noisyposterior}
+%     The marginals of the joint noisy posterior satisfy for all $s \in [1:n-1]$, 
+%     \begin{equation} 
+%         \filter{s}{\lmeas}{\lstate_s} \propto \int \bwmarg{0}{\rmd \lstate_0} \fwtrans{s+1|0}{\lstate_0}{\rmd \lstate_{s+1}} \revbridge{s,\bot}{\lbottomstate_{s+1}, \lbottomstate_{0}}{\lbottomstate_s} \prod_{\ell \in \m{J}_{\leq s}} \revbridge{s|\tau_i}{\ltopstate_{s+1,i}, \ltopstate_{0,i}}{\ltopstate_{s,i}}
+%     \end{equation} 
+%     where $\m{J}_{\leq s} \eqdef \{ i \in [1:n]: \tau_i \leq s \}$.
+% \end{lemma}
+% \textbf{old...} Given an observation $y \in \R^{\dimy}$, we aim at sampling approximately from the diffusion posterior
+% \begin{equation} 
+%     \label{eq:posterior}
+%     \filter{0}\lmeas{\rmd x_0} =  \frac{\pot{0}\lmeas{x_0} \bwmarg{0}{\rmd x_0}}{\int \pot{0}\lmeas{\tilde{x}_0} \bwmarg{0}{\rmd \tilde{x}_0}} \eqsp.
+% \end{equation}
+% %which is simply the law of $X$ sampled from the diffusion model given the observation $y$ from the inverse problem model \eqref{eq:obs:model}. 
+% While $\pot{0}\lmeas{}$ admits a simple form, $\bwmarg{0}{}$ does not, and as a result  the posterior \eqref{eq:posterior} is  intractable for sampling and density evaluation. 
+% Furthermore, $\filter{0}\lmeas{}$ may be a high-dimensional multi-modal distribution and due to slow mixing, using standard MCMC techniques can turn out to be inefficient even if we could evaluate its unnormalized density. \emph{Sequential Monte Carlo samplers} (SMCS) \cite{del2006sequential} on the other hand offer an attractive alternative by making use of \emph{bridge distributions} that help simplify the sampling problem. In order to sample from the posterior $\filter{0}\lmeas{}$ an SMCS relies on a path of distributions $(\mu_s)_{s\in[0:n]}$ with $\mu_0 = \filter{0}\lmeas{}$ and such that (1) $\mu_n$ is tractable for sampling, (2)  sampling from $\mu_s$ starting from $\mu_{s+1}$ is easy. The latter is achieved either by making sure that the discrepancy between $\mu_{s+1}$ and $\mu_s$ is small or by designing Markov kernels $(K_s)_{s\in[0:n-1]}$ that are such that $\mu_{s+1} K_s$ is used as an approximation of $\mu_s$ for all $s \in [0:n-1]$.
+% The intermediate distributions $\mu_s$ are generally not available for sampling and the idea is to use approximate samples from $\mu_{s+1}$ to obtain approximate samples from the current distribution $\mu_s$. 
+
+% Let us sktech a simplified version of a generic SMCS and let $K_{s}$ be a $\mu_s$-invariant Markov kernel, i.e. $\mu_s K_s = \mu_s$, and  write $\mu_{s} = \tilde\mu_{s} / \int \rmd \tilde\mu_{s}$ to emphasize that the normalizing constants of the bridge distributions are not required. We then have that \[ \mu_s(\rmd x_s) = \mu_s K_s(\rmd x_s) \propto \int \frac{\rmd \tilde\mu_s}{ \rmd \tilde\mu_{s+1}}(x_{s+1}) \mu_{s+1}(\rmd x_{s+1})K_s(x_{s+1}, \rmd x_s) \eqsp,\] 
+% and thus, if an empirical approximation $\mu^N _{s+1} = N^{-1} \sum_{i = 1}^N \delta_{\particle{i}{s+1}}$ of $\mu_{s+1}$ is available we can introduce the following approximation of $\mu _{s}$:
+% \begin{equation}
+%     \label{eq:mixture}
+%     \tilde\mu^N_s(\rmd x_s) = \sum_{i = 1} ^N \weight{i}{s+1}  K_s(\particle{i}{s+1}, \rmd x_s)\eqsp, \quad \mathrm{where} \quad \weight{i}{s+1} \propto \frac{\tilde\mu_s(\particle{i}{s+1})}{\tilde\mu_{s+1}(\particle{i}{s+1})} \eqsp, 
+% \end{equation}
+% and $\sum_{i = 1}^N \weight{i}{s+1} = 1$. Then, to obtain an empirical approximation $\mu^N _s$ of $\mu_s$ we sample from the mixture by drawing for $\smash{\anc{1}{s+1}, \dotsc, \anc{N}{s+1} \iid \mathrm{Categorical}(\{ \weight{j}{s+1} \}_{j = 1} ^N)}$ and set 
+% \[ \mu^N _s = N^{-1} \sum_{i = 1}^N \delta_{\particle{i}{s}}, \quad \mathrm{where} \quad \particle{1}{s}, \dotsc, \particle{N}{s} \sim K_s(\particle{\anc{1}{s+1}}{s+1}, \cdot) \otimes \cdots \otimes K_s(\particle{\anc{N}{s+1}}{s+1}, \cdot) \eqsp.\]
+% The resampling step, which amounts to sampling from the mixture \eqref{eq:mixture}, is crucial as it prevents the degeneracy of the normalized weights and henceforth of the particle approximations. It is shown under mild assumptions that $\mu^N _s$ converges to $\mu_s$ at the usual $N^{-1/2}$ Monte Carlo rate, see \cite[Chapter 10]{douc2014nonlinear}.
+
+% In what follows we consider a similar strategy for drawing approximate samples from $\filter{0}\lmeas{}$. Consecutive marginals $\bwmarg{s+1}{}, \bwmarg{s}{}$ of the diffusion model (of which the prior $\bwmarg{0}{}$  in \eqref{eq:posterior} is the terminal marginal) are bridged using the transition $\bwtrans{}{s}{}{}$ and thus we can build on the marginals $(\bwmarg{s}{})_{s\in[0:n]}$ to obtain a sequence of posteriors $(\filter{s:n}\lmeas{})_{s\in[0:n]}$ that are also easy to bridge. Our intermediate posteriors are
+% \begin{equation} 
+%     \label{eq:posterior:intermediate}
+%     \filter{s:n}\lmeas{\rmd x_{s:n}} =  \frac{\pot{s:n}\lmeas{x_{s:n}} \bwmarg{s:n}{\rmd x_{s:n}}}{\int \pot{s:n}\lmeas{\tilde{x}_{s:n}} \bwmarg{s:n}{\rmd \tilde{x}_{s:n}}} \eqsp,
+% \end{equation}
+% where the $(\pot{s:n}\lmeas{})_{s\in[0:n]}$ are intermediate potentials introduced to define the transition kernels used to move particles from time $s+1$ to time $s$. 
+% % yet to be defined and will be chosen so that it is possible to obtain an efficient transition from $\filter{s+1}\lmeas{}$ to $\filter{s}\lmeas{}$. 
+
+% %With this in hand there is still one obstacle to overcome in order to apply the SMCS methodology we described above. 
+% However, the intermediate posterior distributions have intractable unnormalized densities so that we cannot compute the weights $(\weight{i}{s+1})_{s\in[1:n]}$. By exploiting the fact that $\bwmarg{s}{ x_s} = \int \bwmarg{s+1}{\rmd x_{s+1}} \bwtrans{}{s}{x_{s+1}}{\rmd x_s}$ it is easily seen that the intermediate posterior distributions  satisfy the following recursion, for all $s \in [0:n-1]$ and $\forall B \in \sigalgebra\big( \left(\R^{\dimx}\right)^{n-s+1} \big)$,
+% \begin{equation} 
+%     \label{eq:filter:recursion}
+%     \filter{s:n}\lmeas{B} = \frac{\int \1_B(x_{s:n}) \filter{s+1:n}\lmeas{\rmd x_{s+1:n}}\bwtrans{}{s}{x_{s+1}}{\rmd x_s} \dubpot{s:n}\lmeas{x_{s:n}} }{\int \filter{s+1}\lmeas{\rmd \tilde{x}_{s+1:n}} \bwtrans{}{s}{\tilde{x}_{s+1}}{\rmd \tilde{x}_s} \dubpot{s:n}\lmeas{\tilde{x}_{s:n}} }\eqsp,
+% \end{equation}
+% where $\dubpot{s:n}\lmeas{x_{s:n}}: (\R^{d_x})^{n-s+1} \ni x_{s:n} \mapsto \pot{s:n}\lmeas{x_{s:n}} / \pot{s+1:n}\lmeas{x_{s+1:n}}$. The expression \eqref{eq:filter:recursion} is reminiscent of the filtering recursion of \emph{hidden Markov models} and so it is still possible to apply the SMCS methodology. In the next two sections we proceed to detail our choice of potentials $(\pot{s}\lmeas{})_{s\in[1:n]}$ and the particle approximation of $\filter{0}\lmeas{}$.
+% \subsection{Choice of potentials}
+% The marginal at time $s$ of the joint posterior $\filter{0:n}{\lmeas}{}$ writes as 
+% $
+%     \filter{s}{\lmeas}{x_s} \propto \bwmarg{s}{x_s} \pot{s}{\lmeas}{x_s} \eqsp,
+% $
+% where 
+% \[ 
+%     \pot{s}{\lmeas}{\statevar{s}} = \int \bwtrans{}{0|s}{\statevar{s}}{\statevar{0}} \delta_\lmeas(\rmd \tstatevar{0}) \rmd \bstatevar{0} \eqsp.
+% \]
+% Under \assp{\ref{assp:perfect}} we can show that 
+% \[ 
+%     \pot{s}{\lmeas}{\statevar{s}} \propto \fwtrans{s|0, t}{\lmeas}{\tstatevar{s}} \int \bwmarg{0}{\lmeas, \bstatevar{0}} \fwtrans{s|0,b}{\bstatevar{0}}{\bstatevar{s}}
+% \]
+% \textbf{old...}
+% Following \cite{trippe2023diffusion} first consider the assumption which implies in particular that $\datadistr = \bwmarg{0}{}$.
+% % \begin{hypA} 
+% % \label{assp:perfect}
+% %     For all $\statevar{0:n} \in (\R^{\dimx})^{n+1}$,  $\datadistr(\statevar{0}) \fwtrans{1:n|0}{\statevar{0}}{\statevar{1:n}} = \bwmarg{0:n}{\statevar{0:n}}$.
+% % \end{hypA}
+% We consider first the case of noiseless inverse problems.
+% For any $\statevar{} \in \R^{\dimx}$ we write $\statevar{} = (\tstatevar{}, \bstatevar{})$ where $\tstatevar{} \in \R^{\dimy}$ and $\bstatevar{} \in \R^{\dimx - \dimy}$. We assume that we  only observe the \emph{top} of the vector $\tstatevar{0} = \lmeas$ and our aim is to draw approximate samples from the posterior on $\bstatevar{0}$ given by $\noiselessfilter{}{\lmeas}{\rmd \statevar{0}} \propto \bwmarg{0}{\tstatevar{0}, \bstatevar{0}} \delta_\lmeas(\rmd \tstatevar{0}) \rmd \bstatevar{0}$. 
+% Following the work of \cite{trippe2023diffusion}, it can be shown under \assp{\ref{assp:perfect}} (see ... for a proof) that
+% \begin{equation} 
+%     \label{eq:smcdiff_decomp}
+%     \filter{0}\lmeas{\rmd \statevar{0}} = \displaystyle \int \delta_\lmeas(\rmd \tstatevar{0}) \prod_{s = 0}^{n-1} \fwtrans{s+1}{\tstatevar{s}}{\rmd \tstatevar{s+1}} \filter{0:n}{}{\rmd \bstatevar{0} | \tstatevar{0:n}}  \eqsp,
+% \end{equation}
+% where 
+% \begin{equation*} 
+%     \filter{0:n}{}{\rmd \bstatevar{0} | \tstatevar{0:n}} 
+%     \propto \int \bwoptmarg{n}{t}{\rmd \bstatevar{n}} \prod_{s = 1}^{n-1} \bwopt{s}{b}{\tstatevar{s+1}, \bstatevar{s+1}}{\rmd \bstatevar{s}} \bwopt{s}{t}{\tstatevar{s+1}, \bstatevar{s+1}}{\tstatevar{s}}\eqsp.
+% \end{equation*}
+% \textcolor{red}{$\fwopt{s+1}{b}{\bstatevar{s+1}}{\rmd \bstatevar{s}}$, $\bwopt{s}{t}{\tstatevar{s+1}, \bstatevar{s+1}}{\tstatevar{s}}$ not defined (obvious but still).}
+% This means that sampling from $\filter{0}\lmeas{}$ boils down to (1) sampling the forward process starting from $y$ up to time $n$ yielding ``diffused'' observations $\tstate{1:n}$, and then (2) sampling the states $\bstate{0:n}$ conditionally on $(\lmeas, \tstate{1:n})$. The second step requires sampling $\filter{0:n}{}{\cdot | \lmeas, \bstate{1:n}}$ which is intractable and a particle filter on the unobserved states $(\bstatevar{s})_{s \in [0:n]}$ is used in order to draw a \emph{single} approximate sample. 
+% Interestingly, under this procedure it is not required to filter the states $(\tstatevar{s})_{s \in [1:n]}$ also. The particle approximation is obtained by applying Algorithm xx with the transitions $\{ \bwopt{s}{b}{\tstate{s+1}, \cdot}{\cdot} \}_{s \in [0:n-1]}$ and potentials $\{ \bwopt{s}{t}{\tstate{s+1}, \cdot}{\tstate{s}}\} _{s \in [0:n-1]}$. It is worth noting that the integral form \eqref{eq:smcdiff_decomp} does not hold without \assp{\ref{assp:perfect}} and as such, filtering the whole states $(\statevar{s})_{s \in [0:n]}$, instead of the unobserved states only, is necessary for obtaining a consistent empirical approximation of $\filter{0}{\lmeas}{}$. 
+
+% For our choice of potentials we draw inspiration from smcdiff \textcolor{red}{Additional notations to define here}
+% \[ 
+%    \fwopt{1}{t}\lmeas{\tstatevar{1}} \prod_{s = 1}^{n-1} \fwopt{s+1}{t}{\tstatevar{s}}{\tstatevar{s+1}} = \fwopt{n|0}{t}\lmeas{\tstatevar{n}} \prod_{s = 1}^{n-1} \revbridge{s}{y,t}{\tstatevar{s+1}}{\tstatevar{s}} \eqsp,
+%     \]
+% and considering the intermediate posteriors initialized with $ \filter{n}{\lmeas}{\rmd \statevar{n}} \propto \fwtrans{n|0}\lmeas{\tstatevar{n}} \bwmarg{n}{\rmd \statevar{n}} $,
+% \begin{equation}
+%     \filter{s:n}\lmeas{\rmd \statevar{s:n}} \propto  \revbridge{s}\lmeas{\tstatevar{s+1}}{\tstatevar{s}} \bwmarg{s:n}{\rmd \statevar{s:n}} \eqsp, \quad \forall s \in [1:n-1] \eqsp,
+% \end{equation}
+% with $\filter{0:n}\lmeas{\rmd \statevar{0}} \propto \bwopt{0}{t}{\tstatevar{1}}\lmeas \bwmarg{0:n}{\rmd \statevar{0:n}}$ as terminal posterior. The recursion \eqref{eq:filter:recursion} can then be written as, 
+% \begin{equation} 
+%     \filter{s:n}{\lmeas}{\rmd \statevar{s:n}} \propto \int \filter{s+1:n}{\lmeas}{\rmd \statevar{s+1:n}} \bwopt{s}{b}{\statevar{s+1}}{\rmd \bstatevar{s}} \revbridge{s}{\lmeas, t}{\tstatevar{s+1}}{\rmd \tstatevar{s}} \frac{\bwopt{s}{t}{\statevar{s+1}}{\tstatevar{s}}}{\revbridge{s+1}{\lmeas, t}{\tstatevar{s+2}}{ \tstatevar{s+1}}} \eqsp.
+% \end{equation}
+% Then, running Algorithm with the transitions $(\statevar{s+1}, A) \mapsto \int \1_A(\statevar{s})\bwopt{s}{b}{\statevar{s+1}}{\rmd \bstatevar{s}}  \revbridge{s}{\lmeas, t}{\tstatevar{s+1}}{\rmd \tstatevar{s}}$ and weights $\bwopt{s}{t}{\statevar{s+1}}{\cdot} / \revbridge{s+1}{\lmeas, t}{\tstatevar{s+2}}{\cdot}$ yields a consistent approximation
+% \begin{align*}
+%     \filter{0}\lmeas{x_0} &  \propto \int \bwoptmarg{n}{t}{\bstatevar{n}} \fwtrans{n|0}\lmeas{ x^b _n}  \left[\prod_{s = 1}^{n-1} \revbridge{s}\lmeas{\bstatevar{s+1}}{\bstatevar{s}}
+%     \bwopt{s}{}{(\bstatevar{s+1}, \tstatevar{s+1})}{(x_s^t, x^b_s)} \right]\\
+%     &\times 
+%     \bwopt{0}{}{(\bstatevar{1}, \tstatevar{1})}{(x^t_0, y)} \rmd x^t_{1:n} \rmd x^b_{1:n} \eqsp.
+% \end{align*}
+% Therefore, we recover the particle approximation of \cite{trippe2023diffusion} by starting at  and considering for $s \in \intvect{1}{n-1}$  
+% \gabriel{On ne devrait pas avoir tous les q ici?}
+% and \yazid{todo:il reste pas mal de choses à dire ici.}
+% \begin{align*} 
+%     \filter{0}\lmeas{\rmd \statevar{0:n}} & \propto \bwmarg{0:n}{\rmd \statevar{0:n}} \bwopt{0}{b}{\bstatevar{1}}{\bstatevar{0}} \delta_\lmeas(\rmd \bstatevar{0}) \eqsp.
+% \end{align*}
+
+% We now turn to the case of noisy inverse problems. As explained in \cref{sec:inverse_problem_formulation} we can consider without loss of generality a potential of the form $\pot{0}\lmeas{\tstatevar{0}} = \normpdf(y; \tstatevar{0}, \Sigma_\lmeas)$ and we remind the reader that $\Sigma_\lmeas$ is an $\dimy$-diagonal matrix with non-negative entries. To simplify the exposition we assume that all the diagonal elements are different, i.e. the diagonal entries of $\Sigma_\lmeas$ are $\eigsigy{1}^2 < \dotsc < \eigsigy{\dimy}^2$. The extension to a block of coordinates with equal variance is provided Appendix xxx. % We denote by $o_i$ the number of occurences of the singular value $\eigSigmay_i$ which satisfy $\sum_{i = 1}^m o_i = \dimy$ and 
+% We let $\tau_1 < \dotsc < \tau_{m}$ be the time steps such that $\alpha_{\tau_s} \eigsigy{s}^2 = 1 - \alpha_{\tau_s}$ for $s \in \intvect{0}{m}$.
+% Then, letting $\tilde{y}_i = \sqrt{\alpha _{\tau_i}} y_i$, we can write that \yazid{todo: further comments here}
+% \begin{equation}
+%     \label{eq:potential:fwd_ker_decomposition}
+%     \pot{0}\lmeas{\tstatevar{0}} = \prod_{i = 0}^{\dimy} \normpdf(y_i; \tstatevar{0,i}, \eigsigy{i}^2) \propto 
+%     \prod_{i = 0}^{\dimy} \normpdf(\tilde{y}_i; \sqrt{\alpha} _{\tau_i} \tstatevar{0,i}, 1 - \alpha_{\tau_i})\eqsp.
+% \end{equation}
+% %where $y^{i}$ are the coordinates of $y$ with variance $\eigSigmay_i$ and $\bstatevar{0,[i]}$ is the associated mean. 
+% As a consequence,  the potential $\pot{0}\lmeas{\tstatevar{0}}$ can be written in terms of forward kernels, \[
+%      \pot{0}\lmeas{\tstatevar{0}} \propto \prod_{i = 1}^{\dimy} \fwopt{\tau_i | 0}{i}{\tstatevar{0,i}}{\tilde{y}_i} \eqsp.
+%      \]
+% Following this decomposition we now show that under \assp{\ref{assp:perfect}} the problem of sampling from the posterior of a noisy inverse problem breaks down to that of sampling from the posteriors of some particular noiseless inverse problems.
+% Let $\noiselessfilter{\tau_\dimy}{\tilde{y}_m}{\rmd \statevar{\tau_\dimy}} \propto \bwmarg{\tau_\dimy}{\statevar{\tau_\dimy}} \clipleb{\dimy}{\tilde{y}_{\dimy}}{\rmd \statevar{\tau_\dimy}}$ and  define recursively for all $s \in [1:\dimy-1]$
+% \[ 
+%     \noisyfilter{\tau_{s}}{\lmeas}{\rmd \statevar{\tau_s}} \propto \int \filter{\tau_{s+1}}\lmeas{\rmd \statevar{\tau_{s+1}}} \bwtrans{}{\tau_{s} | \tau_{s+1}}{\statevar{\tau_{s+1}}}{\statevar{\tau_s}} \clipleb{s}{\tilde{y}_s}{\rmd \statevar{\tau_s}} \eqsp.
+% \]  
+% \begin{proposition} 
+%     \label{prop:noisytonoiseless}
+%     Assume \assp{\ref{assp:perfect}}. Then it holds that 
+%     \begin{equation} 
+%         \noisyfilter{0}{\lmeas}{\rmd \statevar{0}} \propto \int \noisyfilter{\tau_1}{\lmeas}{\rmd \statevar{\tau_1}} \bwtrans{}{0|\tau_1}{\statevar{\tau_1}}{\rmd \statevar{0}} \eqsp.
+%         %  \\= \int \bwmarg{\tau_{\dimy}}{\rmd \statevar{\tau_{\dimy}}} \delta_{\tilde{y}_{\dimy}}(\rmd \tstatevar{\tau_{\dimy}, \dimy})
+%         %   \prod_{j = 1}^{\dimy-1} \bwtrans{}{\tau_{j} | \tau_{j+1}}{\statevar{\tau_{j+1}}}{\rmd \statevar{\tau_j}} \delta_{\tilde{y}_{j}}(\rmd \tstatevar{\tau_j, j}) \bwtrans{}{0|\tau_1}{x_{\tau_1}}{x_0} \eqsp.
+%     \end{equation}
+% \end{proposition}
+% Following this insight, our intermediate posteriors are defined for all $i \in [1:m]$,
+% \begin{align*} 
+%     \filter{s:n}{\lmeas}{\rmd \statevar{s:n}} & \propto \revbridge{s}{\lmeas, i}{x_{s+1, i}}{x_{s, i}} \bwmarg{s:n}{\rmd \statevar{s:n}}, \quad s \in (\tau_i: \tau_{i+1}] \eqsp, \\
+%     \filter{\tau_{i}: n}{\lmeas}{\rmd \statevar{\tau_{i}:n}} & \propto \bwopt{\tau_i}{i}{x_{\tau_i, i}}{\tilde{y}_i} \bwmarg{\tau_{i}:n}{\statevar{\tau_i : n}} \clipleb{i}{\tilde{y}_{i}}{\rmd \statevar{\tau_i : n}} \\
+%     \filter{0:\tau_1}{\lmeas}{\rmd \statevar{0:\tau_1}} & \propto \pot{0}{\lmeas}{\tstatevar{0}} \bwmarg{0:\tau_1}{\rmd \statevar{0:\tau_1}}
+% \end{align*}
+
+% \begin{algorithm2e}
+%     \caption{\ouralgorithm}
+%     \label{alg:APF} 
+%     \KwInput{$N$}
+%     \KwOutput{$\particle{1:N}{0}$, $\weight{1:N}{0}$}
+%     Compute time steps $\tau_{0:m}$.\\
+%     Draw $\particle{1:N}{n} \sim \ndist{0}{\idm}$.\\
+%     \For{$s \in [n:1]$}{
+%         set $J = \{\ell | \tau_\ell < s\}$ \\
+%         set $\weight^{1:N} = \uweight(\particle{1:N}{s})$
+%         sample $\ancestors{1:N}{s} \sim $\\
+       
+%     }
+%     $\anc{1:N}{\tau_1} \iid \categorical\big( \{ \weight{j}{\tau_1} \}_{j = 1}^N\big)$;\\
+%     $\particle{1:N}{0} \iid \bigotimes_{j = 1}^N \bwtrans{}{0 | \tau_i}{\particle{A^j _{\tau_1}}{\tau_1}}{\cdot}$;\\
+%     Compute $\uweight{i}{0} = \pot{0}{\lmeas}{\particle{i}{0}}$ and set $\weight{i}{0} = \uweight{i}{0} / \sum_{j = 1}^N \uweight{j}{0}$.
+%  \end{algorithm2e}
+% and
+% \begin{align*} 
+%     L_{1:n}(y, \rmd \tstatevar{1:n}) & = \int \bwoptmarg{n}{t}{\rmd \tilde{x}^t _n} \prod_{s = 0}^{n-1} \bwopt{s}{t}{(\tilde{x}^t _{s+1}, \tstatevar{s+1})}{\rmd \tilde{x}^t _s} \bwopt{s}{b}{(\tilde{x}^t _{s+1}, \tstatevar{s+1})}{x^b _s} \delta_\lmeas(\rmd x^b _0) \eqsp, \\
+%     M^b _{1:n|0}(y, \rmd \tstatevar{1:n}) & = \frac{L_{1:n}(y, \rmd \tstatevar{1:n})}{\int \bwmarg{0}{\tilde{x} _0} \delta_\lmeas(\rmd x^b _0) \rmd \tilde{x}^t _0} \eqsp.
+% \end{align*}
+\paragraph{Consistency}
+% \tcr{To be rewritten}
+% The approximation mechanism we have just described is known as the fully adapted \emph{auxiliary particle filter} introduced in \cite{pitt1999filtering}. Crucially, we have assumed that it is possible to sample from $\bwopt{s}\lmeas{}{}$ for all $s \in [0:n-1]$ and $\filter{n}\lmeas{}$ and we now detail how this can be made possible. 
+% \[ 
+%     \pot{s}\lmeas{x_s}  = \normpdf(y; c_s A x_s, \Sigma_s) \eqsp,
+% \]
+% where $c_s \in \R$ and $\Sigma_s$ is a positive definite matrix. 
+% \begin{hypA}
+%     \label{assp:bounded_score}
+%     For all $s \in [0:n]$ there exists $C_s < \infty$ such that $\| \epsprop{\cdot, s}{\param^\star} \|_\infty \leq C_s$. 
+% \end{hypA}
+
+% \begin{lemma}
+%     \label{lem:potentials}
+%     Assume \assp{\ref{assp:bounded_score}}. Consider the reverse transitions and potentials defined for any $s \in [1:n]$ by
+%     \begin{align*} 
+%         \bwtrans{}{s}{x_{s}, \rmd x_{s-1}}{x_{s-1}} & = \normpdf(x_{s-1}; \gamma_{1,s} x_{s} + \gamma_{2,s} \epsprop{s, x_s}{\param^\star}, \sigma_s \mathbf{I}_{\dimx}) \rmd x_{s-1}\\
+%         \pot{s}\lmeas{x_s} 
+%         & = \normpdf(y_s; c_s A x_s, \Sigma_\lmeas + (c_s ^2 - 1) A A^\intercal)  \eqsp,
+%     \end{align*}
+%     where the sequence $(c_s)_{s \in [0:n]}$ with $c_0 = 1$ satisfies 
+%     \begin{equation}
+%         \label{eq:coeff:assumptions}
+%     \frac{c^2 _{s-1} \gamma_{1,s} ^2}{\eigSigmay_i + (c^2 _{s-1} - 1 + \sigma^2 _s) \eigA _i} \geq \frac{c^2 _s}{\eigSigmay_i + (c^2 _s - 1) \eigA _i}, \quad i \in [1:n] \eqsp.
+%     \end{equation}
+%     Then it holds that $\sup_{x_{s+1} \in \R^{\dimx}} \uweight{}{s+1}(x_{s+1}) < \infty$.
+% \eric{c'est quoi $\sigma_i^A$ ?}
+% \end{lemma}
+% \begin{example}[DDPM]
+%     For all $s \in [1:n]$ let $c_s = \prod_{\ell = 0}^s (1 - \beta_\ell)^{-1}$ and set $c_0 = 1$. Since for DDPM $\gamma_{1, s} = 1 / \sqrt{1 - \beta_s}$ and $\sigma_s = \sqrt{\beta_s}$, we have that $c^2 _{s-1} \gamma_{1,s} ^2 = c^2 _s$ and for all $i \in [1:\dimy]$
+%     \[ 
+%       \eigSigmay _i + (1 - \beta_s)(c^2 _s - 1) \eigA_i  = \eigSigmay _i + (c^2 _{s-1} - 1 + \sigma^2 _s) \eigA_i \leq \eigSigmay_i + (c^2 _s - 1) \eigA_i \eqsp,
+%     \]
+%     since $\beta_s \in [0,1]$, and thus \eqref{eq:coeff:assumptions} is satisfied.
+% \end{example}
+\textbf{do not read, not finished...} We now provide a bound on the backward KL divergence between $\filter{0}\lmeas{}$ and its particle-based estimation $\bfilter{0}{N}{}$ defined for any $B \in \sigalgebra(\R^d)$ by
+\[
+    \bfilter{0}{N}{B} = \pE \big[ \filter{0}{N}{B} \big]\,,
+    \]
+where the expectation is taken with respect to the law of the generated particle cloud $\lawSMC{0:n}$:
+\begin{equation} 
+    \lawSMC{0:n}(\rmd \iparticle{1:N}{0:n}, \rmd \ianc{1:N}{1:n}) = \bigg\{\prod_{i = 1}^N \bwoptmarg{n}\lmeas{\rmd \iparticle{i}{n}}{} \bigg\}\prod_{s = 1}^n \bigg\{ \prod_{k = 1}^N   \sum_{\ell = 1}^N \weight{\ell}{s} \delta_\ell (\rmd \ianc{k}{s})  \bwopt{s}\lmeas{\iparticle{\ianc{k}{s}}{s}}{\rmd \iparticle{k}{s-1}} \bigg\} \eqsp.
+\end{equation}
+Define the \emph{joint smoothing} distribution 
+\begin{equation} 
+    \filter{0:n}\lmeas{\rmd x_{0:n}} = \frac{\bwmarg{0:n}{\rmd x_{0:n}}{}  g_0(x_0)}{\int \bwmarg{0}{\rmd \tilde{x}_{0}}{}  g_0(\tilde{x}_0)} \eqsp.
+\end{equation}
+For all $s \in [0:n]$ we write $\normconst_s = \int \bwmarg{s}{\rmd x_s} \pot{s}\lmeas{x_s}$.
+\begin{hypA} 
+    \label{assp:bounded_weights}
+    For all $\ell \in [1:n]$, there exists $C_\ell < \infty$ such that $\sup_{x_\ell \in \R^{\dimx}} \uweight{}{\ell-1|\ell}(x_\ell) \leq C_\ell.$
+\end{hypA}
+
+\begin{proposition} \label{lem:kldiv:filtering}
+    Assume \assp{\ref{assp:bounded_weights}}. Then it holds that
+    \begin{multline*}
+        \kldivergence{\filter{0}\lmeas{}}{\bfilter{0}{N}{}} \leq n \log \left(1-\frac{1}{N}\right) \\
+         + \frac{1}{N-1}  \sum_{s = 1}^n \int \frac{\normconst_s / \normconst_0}{\pot{s}\lmeas{z_s}} \int \bwtrans{}{0|s}{z_s}{\rmd x_0} \pot{0}\lmeas{x_0} \filter{0:n}\lmeas{\rmd z_{0:n}} + \bigo(N^{-2}) \eqsp.
+    \end{multline*}
+\end{proposition}
+\textcolor{red}{We know the dependency on $n$ of the second term (sum + $\phi_{0:n}^y$) ? }
+\begin{proof}  
+    The proof is given in \Cref{proof:kldiv:filtering}.
+\end{proof}
+
+% \subsection{Application to the noiseless case.}
+% In this section we consider target posteriors of the type
+% \begin{equation} 
+%     \filter{0}\lmeas{\rmd \bstatevar0} = \frac{\bwmarg{0}{\bstatevar0, y}  \lambda(\rmd \bstatevar0)}{\int \bwmarg{0}{\tilde{x}^t _0, y} \lambda(\rmd \tilde{x}^t _0)}
+% \end{equation}
+% We have that
+% \begin{align*} 
+%     \filter{0}\lmeas{\rmd \bstatevar0} = \int \filter{0:n}\lmeas{\tstatevar{1:n}, \rmd \bstatevar{0:n}} M^b _{1:n | 0}(y, \rmd \tstatevar{1:n}) \eqsp,
+% \end{align*}
+% where 
+% \begin{multline*} 
+%      \filter{0:n}\lmeas{x_{1:n} ^b, \rmd \bstatevar{0:n}} \\
+%      = \frac{1}{L_{1:n}(y, \tstatevar{1:n})} \bwoptmarg{n}{t}{\rmd \bstatevar{n}} \prod_{s = 0}^{n-1} \bwopt{s}{t}{(\bstatevar{s+1}, \tstatevar{s+1})}{\rmd \bstatevar{s}} \bwopt{s}{b}{(\bstatevar{s+1}, \tstatevar{s+1})}{x^b _s} \delta_\lmeas(\rmd x^b _0) \eqsp,
+% \end{multline*}
+% and 
+% \begin{align*} 
+%      M^b _{1:n|0}(y, \rmd \tstatevar{1:n}) & = \frac{L_{1:n}(y, \rmd \tstatevar{1:n})}{\int \bwmarg{0}{\tilde{x}^t _0, y} \lambda(\rmd \tilde{x}^t _0)} \eqsp,\\
+%      L_{1:n}(y, \rmd \tstatevar{1:n}) & = \int \bwoptmarg{n}{t}{\rmd \tilde{x}^t _n} \prod_{s = 0}^{n-1} \bwopt{s}{t}{(\tilde{x}^t _{s+1}, \tstatevar{s+1})}{\rmd \tilde{x}^t _s} \bwopt{s}{b}{(\tilde{x}^t _{s+1}, \tstatevar{s+1})}{x^b _s} \delta_\lmeas(\rmd x^b _0) \eqsp.
+% \end{align*}
+% Let us describe the SMCDIFF methodology developed in \cite{trippe2023diffusion}. The authors assume that the joint backward and forward processes match, i.e. $\bwmarg{0:n}{\rmd x_{0:n}} = \fwmarg{0:n}{\rmd x_{0:n}}$ since under this assumption we can write that
+% \begin{align*} 
+% L_{1:n}(y, \rmd \tstatevar{1:n}) = \int \fwmarg{0:n}{\rmd x_{0:n}} \delta_\lmeas(\rmd x^b _0) = \int \bwmarg{0}{\bstatevar0, y} \lambda(\rmd \bstatevar0) \int \prod_{s = 0}^{n-1} \fwtrans{s+1}{x^b _s}{\rmd \tstatevar{s+1}}
+% \end{align*}
+% and thus, the original posterior simplifies to
+% \begin{align*} 
+%     \filter{0}\lmeas{\rmd \bstatevar0} = \int \delta_\lmeas(\rmd x^b _0) \prod_{s = 0}^{n-1} \fwtrans{s+1}{x^b _s}{\rmd \tstatevar{s+1}} \filter{0:n}\lmeas{\tstatevar{1:n}, \rmd \bstatevar{0:n}} \eqsp.
+% \end{align*}
+% Then, in order to obtain an empirical approximation, they first sample \emph{one forward trajectory} $(\particle{b}{1}, \dotsc, \particle{b}{n}) \sim \delta_\lmeas(\rmd x^b _0) \prod_{s = 0}^{n-1} \fwtrans{s+1}{x^b _s}{\rmd \tstatevar{s+1}}$ and then approximate the conditional distribution $\filter{0:n}\lmeas{\particle{b}{1:n}, \rmd \bstatevar{0:n}}$ using particle filters. We now show that the the same approximation can be achieved without the requirement that the backward and forward match perfectly.
+
+% We define for all $s \in [1:n]$
+% \begin{align*} 
+%     \pred{s}{}{\tstatevar{s-1:n}, \rmd \bstatevar{s}} & = \int \filter{s+1}\lmeas{\tstatevar{s-1:n}, \rmd \bstatevar{s+1}}  \bwtrans{}{s}{(\bstatevar{s+1}, \tstatevar{s+1})}{\rmd \bstatevars} \\
+%     \filter{s}\lmeas{\tstatevar{s-1:n}, \rmd \bstatevar{s+1}} & \propto \pred{s}{}{\tstatevar{s:n}, \rmd \bstatevar{s+1}} \frac{\bwtrans{}{s}{(\bstatevar{s+1}, \tstatevar{s+1})}{x^b _s}}{\fwtrans{s}{\tstatevar{s-1}}{x^b _s}} \eqsp.
+% \end{align*}
+% For $s \in []$, 
+% \begin{align*} 
+%     \filter{n}{}{\tstatevar{n-2:n}, \rmd \bstatevarn} & = \bwmarg{n}{\rmd \bstatevarn} \frac{\bwmarg{n}{\tstatevar{n}} \bwtrans{}{n-1}{(\bstatevarn, x^b _n)}{\tstatevar{n-1}}}{\fwtrans{n}{\tstatevar{n-1}}{x^b _n} \fwtrans{n-1}{\tstatevar{n-2}}{\tstatevar{n-1}}} \\
+%     \filter{0}{}{\tstatevar{0:n}, \rmd \bstatevar{1}} & \propto \pred{0}{}{\tstatevar{0:n}, \rmd \bstatevar1} \bwtrans{}{0}{(\bstatevar1, x^b _1)}{x^b _0}
+% \end{align*}
+% Thus, we can write that 
+% \[ 
+%     \filter{0}\lmeas{\rmd \bstatevar0} = \int \frac{ \delta_\lmeas(\rmd x^b _0) M^b _{1:n}(x^b _0, \rmd \tstatevar{1:n}) \pred{0}{}{\tstatevar{0:n}, \mathbf{1}} \filter{0}{}{\tstatevar{0:n}, \rmd \bstatevar{0}}}{\int\delta_\lmeas(\rmd \tilde{x}^b _0) M^b _{1:n}(\tilde{x}^b _0, \rmd \tilde{x}^b _{1:n})  \pred{0}{}{\tilde{x}^b _{0:n}, \mathbf{1}}}
+% \]
+% where 
+% \[ 
+% M^b _{1:n}(x^b _0, \rmd \tstatevar{1:n}) = \int \prod_{s = 0}^{n-1} \fwtrans{s+1}{x^b _s}{\rmd \tstatevar{s+1}}
+% \]
+
+
+
+\paragraph{Connection to SMC diff} Following the work of \cite{trippe2023diffusion}, it can be shown under \assp{\ref{assp:perfect}} that
+\begin{equation} 
+    \label{eq:smcdiff_decomp}
+    \filter{0}\lmeas{\rmd \statevar{0}} = \displaystyle \int \delta_\lmeas(\rmd \tstatevar{0}) \prod_{s = 0}^{n-1} \fwtrans{s+1,t}{\tstatevar{s}}{\rmd \tstatevar{s+1}} \filter{0:n}{}{\rmd \bstatevar{0} | \tstatevar{0:n}}  \eqsp,
+\end{equation}
+where 
+$
+    \filter{0:n}{}{\rmd \bstatevar{0} | \tstatevar{0:n}} 
+    \propto \int \bwoptmarg{n}{t}{\rmd \bstatevar{n}} \prod_{s = 1}^{n-1} \bwopt{s}{b}{\tstatevar{s+1}, \bstatevar{s+1}}{\rmd \bstatevar{s}} \bwopt{s}{t}{\tstatevar{s+1}, \bstatevar{s+1}}{\tstatevar{s}}\eqsp.
+$
+\textcolor{red}{$\fwopt{s+1}{b}{\bstatevar{s+1}}{\rmd \bstatevar{s}}$, $\bwopt{s}{t}{\tstatevar{s+1}, \bstatevar{s+1}}{\tstatevar{s}}$ not defined (obvious but still).}
+This means that sampling from $\filter{0}\lmeas{}$ boils down to (1) sampling the forward process starting from $y$ at time $0$ and up to time $n$ yielding ``diffused'' observations $\tstate{1:n}$, and then (2) sampling the states $\bstate{0:n}$ conditionally on $(\lmeas, \tstate{1:n})$. The second step requires sampling $\filter{0:n}{}{\cdot | \lmeas, \bstate{1:n}}$ which is intractable but since it has the structure of a Feynman--Kac model with transitions $\{ \bwopt{s}{b}{\tstate{s+1}, \cdot}{\cdot} \}_{s \in [0:n-1]}$ and potentials $\{ \bwopt{s}{t}{\tstate{s+1}, \cdot}{\tstate{s}}\} _{s \in [0:n-1]}$, a particle filter can be used to obtain an empirical approximation from which a \emph{single} approximate sample is then drawn. Since \assp{\ref{assp:perfect}} is an ideal assumption that does not hold in practice, it is natural to wonder if this procedure is still theoretically grounded in realistic scenarios. With no assumption we can write that 
+\begin{multline}
+    \filter{0}{\lmeas}{\rmd \statevar{0}} = \int \delta_\lmeas(\rmd \tstatevar{0}) \prod_{s = 0}^{n-1} \fwtrans{s+1, t}{\tstatevar{s}}{\rmd \tstatevar{s+1}} \\
+    \times \frac{1}{L_{0:n}(\lmeas)} \frac{\bwmarg{n,b}{\rmd  \bstatevar{n}} \bwmarg{n,t}{\tstatevar{n}} \prod_{s = 0}^{n-1} \bwtrans{}{s, b}{\statevar{s+1}}{\rmd \bstatevar{s}} \bwtrans{}{s, t}{\statevar{s+1}}{\tstatevar{s}}}{\prod_{s = 0}^{n-1} \fwtrans{s+1, t}{\tstatevar{s}}{\tstatevar{s+1}}}\eqsp,
+\end{multline}
+where $L_{0:n}(\lmeas) \eqdef \int \bwmarg{0}{\statevar{0}} \delta_\lmeas(\rmd \tstatevar{0}) \rmd \bstatevar{0}$ and we see that the remaining measure on the unobserved states $\bstatevar{0:n}$ does not integrate to one.

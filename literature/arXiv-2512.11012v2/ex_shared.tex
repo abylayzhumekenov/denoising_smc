@@ -1,0 +1,203 @@
+% SIAM Shared Information Template
+% This is information that is shared between the main document and any
+% supplement. If no supplement is required, then this information can
+% be included directly in the main document.
+
+
+% Packages and macros go here
+\usepackage{lipsum}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+%\usepackage{amsthm}
+\usepackage{graphicx}
+\usepackage{epstopdf}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+%\usepackage{epsfig}
+\usepackage{latexsym}
+\usepackage{subfigure}
+\usepackage{stmaryrd}
+\usepackage{caption}
+\usepackage{xcolor}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage{enumerate}
+\usepackage{bbm}
+\usepackage{bm}
+\usepackage{xspace,comment}
+\usepackage{hyperref}
+\ifpdf
+  \DeclareGraphicsExtensions{.eps,.pdf,.png,.jpg}
+\else
+  \DeclareGraphicsExtensions{.eps}
+\fi
+
+% Prevent itemized lists from running into the left margin inside theorems and proofs
+\usepackage{enumitem}
+\setlist[enumerate]{leftmargin=.5in}
+\setlist[itemize]{leftmargin=.5in}
+
+% Add a serial/Oxford comma by default.
+\newcommand{\creflastconjunction}{, and~}
+
+% Used for creating new theorem and remark environments
+\newsiamremark{remark}{Remark}
+\newsiamremark{example}{Example}
+\newsiamthm{claim}{Claim}
+\newsiamthm{assumption}{Assumption}
+
+% Sets running headers as well as PDF title and authors
+\headers{Constrained Bayesian filters}{U. Erdogan, G. J. Lord and J. Miguez}
+
+% Title. If the supplement option is on, then "Supplementary Material"
+% is automatically inserted before the title.
+\title{On a class of constrained Bayesian filters and their numerical implementation in high-dimensional state-space models\thanks{Submitted to the editors on ...
+\funding{This work has been partially supported by grant PID2024-158181NB-I00 NISA, funded by MCIN/AEI/10.13039/501100011033 and ERDF, and by Community of Madrid, under Grant IDEA-CM (TEC-
+2024/COM-89).}}}
+
+% Authors: full names plus addresses.
+\author{Utku Erdogan\thanks{Eskisehir Technical University (\email{utkuerdog@gmail.com})}
+\and Gabriel J. Lord\thanks{Radboud University (\email{gabriel.lord@ru.nl})}
+\and Joaquin Miguez\thanks{Universidad Carlos III de Madrid (\email{joaquin.miguez@uc3m.es})}}
+
+\usepackage{amsopn}
+\DeclareMathOperator{\diag}{diag}
+
+% My definitions
+\newcommand{\dfn}{\triangleq}
+\newcommand{\QED}{\Box} 
+\newcommand{\rw}{\rightarrow}    
+\newcommand{\Real}{\mathbb{R}}  
+\newcommand{\Ind}{\mathbbm{1}} 
+\newcommand{\pwp}{\cdot}
+\newcommand{\osc}{\text{osc}}
+\newcommand\dtv[1]{\left\| #1 \right\|_{\rm tv}}
+\newcommand\dvn[2]{\left\| #1 \right\|_{#2}}
+
+% Calligraphic
+\newcommand{\mB}{{\mathcal B}}
+\newcommand{\mP}{{\mathcal P}}
+\newcommand{\mK}{{\mathcal K}}
+\newcommand{\mC}{{\mathcal C}}
+\newcommand{\mD}{{\mathcal D}}
+\newcommand{\mL}{{\mathcal L}}
+\newcommand{\mS}{{\mathcal S}}
+\newcommand{\mI}{{\mathcal I}}
+\newcommand{\mH}{{\mathcal H}}
+\newcommand{\mG}{{\mathcal G}}
+\newcommand{\mF}{{\mathcal F}}
+\newcommand{\mE}{{\mathcal E}}
+\newcommand{\mX}{{\mathcal X}}
+\newcommand{\mY}{{\mathcal Y}}
+\newcommand{\mN}{{\mathcal N}}
+\newcommand{\mU}{{\mathcal U}}
+\newcommand{\mQ}{{\mathcal Q}}
+\newcommand{\mZ}{{\mathcal Z}}
+\newcommand{\mR}{{\mathcal R}}
+\newcommand{\mO}{{\mathcal O}}
+
+% Gothic-ish
+\newcommand{\mfp}{\mathfrak{p}}
+\newcommand{\mfP}{\mathfrak{P}}
+\newcommand{\mff}{\mathfrak{f}}
+\newcommand{\mfL}{\mathfrak{L}}
+\newcommand{\mfS}{\mathfrak{S}}
+\newcommand{\mfR}{\mathfrak{R}}
+\newcommand{\mfM}{\mathfrak{M}}
+\newcommand{\mfc}{\mathfrak{c}}
+\newcommand{\mfg}{\mathfrak{g}}
+
+% Double trace
+\newcommand{\mbQ}{\mathbb{Q}} 
+\newcommand{\mbN}{\mathbb{N}}
+\newcommand{\mbZ}{\mathbb{Z}}
+\newcommand{\mbP}{\mathbb{P}}   
+\newcommand{\mbS}{\mathbb{S}} 
+\newcommand{\mbE}{\mathbb{E}} 
+\newcommand{\mbR}{\mathbb{R}} 
+\newcommand{\mbD}{\mathbb{D}} 
+
+% Sans serif
+\newcommand{\sa}{{\sf a}}
+\newcommand{\sff}{{\sf f}}
+\newcommand{\sh}{{\sf h}}
+\newcommand{\sH}{{\sf H}}
+\newcommand{\sfc}{{\sf c}}
+\newcommand{\sC}{{\sf C}}
+\newcommand{\sk}{{\sf k}}
+\newcommand{\sK}{{\sf K}}
+\newcommand{\sL}{{\sf L}}
+\newcommand{\sr}{{\sf r}}
+\newcommand{\sfp}{{\sf p}}
+\newcommand{\sfq}{{\sf q}}
+\newcommand{\sfs}{{\sf s}}
+\newcommand{\sB}{{\sf B}}
+\newcommand{\sY}{{\sf Y}}
+\newcommand{\sX}{{\sf X}}
+\newcommand{\st}{{\sf t}}
+\newcommand{\sd}{{\sf d}}
+\newcommand{\sR}{{\sf R}}
+\newcommand{\sZ}{{\sf Z}}
+\newcommand{\sg}{{\sf g}}
+\newcommand{\sG}{{\sf G}}
+\newcommand{\sS}{{\sf S}}
+
+
+% typewriter
+\newcommand{\Y}{\mathtt{Y}}
+\newcommand{\y}{\mathtt{y}}
+\newcommand{\Z}{\mathtt{Z}}
+\newcommand{\z}{\mathtt{z}}
+\newcommand{\X}{\mathtt{X}}
+\newcommand{\x}{\mathtt{x}}
+\newcommand{\W}{\mathtt{W}}
+\newcommand{\w}{\mathtt{w}}
+\newcommand{\mc}{\mathtt{c}}
+
+
+% mathrm
+\newcommand{\md}{\mathrm{d}}
+
+% bm
+\newcommand{\bX}{\bm{X}}
+\newcommand{\bx}{\bm{x}}
+\newcommand{\bY}{\bm{Y}}
+\newcommand{\by}{\bm{y}}
+
+% Commands
+\newcommand{\beq}{\begin{equation}}
+\newcommand{\eeq}{\end{equation}}
+\newcommand{\beqa}{\begin{eqnarray}}
+\newcommand{\eeqa}{\end{eqnarray}}
+\newcommand{\nn}{\nonumber}
+\newcommand{\tb}{\textbf}
+\newcommand{\Dt}{{\Delta t}}
+\newcommand{\dy}{d_y}
+\newcommand{\dx}{d_x}
+
+% Coloured text
+\newcommand{\cred}{\textcolor{red}}
+\newcommand{\cblue}{\textcolor{blue}}
+\newcommand{\cgreen}{\textcolor{green}}
+\newcommand{\ccyan}{\textcolor{cyan}}
+\newcommand{\cblack}{\textcolor{black}}
+\newcommand{\cbrown}{\textcolor{brown}}
+
+
+% Comments
+\newcommand{\GJL}[1]{\cblue{GJL: #1}\xspace}
+\newcommand{\JM}[1]{{\cbrown{JM: #1}}\xspace}
+\newcommand{\UE}[1]{{\cred{UE: #1}}\xspace}
+
+\newcommand{\pl}{\varrho_{l}}
+
+\tolerance=10000
+\pretolerance=10000
+
+
+
+%%% Local Variables: 
+%%% mode:latex
+%%% TeX-master: "ex_article"
+%%% End: 

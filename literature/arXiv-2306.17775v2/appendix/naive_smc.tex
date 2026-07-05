@@ -1,0 +1,33 @@
+
+\section{Naive SMC: importance sampling from unconditional diffusion models}
+We here provide details of the naive procedure, showing that it is a case of self-normalized importance sampling.
+As mentioned in \Cref{subsec:SMC_framing} importance sampling is a special case of of SMC with a single step (or equivalently several steps, but no resampling at intermediate steps).
+It involves a target $\nu$,
+and proposal $r$. 
+$K$ samples $x_1,\dots, x_K$ are drawn i.i.d.\ from $r$,
+and an estimate of $v$ is computed as 
+$\hat \nu = \sum w_k x_k$ with each $w_k = \tilde w_k / \sum_k \tilde w_k$
+for $\tilde w_k = \nu(x_k)/r(x_k).$
+Note hat that the procedure in \Cref{subsec:SMC_framing} is a special case of importance sampling with proposal $r(\dt{x}{0:T})=\pmodel(\dt{x}{0:T})$ and target $\pmodel(\dt{x}{0:T} \mid y)$.
+
+%As a step building up to a practical algorithm, we consider an instance that corresponds to importance sampling using (unconditional) diffusion model as the proposal. 
+%As an initial proof-of-concept, we first present a simple instance that wraps the unconditional diffusion generation process into an SMC sampler, defined by the following proposals and weighting functions. 
+%\begin{fkModel}[Naive importance sampling]\label{sampler:naive}
+%\begin{align*}
+%    M_T(\xT)&=p(\xT)\  \mathrm{and} \ 
+%  M_t(\xt \mid \xtpo)=\pmodel (\xt \mid \xtpo )\  \mathrm{ and\  for }\ \ T>t\ge 0,
+%%    &\mathrm{ and }\ \  M_0( \dt{x}{0}\mid \dt{x}{1}) = \pmodel(\dt{x}{0} \mid \dt{x}{1}, y)
+%\end{align*}
+%and 
+%\begin{align*}
+%    &G_T(\xT)=G_t(\xt, \xtpo)=1 \ \ \mathrm{for }\ \ T>t>1,\ \mathrm{and }\ G_0(\xzero, \dt{x}{1})=p(y\mid \xzero).
+%\end{align*}
+%\end{fkModel}
+
+%This sampler relies on the tractable unconditional sampling mechanism of $\pmodel$ in every transition kernel, i.e. not conditioning on measurement $y$. 
+%And the weighting function is uninformative until the final step, where each particle of $\xzero$ is evaluated under the measurement model. 
+%And the potential function used to weight the particles is equal to one at all but the final step.
+%The final proposal $M_0(\xzero \mid \dt{x}{1})$ is analytically tractable to sample from for many types of complex conditioning information.
+%otably by Bayes' rule we can see that $M_0(\xzero \mid \dt{x}{1})= \pmodel(\xzero \mid \dt{x}{1})\pmodel(y \mid \xzero) / \int \pmodel(\dt{\tilde x}{0} \mid \dt{x}{1})\pmodel(y \mid \dt{x}{1})d\dt{\tilde x}{0},$
+%here the first two terms are computable and the denominator an integral taken w.r.t. a Gaussian and so will often be easily and accurately approximated by e.g.\ Gaussian quadrature or importance sampling.\footnote{
+%   \BLT{Clean this bit up... for figure out to to weave into assumptions of propositions and leave as a remark below defending the assumption.}}

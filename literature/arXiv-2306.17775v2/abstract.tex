@@ -1,0 +1,29 @@
+Diffusion models have been successful on a range of conditional generation tasks including molecular design and text-to-image generation.
+However, these achievements have primarily depended on task-specific conditional training or error-prone heuristic approximations.
+Ideally, a conditional generation method should provide exact samples for a broad range of conditional distributions without requiring task-specific training.
+To this end, we introduce the \emph{Twisted Diffusion Sampler}, or \emph{TDS}.
+TDS is a sequential Monte Carlo (SMC) algorithm that targets the conditional distributions of diffusion models through simulating a set of weighted particles. 
+The main idea is to use \emph{twisting}, an SMC technique that enjoys good computational efficiency, to incorporate heuristic approximations without compromising asymptotic exactness. 
+We first find in simulation and in conditional image generation tasks that TDS provides a computational statistical trade-off, yielding more accurate approximations with many particles but with empirical improvements over heuristics with as few as two particles.
+We then turn to motif-scaffolding, a core task in protein design, using a TDS extension to Riemannian diffusion models; on benchmark tasks, TDS allows flexible conditioning criteria and often outperforms the state-of-the-art, conditionally trained model.\footnote{
+ Code: \url{https://github.com/blt2114/twisted_diffusion_sampler}
+ }
+
+%Diffusion models have been successful in areas like molecular design and text-to-image generation.
+%However, these achievements have primarily depended on expensive, task-specific conditional models or error-prone heuristic approximations. 
+%By contrast, an ideal method should provide exact samples from a broad range of conditional distributions without requiring conditional neural network training.
+%While the exact conditional distributions 
+%of diffusion models are analytically intractable, the sequential structure of diffusion models permits the application of an established toolkit of sequential Monte Carlo (SMC) methods.
+%To this end, we introduce the Twisted Diffusion Sampler (TDS), an SMC algorithm that targets conditional distributions of trained diffusion generative models. 
+%The main idea behind TDS is to incorporate heuristic approximations as \emph{twisting} functions -- an SMC technique that enjoys good computational efficiency, but without compromising asymptotic exactness.
+%We study the performance of TDS on image inpainting, class-conditioned image generation tasks, and diffusion models on Riemannian manifolds, which is crucial for molecular modeling applications.
+%In an application to protein design, and across various functional motif-scaffolding benchmark problems, TDS enables more flexible conditioning criteria and outperforms the state-of-the-art.
+
+%We introduce the Twisted Diffusion Sampler (TDS), a sequential Monte Carlo (SMC)  algorithm that accurately samples from the conditional distributions of trained diffusion generative models. 
+%While diffusion models have been successful in areas like molecular design and text-to-image generation, these achievements have primarily depended on expensive task-specific conditional models or error-prone heuristic approximations. 
+%The work presented here, by contrast, accommodates a broader range of conditioning information and samples exact conditional distributions in a large-compute limit. 
+%The main idea behind TDS is to 
+%incorporate heuristic approximations as twisting functions and proposals in an exact SMC sampler. The resulting algorithm enjoys good computational efficiency, but without compromising asymptotic accuracy.
+%We study the performance of TDS on image inpainting, class-conditioned image generation tasks, and diffusion models on Riemannian manifolds, which is crucial for molecular modeling applications. In an application to protein design, and across various functional motif-scaffolding benchmark problems, TDS enables more flexible conditioning criteria and outperforms the state-of-the-art.
+%
+%We introduce the Twisted Diffusion Sampler (TDS), a sequential Monte Carlo algorithm that accurately samples from the conditional distributions of trained diffusion generative models. While diffusion models have been successful in areas like molecular design and text-to-image generation, these achievements have primarily depended on task-specific conditional models. These models, however, only accommodate a limited range of conditioning information and are computationally burdensome to train. Alternatively, heuristic approximations are used but can introduce significant approximation errors.  TDS, by contrast, accommodates a broader range of conditioning information and samples exact conditional distributions in a large-compute limit. It incorporates previous heuristic approximations as twisting functions and proposals, which enhance computational efficiency without compromising asymptotic accuracy. We demonstrate TDS's effectiveness in image inpainting and class-conditioned image generation tasks, and its applicability to diffusion models on Riemannian manifolds, crucial for molecular modeling applications. In an application to protein design, TDS enables more flexible conditioning criteria and outperforms the state-of-the-art, conditionally-trained diffusion model across various functional motif-scaffolding benchmark problems.

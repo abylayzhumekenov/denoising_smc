@@ -1,0 +1,27 @@
+
+    The identity \eqref{eq:noiseless_at_tau} allows us to extend \smcdiff\ \cite{trippe2023diffusion} to handle noisy inverse problems as we now show. We have that 
+    \begin{align*}
+        \filter{\tau}{\tilde\lmeas_\tau}{\lbottomstate_\tau} & = \frac{\int \bwtrans{}{\tau}{\lstate_{\tau + 1}}{\cat{\tilde\lmeas_\tau}{\lbottomstate_\tau}} \left\{ \prod_{s = \tau+1}^{n-1} \bwtrans{}{s}{\lstate_{s+1}}{\rmd \lstate_s} \right\} \bwmarg{n}{\rmd \lstate_n}}{ \int \bwmarg{\tau}{\cat{\tilde\lmeas_\tau}{\underline{z}_\tau}} \rmd \underline{z}_\tau} \\
+        & = \int b^{\tilde\lmeas_\tau} _{\tau:n}(\lbottomstate_{\tau:n}|\ltopstate_{\tau+1:n}) f^{\tilde\lmeas_\tau} _{\tau+1:n}(\rmd \ltopstate_{\tau+1:n}) \rmd \lbottomstate_{\tau+1:n}  \eqsp,
+    \end{align*}
+    where 
+    \begin{align*} 
+        b_{\tau:n}(\lbottomstate_{\tau:n}|\ltopstate_{\tau+1:n}) & = \frac{\bwtrans{}{\tau}{\lstate_{\tau + 1}}{\cat{\tilde\lmeas_\tau}{\lbottomstate_\tau}} \left\{ \prod_{s = \tau+1}^{n-1} \bbwtrans{}{s}{\lstate_{s+1}}{\lbottomstate_s} \tbwtrans{}{s}{\lstate_{s+1}}{\ltopstate_s} \right\} \underline{\mathsf{p}}_n(\lbottomstate_n)}{\mathsf{L}^{\tilde\lmeas_\tau} _{\tau:n}(\ltopstate_{\tau+1:n})} \eqsp, \\
+        f^{\tilde\lmeas_\tau} _{\tau+1:n}(\ltopstate_{\tau+1:n}) & = \frac{\mathsf{L}^{\tilde\lmeas_\tau} _{\tau:n}(\ltopstate_{\tau+1:n})}{\int \bwmarg{\tau}{\cat{\tilde\lmeas_\tau}{\underline{z}_\tau}} \rmd \underline{z}_\tau} \eqsp,
+    \end{align*}
+    and
+    \begin{equation*}
+        \mathsf{L}^{\tilde\lmeas_\tau} _{\tau:n}(\ltopstate_{\tau+1:n}) = 
+         \int \bwtrans{}{\tau}{\cat{\ltopstate_{\tau + 1}}{\underline{z}_{\tau+1}}}{\cat{\tilde\lmeas_\tau}{\underline{z}_\tau}} \left\{ \prod_{s = \tau+1}^{n-1} \bbwtrans{}{s}{\cat{\ltopstate_{s+1}}{\underline{z}_{s+1}}}{\rmd \underline{z}_s} \tbwtrans{}{s}{\cat{\ltopstate_{s+1}}{\underline{z}_{s+1}}}{\ltopstate_s} \right\} \underline{\mathsf{p}}_n(\rmd \underline{z}_n) \eqsp.
+    \end{equation*}
+    Next, \eqref{eq:bweqfw} implies that 
+    \begin{multline*}
+       \int \bwmarg{s+1}{\cat{\ltopstate_{s+1}}{\underline{z}_{s+1}}} \bbwtrans{}{s}{\cat{\ltopstate_{s+1}}{\underline{z}_{s+1}}}{\rmd \underline{z}_s} \tbwtrans{}{s}{\cat{\ltopstate_{s+1}}{\underline{z}_{s+1}}}{\ltopstate_s} \rmd \underline{z}_{s:s+1} = \\
+       \int \bwmarg{s}{\cat{\ltopstate_s}{\underline{z}_s}} \tfwtrans{s+1}{\ltopstate_s}{\ltopstate_{s+1}} \bfwtrans{s+1}{\underline{z}_s}{\underline{z}_{s+1}} \rmd \underline{z}_{s:s+1} \eqsp, 
+    \end{multline*}
+    and applied repeatedly, we find that 
+    \[ 
+        \mathsf{L}^{\tilde\lmeas_\tau}(\ltopstate_{\tau+1:n}) = \int \bwmarg{\tau}{\cat{\tilde\lmeas_\tau}{\lbottomstate_\tau}} \rmd \lbottomstate_\tau \cdot \int \delta_{\tilde\lmeas_\tau}(\rmd \ltopstate_\tau) \prod_{s = \tau+1}^n \tfwtrans{s}{\ltopstate_{s-1}}{\ltopstate_s} \eqsp.
+    \]
+    and thus, $f^{\tilde\lmeas_\tau} _{\tau:n}(\ltopstate_{\tau+1:n}) = \int \delta_{\tilde\lmeas_\tau}(\rmd \ltopstate_\tau) \prod_{s = \tau+1}^n \tfwtrans{s}{\ltopstate_{s-1}}{\ltopstate_s}$. In order to approximate $\filter{\tau}{\tilde\lmeas_\tau}{}$ we first diffuse the noised observation up to time $n$, resulting in $\ltopstate_{\tau+1:n}$, and then estimate $b^{\tilde\lmeas_\tau} _{\tau+1:n}(\cdot | \ltopstate_{\tau+1:n})$ using a particle filter with $\bbwtrans{}{s}{\lstate_{s+1}}{\lbottomstate_s}$ as transition kernel at step 
+    $s \in [\tau+1:n]$ and $\pot{s}{}{}: \underline{z}_s \mapsto \tbwtrans{}{s-1}{\cat{\ltopstate_s}{\underline{z}_s}}{\ltopstate_{s-1}}$ as potential, similarly to \smcdiff. 

@@ -1,0 +1,368 @@
+\begin{thebibliography}{57}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Anastasiou et~al.(2023)Anastasiou, Barp, Briol, Ebner, Gaunt,
+  Ghaderinezhad, Gorham, Gretton, Ley, Liu, Mackey, Oates, Reinert, and
+  Swan]{anastasiou2023steinmethod}
+Anastasiou, A., Barp, A., Briol, F.-X., Ebner, B., Gaunt, R.~E., Ghaderinezhad,
+  F., Gorham, J., Gretton, A., Ley, C., Liu, Q., Mackey, L., Oates, C.~J.,
+  Reinert, G., and Swan, Y.
+\newblock Stein's method meets computational statistics: a review of some
+  recent developments.
+\newblock \emph{Statistical Science}, 38\penalty0 (1):\penalty0 120--139, 2023.
+
+\bibitem[Arbel et~al.(2021)Arbel, Matthews, and Doucet]{arbel2021annealed}
+Arbel, M., Matthews, A., and Doucet, A.
+\newblock Annealed flow transport {M}onte {C}arlo.
+\newblock In \emph{International Conference on Machine Learning}, 2021.
+
+\bibitem[Assaraf \& Caffarel(1999)Assaraf and
+  Caffarel]{assaraf1999zerovariance}
+Assaraf, R. and Caffarel, M.
+\newblock Zero-variance principle for {M}onte {C}arlo algorithms.
+\newblock \emph{Physical Review Letters}, 83:\penalty0 4682--4685, 1999.
+
+\bibitem[Berner et~al.(2022)Berner, Richter, and Ullrich]{berner2022optimal}
+Berner, J., Richter, L., and Ullrich, K.
+\newblock An optimal control perspective on diffusion-based generative
+  modeling.
+\newblock In \emph{NeurIPS Workshop on Score-Based Methods}, 2022.
+
+\bibitem[Bradbury et~al.(2018)Bradbury, Frostig, Hawkins, Johnson, Leary,
+  Maclaurin, Necula, Paszke, Vander{P}las, Wanderman-{M}ilne, and
+  Zhang]{Bradbury:2018}
+Bradbury, J., Frostig, R., Hawkins, P., Johnson, M.~J., Leary, C., Maclaurin,
+  D., Necula, G., Paszke, A., Vander{P}las, J., Wanderman-{M}ilne, S., and
+  Zhang, Q.
+\newblock {JAX}: composable transformations of {P}ython+{N}um{P}y programs,
+  2018.
+
+\bibitem[Cardoso et~al.(2024)Cardoso, Idrissi, Corff, and
+  Moulines]{cardoso2023diffusion}
+Cardoso, G., Idrissi, Y. J.~E., Corff, S.~L., and Moulines, E.
+\newblock Monte {C}arlo guided diffusion for {B}ayesian linear inverse
+  problems.
+\newblock In \emph{International Conference on Learning Representations}, 2024.
+
+\bibitem[Cattiaux et~al.(2023)Cattiaux, Conforti, Gentil, and
+  L{\'e}onard]{cattiaux2021time}
+Cattiaux, P., Conforti, G., Gentil, I., and L{\'e}onard, C.
+\newblock Time reversal of diffusion processes under a finite entropy
+  condition.
+\newblock \emph{Annales de l'Institut Henri Poincar{\'e} (B) Probabilites et
+  statistiques}, 59\penalty0 (4):\penalty0 1844--1881, 2023.
+
+\bibitem[Chatterjee \& Diaconis(2018)Chatterjee and Diaconis]{chatterjee2018}
+Chatterjee, S. and Diaconis, P.
+\newblock The sample size required in importance sampling.
+\newblock \emph{The Annals of Applied Probability}, 28\penalty0 (2):\penalty0
+  1099--1135, 2018.
+
+\bibitem[Chopin \& Papaspiliopoulos(2020)Chopin and
+  Papaspiliopoulos]{chopin2020book}
+Chopin, N. and Papaspiliopoulos, O.
+\newblock \emph{An Introduction to Sequential {Monte} {Carlo}}.
+\newblock Springer Ser. Stat. Springer, 2020.
+
+\bibitem[Chopin et~al.(2022)Chopin, Singh, Soto, and
+  Vihola]{chopin2022resampling}
+Chopin, N., Singh, S.~S., Soto, T., and Vihola, M.
+\newblock On resampling schemes for particle filters with weakly informative
+  observations.
+\newblock \emph{The Annals of Statistics}, 50\penalty0 (6):\penalty0
+  3197--3222, 2022.
+
+\bibitem[Chung et~al.(2023)Chung, Kim, Mccann, Klasky, and
+  Ye]{chung2023diffusion}
+Chung, H., Kim, J., Mccann, M.~T., Klasky, M.~L., and Ye, J.~C.
+\newblock Diffusion posterior sampling for general noisy inverse problems.
+\newblock In \emph{International Conference on Learning Representations}, 2023.
+
+\bibitem[Corso et~al.(2023)Corso, Xu, De~Bortoli, Barzilay, and
+  Jaakkola]{corso2023particle}
+Corso, G., Xu, Y., De~Bortoli, V., Barzilay, R., and Jaakkola, T.
+\newblock Particle guidance: non-iid diverse sampling with diffusion models.
+\newblock In \emph{International Conference on Learning Representations}, 2023.
+
+\bibitem[Dai et~al.(2022)Dai, Heng, Jacob, and Whiteley]{dai2022invitation}
+Dai, C., Heng, J., Jacob, P.~E., and Whiteley, N.
+\newblock An invitation to sequential {M}onte {C}arlo samplers.
+\newblock \emph{Journal of the American Statistical Association}, 117\penalty0
+  (539):\penalty0 1587--1600, 2022.
+
+\bibitem[De~Bortoli et~al.(2021)De~Bortoli, Thornton, Heng, and
+  Doucet]{debortoli2021diffusion}
+De~Bortoli, V., Thornton, J., Heng, J., and Doucet, A.
+\newblock Diffusion {S}chr{\"o}dinger bridge with applications to score-based
+  generative modeling.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2021.
+
+\bibitem[Del~Moral(2004)]{del2004feynman}
+Del~Moral, P.
+\newblock \emph{Feynman-{K}ac Formulae: Genealogical and Interacting Particle
+  Approximations}.
+\newblock Springer, 2004.
+
+\bibitem[Del~Moral et~al.(2006)Del~Moral, Doucet, and Jasra]{del2006sequential}
+Del~Moral, P., Doucet, A., and Jasra, A.
+\newblock Sequential {M}onte {C}arlo samplers.
+\newblock \emph{Journal of the Royal Statistical Society: Series B (Statistical
+  Methodology)}, 68\penalty0 (3):\penalty0 411--436, 2006.
+
+\bibitem[Del~Moral et~al.(2012)Del~Moral, Doucet, and Jasra]{Del-Moral:2012}
+Del~Moral, P., Doucet, A., and Jasra, A.
+\newblock On adaptive resampling strategies for sequential {M}onte {C}arlo
+  methods.
+\newblock \emph{Bernoulli}, 18\penalty0 (1):\penalty0 252--278, 2012.
+
+\bibitem[Douc \& Capp{\'e}(2005)Douc and Capp{\'e}]{douc2005comparison}
+Douc, R. and Capp{\'e}, O.
+\newblock Comparison of resampling schemes for particle filtering.
+\newblock In \emph{Proceedings of the 4th International Symposium on Image and
+  Signal Processing and Analysis}, pp.\  64--69. IEEE, 2005.
+
+\bibitem[Doucet et~al.(2001)Doucet, De~Freitas, and Gordon]{Doucet:2001}
+Doucet, A., De~Freitas, N., and Gordon, N.~J.
+\newblock \emph{Sequential {Monte} {Carlo} {Methods} in {Practice}}.
+\newblock Information {Science} and {Statistics}. New York, NY: Springer, New
+  York, 2001.
+
+\bibitem[Gerber et~al.(2019)Gerber, Chopin, and Whiteley]{gerber2019negative}
+Gerber, M., Chopin, N., and Whiteley, N.
+\newblock Negative association, ordering and convergence of resampling methods.
+\newblock \emph{The Annals of Statistics}, 47\penalty0 (4):\penalty0
+  2236--2260, 2019.
+
+\bibitem[Geyer(1991)]{geyer1991markov}
+Geyer, C.
+\newblock {Markov chain Monte Carlo maximum likelihood}.
+\newblock In \emph{Computing science and statistics: Proceedings of 23rd
+  Symposium on the Interface Interface Foundation, Fairfax Station, 1991}, pp.\
+   156--163, 1991.
+
+\bibitem[Guarniero et~al.(2017)Guarniero, Johansen, and
+  Lee]{guarniero2017iterated}
+Guarniero, P., Johansen, A.~M., and Lee, A.
+\newblock The iterated auxiliary particle filter.
+\newblock \emph{Journal of the American Statistical Association}, 112\penalty0
+  (520):\penalty0 1636--1647, 2017.
+
+\bibitem[Haussmann \& Pardoux(1986)Haussmann and Pardoux]{haussmann1986time}
+Haussmann, U.~G. and Pardoux, E.
+\newblock Time reversal of diffusions.
+\newblock \emph{The Annals of Probability}, 14\penalty0 (3):\penalty0
+  1188--1205, 1986.
+
+\bibitem[Heng et~al.(2020)Heng, Bishop, Deligiannidis, and
+  Doucet]{heng2020controlled}
+Heng, J., Bishop, A.~N., Deligiannidis, G., and Doucet, A.
+\newblock Controlled sequential {M}onte {C}arlo.
+\newblock \emph{The Annals of Statistics}, 48\penalty0 (5):\penalty0
+  2904--2929, 2020.
+
+\bibitem[Ho et~al.(2020)Ho, Jain, and Abbeel]{ho2020denoising}
+Ho, J., Jain, A., and Abbeel, P.
+\newblock Denoising diffusion probabilistic models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2020.
+
+\bibitem[Hoffman et~al.(2019)Hoffman, Sountsov, Dillon, Langmore, Tran, and
+  Vasudevan]{hoffman2019neutra}
+Hoffman, M., Sountsov, P., Dillon, J.~V., Langmore, I., Tran, D., and
+  Vasudevan, S.
+\newblock Neu{T}ra-lizing bad geometry in {H}amiltonian {M}onte {C}arlo using
+  neural transport.
+\newblock \emph{arXiv preprint arXiv:1903.03704}, 2019.
+
+\bibitem[Huang et~al.(2024)Huang, Dong, Hao, Ma, and Zhang]{huang2023monte}
+Huang, X., Dong, H., Hao, Y., Ma, Y., and Zhang, T.
+\newblock Reverse diffusion {M}onte {C}arlo.
+\newblock In \emph{International Conference on Learning Representations}, 2024.
+
+\bibitem[Hyv{\"a}rinen(2005)]{Hyvarinen:2005a}
+Hyv{\"a}rinen, A.
+\newblock Estimation of non-normalized statistical models by score matching.
+\newblock \emph{The Journal of Machine Learning Research}, 6:\penalty0
+  695--709, 2005.
+
+\bibitem[Kingma \& Ba(2015)Kingma and Ba]{adam}
+Kingma, D. and Ba, J.
+\newblock Adam: A method for stochastic optimization.
+\newblock In \emph{International Conference on Learning Representations}, 2015.
+
+\bibitem[Kloeden \& Platen(1992)Kloeden and Platen]{Kloeden1992numerical}
+Kloeden, P.~E. and Platen, E.
+\newblock \emph{Numerical Solution of Stochastic Differential Equations},
+  volume~23 of \emph{Appl. Math. (N. Y.)}.
+\newblock Berlin: Springer-Verlag, 1992.
+
+\bibitem[Lai et~al.(2022)Lai, Takida, Murata, Uesaka, Mitsufuji, and
+  Ermon]{lai2022regularizing}
+Lai, C.-H., Takida, Y., Murata, N., Uesaka, T., Mitsufuji, Y., and Ermon, S.
+\newblock Regularizing score-based models with score {F}okker-{P}lanck
+  equations.
+\newblock In \emph{NeurIPS Workshop on Score-Based Methods}, 2022.
+
+\bibitem[Lawson et~al.(2022)Lawson, Ravent{\'o}s, and
+  Linderman]{lawson2022sixo}
+Lawson, D., Ravent{\'o}s, A., and Linderman, S.
+\newblock {SIXO}: Smoothing inference with twisted objectives.
+\newblock \emph{Advances in Neural Information Processing Systems}, 2022.
+
+\bibitem[Liptser \& Shiryayev(1977)Liptser and Shiryayev]{liptser1977book}
+Liptser, R.~S. and Shiryayev, A.~N.
+\newblock \emph{Statistics of Random Processes. {I}. {General} theory.
+  {Translated} by {A}. {B}. {Aries}}, volume~5 of \emph{Appl. Math. (N. Y.)}.
+\newblock Springer, New York, 1977.
+
+\bibitem[M{\'a}t{\'e} \& Fleuret(2023)M{\'a}t{\'e} and
+  Fleuret]{mate2023learning}
+M{\'a}t{\'e}, B. and Fleuret, F.
+\newblock Learning deformation trajectories of {B}oltzmann densities.
+\newblock \emph{Transactions on Machine Learning Research}, 2023.
+
+\bibitem[Matthews et~al.(2022)Matthews, Arbel, Rezende, and
+  Doucet]{Matthews2022}
+Matthews, A. G. D.~G., Arbel, M., Rezende, D.~J., and Doucet, A.
+\newblock Continual repeated annealed flow transport {M}onte {C}arlo.
+\newblock In \emph{International Conference on Machine Learning}, 2022.
+
+\bibitem[McDonald \& Barron(2022)McDonald and Barron]{mcdonald2022proposal}
+McDonald, C.~J. and Barron, A.~R.
+\newblock Proposal of a score based approach to sampling using {M}onte {C}arlo
+  estimation of score and oracle access to target density.
+\newblock In \emph{NeurIPS Workshop on Score-Based Methods}, 2022.
+
+\bibitem[Midgley et~al.(2023)Midgley, Stimper, Simm, Sch{\"o}lk~opf, and
+  Hern{\'a}ndez-Lobato]{midgley2022flow}
+Midgley, L.~I., Stimper, V., Simm, G.~N., Sch{\"o}lk~opf, B., and
+  Hern{\'a}ndez-Lobato, J.~M.
+\newblock Flow annealed importance sampling bootstrap.
+\newblock In \emph{International Conference on Learning Representations}, 2023.
+
+\bibitem[Mira et~al.(2013)Mira, Solgi, and Imparato]{mira2013zerovariance}
+Mira, A., Solgi, R., and Imparato, D.
+\newblock Zero variance {Markov} chain {Monte} {Carlo} for {Bayesian}
+  estimators.
+\newblock \emph{Statistics and Computing}, 23\penalty0 (5):\penalty0 653--662,
+  2013.
+
+\bibitem[M{\o}ller et~al.(1998)M{\o}ller, Syversveen, and
+  Waagepetersen]{Moller:1998}
+M{\o}ller, J., Syversveen, A.~R., and Waagepetersen, R.~P.
+\newblock Log {G}aussian {C}ox processes.
+\newblock \emph{Scandinavian Journal of Statistics}, 25\penalty0 (3):\penalty0
+  451--482, 1998.
+
+\bibitem[Neal(2001)]{neal2001annealed}
+Neal, R.~M.
+\newblock Annealed importance sampling.
+\newblock \emph{Statistics and Computing}, 11\penalty0 (2):\penalty0 125--139,
+  2001.
+
+\bibitem[Neal(2003)]{Neal:2003}
+Neal, R.~M.
+\newblock Slice sampling.
+\newblock \emph{The Annals of Statistics}, 31:\penalty0 705--767, 06 2003.
+
+\bibitem[Nichol \& Dhariwal(2021)Nichol and Dhariwal]{nichol2021improved}
+Nichol, A.~Q. and Dhariwal, P.
+\newblock Improved denoising diffusion probabilistic models.
+\newblock In \emph{International Conference on Machine Learning}, 2021.
+
+\bibitem[Richter et~al.(2024)Richter, Berner, and Liu]{richter2023improved}
+Richter, L., Berner, J., and Liu, G.-H.
+\newblock Improved sampling via learned diffusions.
+\newblock In \emph{International Conference on Learning Representations}, 2024.
+
+\bibitem[Salimans \& Ho(2021)Salimans and Ho]{salimans2021should}
+Salimans, T. and Ho, J.
+\newblock Should {EBM}s model the energy or the score?
+\newblock In \emph{Energy Based Models Workshop-ICLR 2021}, 2021.
+
+\bibitem[Song et~al.(2023)Song, Vahdat, Mardani, and
+  Kautz]{song2023pseudoinverseguided}
+Song, J., Vahdat, A., Mardani, M., and Kautz, J.
+\newblock Pseudoinverse-guided diffusion models for inverse problems.
+\newblock In \emph{International Conference on Learning Representations}, 2023.
+
+\bibitem[Song \& Ermon(2019)Song and Ermon]{song2019generative}
+Song, Y. and Ermon, S.
+\newblock Generative modeling by estimating gradients of the data distribution.
+\newblock \emph{Advances in Neural Information Processing Systems}, 2019.
+
+\bibitem[Song et~al.(2021)Song, Sohl-Dickstein, Kingma, Kumar, Ermon, and
+  Poole]{song2020score}
+Song, Y., Sohl-Dickstein, J., Kingma, D.~P., Kumar, A., Ermon, S., and Poole,
+  B.
+\newblock Score-based generative modeling through stochastic differential
+  equations.
+\newblock In \emph{International Conference on Learning Representations}, 2021.
+
+\bibitem[Sountsov et~al.(2020)Sountsov, Radul, and
+  contributors]{inferencegym2020}
+Sountsov, P., Radul, A., and contributors.
+\newblock Inference gym, 2020.
+\newblock URL \url{https://pypi.org/project/inference_gym}.
+
+\bibitem[Syed et~al.(2022)Syed, Bouchard-C{\^o}t{\'e}, Deligiannidis, and
+  Doucet]{syed2022non}
+Syed, S., Bouchard-C{\^o}t{\'e}, A., Deligiannidis, G., and Doucet, A.
+\newblock Non-reversible parallel tempering: A scalable highly parallel {MCMC}
+  scheme.
+\newblock \emph{Journal of the Royal Statistical Society Series B}, 84\penalty0
+  (2):\penalty0 321--350, 2022.
+
+\bibitem[Tawn et~al.(2020)Tawn, Roberts, and Rosenthal]{tawn2020weight}
+Tawn, N.~G., Roberts, G.~O., and Rosenthal, J.~S.
+\newblock Weight-preserving simulated tempering.
+\newblock \emph{Statistics and Computing}, 30\penalty0 (1):\penalty0 27--41,
+  2020.
+
+\bibitem[Vargas et~al.(2023)Vargas, Grathwohl, and Doucet]{vargasDDSampler2023}
+Vargas, F., Grathwohl, W., and Doucet, A.
+\newblock Denoising diffusion samplers.
+\newblock In \emph{International Conference on Learning Representations}, 2023.
+
+\bibitem[Vincent(2011)]{vincent2011connection}
+Vincent, P.
+\newblock A connection between score matching and denoising autoencoders.
+\newblock \emph{Neural Computation}, 23\penalty0 (7):\penalty0 1661--1674,
+  2011.
+
+\bibitem[Webber(2019)]{webber2019unifying}
+Webber, R.~J.
+\newblock Unifying sequential {M}onte {C}arlo with resampling matrices.
+\newblock \emph{arXiv preprint arXiv:1903.12583}, 2019.
+
+\bibitem[Woodard et~al.(2009)Woodard, Schmidler, and
+  Huber]{woodard2009sufficient}
+Woodard, D.~B., Schmidler, S.~C., and Huber, M.
+\newblock Sufficient conditions for torpid mixing of parallel and simulated
+  tempering.
+\newblock \emph{Electronic Journal of Probability}, 14:\penalty0 780--804,
+  2009.
+
+\bibitem[Wu et~al.(2023)Wu, Trippe, Naesseth, Blei, and
+  Cunningham]{wu2023practical2023}
+Wu, L., Trippe, B.~L., Naesseth, C.~A., Blei, D., and Cunningham, J.~P.
+\newblock Practical and asymptotically exact conditional sampling in diffusion
+  models.
+\newblock In \emph{Advances in Neural Information Processing Systems}, 2023.
+
+\bibitem[Zhang et~al.(2024)Zhang, Chen, Liu, Courville, and
+  Bengio]{zhang2023diffusion}
+Zhang, D., Chen, R.~T., Liu, C.-H., Courville, A., and Bengio, Y.
+\newblock Diffusion generative flow samplers: Improving learning signals
+  through partial trajectory optimization.
+\newblock In \emph{International Conference on Learning Representations}, 2024.
+
+\bibitem[Zhang \& Chen(2022)Zhang and Chen]{zhangyongxinchen2021path}
+Zhang, Q. and Chen, Y.
+\newblock Path integral sampler: a stochastic control approach for sampling.
+\newblock In \emph{International Conference on Learning Representations}, 2022.
+
+\end{thebibliography}

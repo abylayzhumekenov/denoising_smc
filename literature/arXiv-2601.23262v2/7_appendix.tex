@@ -1,0 +1,646 @@
+\newpage
+\appendix
+
+\newpage
+\section{Sequential Monte Carlo Derivations}
+
+\subsection{Sequential Monte Carlo Pseudocode} \label{app:smc_psuedocode}
+
+\begin{algorithm}[H]
+\caption{Sequential Monte Carlo (SMC)}
+\label{alg:smc}
+\begin{algorithmic}[1]
+\REQUIRE Number of particles $N$, time steps $K$; proposals $M_K(x_K), M_k(x_{k-1} \mid x_{k})$; incremental weight functions $G_K(x_K), G_k(x_{k-1},x_k)$; resampling threshold $N_{eff} \in (0,1]$.
+\STATE \textbf{Initialization:}
+\FOR{$n = 1 \rightarrow N$}
+    \STATE $x_K^{(i)} \sim M_K(x^{(i)}_K)$
+    \STATE $w_K^{(i)} = G_K(x^{(i)}_K)$
+\ENDFOR
+\FOR{$k = K \rightarrow 1$}
+    \FOR{$i = 1 \rightarrow N$}
+        \STATE \textbf{Propagate:} $x_{k-1}^{(i)} \sim M_k(x^{(i)}_{k-1} \mid x^{(i)}_{k})$ 
+        \STATE \textbf{Weight update:} $\tilde{w}_{k-1}^{(i)} = w^{(i)}_{k} G_k(x_{k-1}^{(i)}, x_k^{(i)})$
+    \ENDFOR
+    \STATE \textbf{Normalize:} $w_{k-1}^{(i)} = \tilde{w}_{k-1}^{(i)} \Big/ \sum_{j=1}^N \tilde{w}_{k-1}^{(j)}$, for all $i$
+    \STATE \textbf{Compute effective sample size:} $\mathrm{ESS}_k = \frac{1}{\sum_{i=1}^N (w_{k-1}^{(i)})^2}$
+    \IF{$\mathrm{ESS}_k \leq \tau$}
+        \STATE \textbf{Resampling (Multinomial):}
+        \FOR{$i = 1 \rightarrow N$}
+            \STATE $a^{(i)} \sim \mathrm{Cat}(w_{k-1}^{(1)}, \dots, w_{k-1}^{(N)})$
+            \STATE $x_{k-1}^{(i)} = x_{k-1}^{(a^{(i)})}$
+            \STATE $w_{k-1}^{(i)} = \frac{1}{N}$
+        \ENDFOR
+    \ENDIF
+\ENDFOR
+%
+\STATE \textbf{Return:} $\{(x_0^{(i)}, w_0^{(i)})\}_{i=1}^N$
+\end{algorithmic}
+\end{algorithm}
+
+\subsection{EM Proposal} \label{app:twisted_intermediate}
+The FK formulation used to derive the targets is provided in equation \ref{eq:FK_formula} but we have restated it here for convenience purposes. 
+\begin{align}
+    \nu(x_{0:K}) = \frac{1}{\mathcal{L}} G_K(x_K) M_K(x_K) \prod_{j=1}^k G_{j-1}(x_j, x_{j-1}) M_{j-1}(x_{j-1} \mid x_{j})
+    \label{eq:FK_formula_again}
+\end{align}
+Where $\mathcal{L}$ is the normalisation constant. Using 
+\begin{align}
+    &M_K(x_K) = p_K(x_K), &&  M_{j-1}(x_{j-1} \mid x_{j})= \Tilde{p}_{\theta}(x_{j-1} \mid x_{j}, y), \nonumber \\
+    &G_K(x_K)= \Tilde{p}_{\theta}(y \mid x_{K}), &&G_{j-1}(x_j, x_{j-1}) = \frac{\Tilde{p}_{\theta}(y \mid x_{j-1})}{\Tilde{p}_{\theta}(y \mid x_{j})} \, \frac{p_\theta(x_{j-1} \mid x_{k})}{\Tilde{p}_{\theta}(x_{j-1} \mid x_{j}, y)}. \nonumber
+\end{align}
+Substituting these into equation~\ref{eq:FK_formula_again}: 
+\begin{align}
+    \nu(x_{s:K}) &\propto \Tilde{p}_{\theta}(y \mid x_{K}) p_K(x_K) \prod_{j=s}^k \frac{\Tilde{p}_{\theta}(y \mid x_{j-1})}{\Tilde{p}_{\theta}(y \mid x_{j})} \frac{p_\theta(x_{j-1} \mid x_{j})}{\Tilde{p}_{\theta}(x_{j-1} \mid x_{j}, y)} \Tilde{p}_{\theta}(x_{j-1} \mid x_{j}, y), \\
+    &= \Tilde{p}_{\theta}(y \mid x_{K}) p_K(x_K) \prod_{j=s}^k p_\theta(x_{j-1} \mid x_{k}), \\
+    &= \Tilde{p}_{\theta}(y \mid x_{s-1}) p_\theta(x_{s-1:K}), \\
+    &= p(x_{s-1:K}, y). 
+\end{align}
+And therefore: 
+\begin{align}
+    \nu(x_{s:K}) = p(x_{s-1:K}\mid y), \\
+    \nu(x_{0:K}) = p(x_{0:K}\mid y).
+\end{align}
+
+\subsection{Pseudo-Bootstrap Formulation} \label{app:pBS_explained}
+For the pBS formulation of the FK process, we use the following: 
+\begin{align}
+    &M_K(x_K) = p_K(x_K), &&  M_{j-1}(x_{j-1} \mid x_{j})= \Tilde{p}_{\theta}(x_{j-1} \mid x_{j}, y), \nonumber \\
+    &G_K(x_K)= \Tilde{p}_{\theta}(y \mid x_{K}), &&G_{j-1}(x_j, x_{j-1}) = \frac{\Tilde{p}_{\theta}(y \mid x_{j-1})}{\Tilde{p}_{\theta}(y \mid x_{j})}. \nonumber
+\end{align}
+Substituting these into equation~\ref{eq:FK_formula_again}: 
+\begin{align}
+    \nu(x_{s:K}) &\propto \Tilde{p}_{\theta}(y \mid x_{K}) p_K(x_K) \prod_{j=s}^k \frac{\Tilde{p}_{\theta}(y \mid x_{j-1})}{\Tilde{p}_{\theta}(y \mid x_{j})}  \Tilde{p}_{\theta}(x_{j-1} \mid x_{j}, y), \\
+    &= \Tilde{p}_\theta(x_{s-1:K}, y) \Tilde{p}_{\theta}(y\mid x_{s-1}).
+\end{align}
+
+\subsection{Pseudocode} \label{app:pseudocodes}
+
+\subsubsection{GEM Proposal Pseudocode} \label{app:pseudocodes_gem}
+\begin{algorithm}[h!]
+\caption{GEM Algorithm}
+\label{alg:song_proposal}
+\begin{algorithmic}[1]
+\REQUIRE{$D_{\theta}(x; \sigma),\, \sigma_k, \sigma_{k-1}, x_{k}, \alpha$}
+    \STATE Sample $\epsilon_{k} \sim \mathcal{N}(0, I)$
+    \STATE $d_{k} \leftarrow \dfrac{x_{k} - D_{\theta}(x_{k}, \sigma_{k})}{\sigma_{k}}$
+    \STATE $x_{k-1} \leftarrow x_{k} + (\sigma_{k-1}^2 - \sigma_{k}^2) d_{k} + \sqrt{\sigma_{k-1}^2 - \sigma_{k}^2} \epsilon_{k}$
+    \STATE $x_{k-1} \leftarrow x_{k-1} - (\sigma_{k-1}^2 - \sigma_{k}^2) \nabla_{x_{k}}\log \Tilde{p}_\theta(y \mid x_k)$
+    \STATE \textbf{return} $x_{k-1}$
+\end{algorithmic}
+\end{algorithm}
+
+\subsubsection{SOSaG Proposal Pseudocode} \label{app:pseudocodes_sosag}
+
+\begin{algorithm}[h!]
+\caption{SOSaG Proposal}
+\label{alg:our_proposal}
+\begin{algorithmic}[1]
+\REQUIRE{$D_{\theta}(x,\sigma),\, \sigma_{k}, \sigma_{k-1}, x_{k}, \gamma_{k}$}
+    \STATE Sample $\epsilon_{k} \sim \mathcal{N}(0, I)$
+    \STATE $\hat{\sigma}_{k} \leftarrow \sigma_{k} + \gamma_{k}\,\sigma_{k}$
+    \STATE $\hat{x}_{k} \leftarrow x_{k} +
+           \sqrt{\hat{\sigma}^{2}_{k} - \sigma^{2}_{k}}\,\epsilon_{k}$
+    \STATE $d_{k} \leftarrow
+           \dfrac{\hat{x}_{k} - D_{\theta}(\hat{x}_{k},\hat{\sigma}_{k})}
+           {\hat{\sigma}_{k}}$
+    \STATE $x_{k-1} \leftarrow \hat{x}_{k} +
+           (\sigma_{k-1} - \hat{\sigma}_{k})\,d_{k}$
+    \IF{$\sigma_{k} \neq 0$}
+        \STATE $d_{k-1} \leftarrow
+        \dfrac{x_{k-1} - D_{\theta}(x_{k-1},\sigma_{k-1})}{\sigma_{k-1}}$
+        \STATE $x_{k-1} \leftarrow \hat{x}_{k} +
+        (\sigma_{k-1} - \hat{\sigma}_{k})\left(\tfrac{1}{2}d_{k} + \tfrac{1}{2}d_{k-1}\right)$
+    \ENDIF
+    \STATE $x_{k-1} \leftarrow x_{k-1} - (\sigma_{k-1}^2 - \sigma_{k}^2) \nabla_{\hat{x}_{k}} \log \Tilde{p}_\theta (y \mid \hat{x}_{k})$
+    \STATE \textbf{return} $x_{k-1}$
+\end{algorithmic}
+\end{algorithm} 
+
+\subsection{Clarification of posterior exactness and empirical performance}
+\label{app:clarification-target}
+We clarify a concern raised by the area chair during the review process on whether pBS trades between the posterior exactness and empirical performance. 
+
+PDE solutions are intrinsically deterministic whereas diffusion models are stochastic. 
+Solving PDEs via diffusion models essentially applies Bayesian inference to a frequentist problem, introducing a large degree of freedom in defining the target posterior distribution. 
+Most state-of-the-art diffusion models define the target as 
+%
+\begin{equation}
+    \overbrace{\pi(u \mid u_{\mathrm{obs}}, a)}^{\text{Diffusion PDE target}} \propto \overbrace{p(u_{\mathrm{obs}} \mid u)}^{\text{Partial observations from data}} \times \overbrace{r_a(u)}^{\text{PDE constraints}} \times \overbrace{p(u)}^{\text{Diffusion prior}},
+    \label{equ:diffusion-pde-target}
+\end{equation}
+%
+by incorporating the partial observations likelihood, PDE constraints likelihood, and a pre-trained diffusion prior. 
+Then, samplers (e.g., SMC) are built aiming to statistically exactly sample from this target. 
+However, this ansatz ignores the fact that both the diffusion prior and the likelihoods contain irreducible errors. 
+Sampling exactly from this target does not guarantee a valid solution from the PDE, and the errors propagating to the samples is not controlled. 
+This motivates us introducing pseudo-bootstrap (pBS), modifying from Equation~\eqref{equ:diffusion-pde-target} with additional tempering exponent terms on the prior and likelihood to calibrate their respective error contributions. %TODO: Now andy, you can refer to your tempering param table xxx.
+
+Table~\ref{tab:results_tempering} give the results on the Darcy, Helmholtz and Poisson forward and inverse experiments when varying the tempering parameter $\rho$ in Equation~\eqref{app:pbs_tempered_target}. We can see from this table that higher values of $\rho$ result in lower relative errors. Consequently, pBS does not trade between the posterior exactness and empirical performance. 
+Instead, pBS produces statistically exact samples from an alternative target distribution that is calibrated against the standard target in Equation~\eqref{equ:diffusion-pde-target}.
+Empirically, samples drawn from this new target demonstrate superior accuracy compared to those obtained from the original distribution. 
+
+There is also previous precedence for exploring tuning this tempering parameter. \citet{wu2023-TDS} explored the use of changing this parameter which they referred to as the \emph{twist scale} and found increasing it produced better results for class conditional generation for the MNIST dataset (Appendix D.2.1). 
+
+\begin{table}[ht]
+\centering
+\caption{Results for Darcy, Helmholtz and Poisson experiments with differing values of $\rho$. Results are averaged over 20 runs.}
+\label{tab:results_tempering}
+\setlength{\tabcolsep}{6pt}
+\begin{tabular}{l cccccc}
+\toprule
+Method & $\rho{=}5$ & $\rho{=}10$ & $\rho{=}50$ & $\rho{=}100$ & $\rho{=}500$ & $\rho{=}1000$ \\
+\midrule
+
+\multicolumn{7}{c}{\textit{Darcy -- Forward}} \\
+\midrule
+GEM-pBS   & 6.19\% & 4.46\% & 3.58\% & 4.50\% & 3.91\%          & 4.07\% \\
+SOSaG-pBS & 4.52\% & 3.22\% & 3.55\% & 4.20\% & \textbf{3.19\%} & 3.42\% \\
+\midrule
+
+\multicolumn{7}{c}{\textit{Darcy -- Inverse}} \\
+\midrule
+GEM-pBS   & 6.05\% & 5.60\% & 5.32\% & 4.69\%          & 4.89\% & 5.08\% \\
+SOSaG-pBS & 4.86\% & 4.90\% & 4.69\% & \textbf{4.55\%} & 4.77\% & 4.56\% \\
+\midrule
+
+\multicolumn{7}{c}{\textit{Helmholtz -- Forward}} \\
+\midrule
+GEM-pBS   & 13.37\% & 10.72\% &  9.29\%         & 8.90\% & 7.85\% & 10.27\% \\
+SOSaG-pBS & 11.16\% & 10.95\% & \textbf{7.69\%} & 9.20\% & 8.40\% &  8.67\% \\
+\midrule
+
+\multicolumn{7}{c}{\textit{Helmholtz -- Inverse}} \\
+\midrule
+GEM-pBS   & 18.55\% & 18.64\% & 18.63\% & 18.45\% & 17.68\% & 18.08\%          \\
+SOSaG-pBS & 20.12\% & 19.80\% & 19.18\% & 19.30\% & 18.17\% & \textbf{17.57\%} \\
+\midrule
+
+\multicolumn{7}{c}{\textit{Poisson -- Forward}} \\
+\midrule
+GEM-pBS   & 6.58\% & 6.79\% & 6.18\% & 7.05\% & 6.09\%          & 6.61\% \\
+SOSaG-pBS & 6.55\% & 8.10\% & 7.89\% & 8.54\% & \textbf{6.03\%} & 6.86\% \\
+\midrule
+
+\multicolumn{7}{c}{\textit{Poisson -- Inverse}} \\
+\midrule
+GEM-pBS   & 22.09\% & 22.18\% & 21.96\% & 21.12\% & 20.65\% & 20.34\%          \\
+SOSaG-pBS & 24.13\% & 23.92\% & 23.76\% & 22.70\% & 21.31\% & \textbf{20.17\%} \\
+
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Tempered ESS and Genetic Algorithms} \label{app:smc_ea_tempering}
+
+Increasing $\rho$ has the effect of collapsing the ESS of the SMC process, as shown in
+Figure~\ref{fig:tempered_ess}. As discussed in Section~\ref{sec:smc-ea}, this collapsing
+ESS reveals a duality between SMC algorithms and evolutionary algorithms~\citep[][EAs]{back1993overview,
+yu2010introduction}: both can be cast as instances of a Feynman--Kac
+model~\citep{DelMoral2004}, and the correspondence follows by inspection of terms.
+
+At values of $\rho \rightarrow \infty$, the ESS converges to a single particle and the sampler behaves like the $1+\lambda$ EA~\citep{yu2010introduction, back1993overview}. 
+This algorithm starts with a single parent which spawns $N$ children; the best-performing child is then used to spawn $N$ children at the next iteration, and the process repeats until convergence. 
+It has been observed previously that when
+using SMC to sample from diffusion models, the ESS collapses towards the end of the
+sampling run, likely because the noise variance approaches $0$ (the noise schedule is
+often linear, going from $0.2 \to 0.01$). Therefore, even when low ESS is induced from
+the start by setting the variance parameter to be small, many existing SMC methods will
+experience this collapse in the latter stages of sampling. When the tempering parameter
+$\rho$ is large and the target is dominated by the likelihood, the EA approximately corresponds to
+maximum likelihood estimation (MLE); when $\rho$ is small and the prior plays a larger
+role, it resembles maximum a posteriori (MAP) estimation, making the algorithm analogous to a Bayesian EA.
+This can be illustrated as follows. 
+
+\begin{figure}
+    \centering
+    \includegraphics[width=\linewidth]{figures/analysis_plots/ess_combined.pdf}
+    \caption{Normalised effective sample size during the denoising process with different particle size.} % TODO: complete caption
+    \label{fig:tempered_ess}
+\end{figure}
+\paragraph{1.\ Mutation $\longleftrightarrow$ Proposal.}
+In an EA, each individual $x_j$ in the population is stochastically perturbed to
+produce an offspring $x_{j-1}^{(i)}$. In pBS, each particle is propagated via the guided
+sampler $x_{j-1}^{(i)} \sim M_{j-1}(\cdot \mid x_j) = \Tilde{p}_{\theta}(x_{j-1} \mid x_{j}, y)$. Both operations apply a stochastic perturbation to each member of the
+population independently, conditional on its current state.
+
+\paragraph{2.\ Fitness evaluation $\longleftrightarrow$ Weighting.}
+In an EA, each offspring is assigned a scalar fitness value. In pBS, each particle
+receives an incremental weight
+\[
+    G_{j-1}(x_j,\, x_{j-1})
+    \;=\;
+    \frac{\tilde{p}_{\theta}(y \mid x_{j-1})}
+         {\tilde{p}_{\theta}(y \mid x_j)}.
+\]
+In the deterministic (PDE) setting, the approximate likelihood $\tilde{p}_\theta(y \mid
+x_{j-1})$ measures how well the denoised reconstruction
+$\delta_\theta(x_{j-1}, \sigma_{j-1})$ satisfies the observations and the PDE
+residual, and therefore plays the role of a fitness function: particles whose
+reconstructions better satisfy the physics and the data receive higher weight.
+
+\paragraph{3.\ Selection $\longleftrightarrow$ Resampling.}
+In an EA, individuals are selected for the next generation with probability proportional
+to their fitness. In SMC, when the effective sample size drops below $N_{\text{eff}}$,
+particles are resampled with probability proportional to their normalised weights. Both
+operations duplicate high-fitness/high-weight individuals and discard
+low-fitness/low-weight ones, concentrating the population around promising regions of the
+search space.
+
+% \begin{proposition}[pBS as an evolutionary algorithm]
+% \label{prop:smc-ea}
+% Any pBS run with $N$ particles, proposal $M_{j-1}(x_{j-1} \mid x_j)$, and
+% potential $G_{j-1}(x_j, x_{j-1}) = \tilde{p}_\theta(y \mid x_{j-1})\, /\, \tilde{p}_\theta(y \mid x_j)$ can be cast as an
+% evolutionary algorithm with population size $N$, in which the mutation, fitness
+% evaluation, and selection steps correspond to the SMC proposal, weighting, and
+% resampling steps, respectively.
+% \end{proposition}
+
+% \begin{proof}
+% We establish the correspondence by inspecting the three core operations of each algorithm at iteration $j$. Recall that $\Tilde{p}_\theta(\cdot \mid x_j, y)$ denotes the guided sampler kernel used as the pBS proposal.
+
+% \paragraph{1.\ Mutation $\longleftrightarrow$ Proposal.}
+% In an EA, each individual $x_j$ in the population is stochastically perturbed to
+% produce an offspring $x_{j-1}^{(i)}$. In pBS, each particle is propagated via the guided
+% sampler $x_{j-1}^{(i)} \sim M_{j-1}(\cdot \mid x_j) = \Tilde{p}_{\theta}(x_{j-1} \mid x_{j}, y)$. Both operations apply a stochastic perturbation to each member of the
+% population independently, conditional on its current state.
+
+% \paragraph{2.\ Fitness evaluation $\longleftrightarrow$ Weighting.}
+% In an EA, each offspring is assigned a scalar fitness value. In pBS, each particle
+% receives an incremental weight
+% \[
+%     G_{j-1}(x_j,\, x_{j-1})
+%     \;=\;
+%     \frac{\tilde{p}_{\theta}(y \mid x_{j-1})}
+%          {\tilde{p}_{\theta}(y \mid x_j)}.
+% \]
+% In the deterministic (PDE) setting, the approximate likelihood $\tilde{p}_\theta(y \mid
+% x_{j-1})$ measures how well the denoised reconstruction
+% $\delta_\theta(x_{j-1}, \sigma_{j-1})$ satisfies the observations and the PDE
+% residual, and therefore plays the role of a fitness function: particles whose
+% reconstructions better satisfy the physics and the data receive higher weight.
+
+% \paragraph{3.\ Selection $\longleftrightarrow$ Resampling.}
+% In an EA, individuals are selected for the next generation with probability proportional
+% to their fitness. In SMC, when the effective sample size drops below $N_{\text{eff}}$,
+% particles are resampled with probability proportional to their normalised weights. Both
+% operations duplicate high-fitness/high-weight individuals and discard
+% low-fitness/low-weight ones, concentrating the population around promising regions of the
+% search space.
+
+% \medskip\noindent
+% Since the three operations are in one-to-one correspondence, both algorithms generate a
+% sequence of weighted populations governed by the same Feynman--Kac
+% recursion~\eqref{eq:FK_formula}. The pBS target $    \overline{\nu}_{0:K}(x_{0:K}) \propto \overline{p}_\theta(x_{0} \mid y) \Tilde{p}_{\theta}(y\mid x_0)$ is therefore equivalently the
+% stationary distribution of the EA selection--mutation process in the limit of large
+% population size~\citep{DelMoral2004}.
+% \end{proof}
+
+\newpage
+\section{Supplementary Experimental Design Material}
+
+\subsection{PDE Equation Details}
+
+\subsubsection{Benchmark PDE Details} \label{app:pde_details}
+
+\paragraph{Darcy Flow: }
+In Darcy flow, we solve for the pressure field $u(c)$ given the permeability field $a(c)$ of a specific medium $-\nabla \cdot (a(c)\nabla u(c)) = s(c)$ 
+\begin{equation}
+\begin{aligned}
+ -\nabla \cdot (a(c)\nabla u(c)) &= s(c), &&c \in \Omega\\
+ u(c) &= 0, &&c \in \partial \Omega ,
+\end{aligned}
+\label{eq:darcy}
+\end{equation}
+and $s(c)$ is a source term such as a forcing function. For these experiments, we set $s(c) = 1$. 
+
+\paragraph{Inhomogeneous Helmholtz/Poisson Equation: }
+In the inhomogeneous Helmholtz equation we solve for the wave field $u(c)$ given a forcing term $a(c)$ which describes wave propagation:
+\begin{equation}
+\begin{aligned}
+\nabla^{2} u(c) + k^{2} u(c) &= a(c), &&c \in \Omega\\ 
+u(c) &= 0, &&c \in \partial \Omega .
+\end{aligned}
+\label{eq:helmholtz}
+\end{equation}
+$k$ is a constant (wavenumber) and $a(c)$ is a piecewise constant function. Note that when $k = 0$, this reduces to the Poisson equation: 
+\begin{equation}
+\begin{aligned}
+\nabla^{2} u(c) &= a(c), &&c \in \Omega\\ 
+u(c) &= 0, &&c \in \partial \Omega .
+\end{aligned}
+\label{eq:poisson}
+\end{equation}
+
+\paragraph{Non-Bounded Incompressible Navier--Stokes: }
+The following describes the vorticity formulation of the non-bounded Navier-Stokes equation: 
+\begin{equation}
+\begin{aligned}
+\frac{\partial w(c,\tau)}{\partial \tau} + v(c,\tau) \cdot \nabla w(c,\tau) &= \nu \nabla w(c,\tau) + q(c), && c\in\Omega, &&&\tau\in[0,\mathcal{T}],\\
+\nabla\cdot v(c,\tau) &= 0, && c\in\Omega, &&&\tau\in[0,\mathcal{T}],
+\end{aligned}
+\label{eq:nb_navier_stokes}
+\end{equation}
+where $w = \nabla \times v$ is the vorticity. $v(c, \tau)$ is the velocity at $c$ at time $\tau$. $q(c)$ again is a forcing term but represented as a field. We follow the same set up as \citep{huang2024diffusionpdegenerativepdesolvingpartial}, setting $\nu = 1 \times 10^{-3}$ and learning the joint distribution of $w_0$ and $w_{\mathcal{T}}$. The dynamics are simulated over $\mathcal{T}=10$ time steps which is equivalent to one second. The guidance is simplified to $f = \nabla \cdot w(c, \tau)$ as we cannot compute the PDE loss from \ref{eq:nb_navier_stokes} with our model outputs. 
+
+\paragraph{Bounded Incompressible Navier--Stokes: }
+We consider the bounded 2D Navier-Stokes equation: 
+\begin{equation}
+\begin{aligned}
+\frac{\partial v(c,\tau)}{\partial \tau} + v(c,\tau) \cdot \nabla v(c,\tau) + \frac{1}{\rho} \nabla p &= \nu \nabla^2 v(c,\tau), && c\in\Omega, &&&\tau\in[0,\mathcal{T}],\\
+\nabla\cdot v(c,\tau) &= 0, && c\in\Omega, &&&\tau\in[0,\mathcal{T}],
+\end{aligned}
+\label{eq:bounded_navier_stokes}
+\end{equation}
+where $\rho = 1$ and $\nu = 1 \times 10^{-3}$. Again following the data generation process from \citep{huang2024diffusionpdegenerativepdesolvingpartial}, 2D cylinders of random radius and points are generated inside the grid. We learn the joint distribution of $v_0, v_{\mathcal{T}}$ where $\mathcal{T}=4$ and this simulates 0,4 seconds. Similarly to the Nonbounded case, we use $f = \nabla \cdot v(c, \tau)$. 
+
+\subsubsection{Reaction--diffusion equations (2-species and 3-species)} \label{app:rd_equation_explanation}
+
+We now explain the 2SRD and 3SRD PDE equations with periodic boundary conditions. 
+
+\paragraph{Two-species reaction--diffusion equation (Gray--Scott):}
+We consider a two-species reaction--diffusion (RD) system with solution fields
+$u(c,\tau)$ and $v(c,\tau)$ describing the concentrations of two interacting species.
+The dynamics are given by the Gray--Scott model:
+\begin{equation}
+\begin{aligned}
+\frac{\partial u(c,\tau)}{\partial \tau} &= D_u \Delta u(c,\tau) - u(c,\tau)v(c,\tau)^2 + F\big(1-u(c,\tau)\big),
+&& c\in\Omega, &&&\tau\in[0,\mathcal{T}],\\
+\frac{\partial v(c,\tau)}{\partial \tau} &= D_v \Delta v(c,\tau) + u(c,\tau)v(c,\tau)^2 - (F+r)v(c,\tau),
+&& c\in\Omega, &&&\tau\in[0,\mathcal{T}].
+\end{aligned}
+\label{eq:rd_2species}
+\end{equation}
+Here $D_u$ and $D_v$ are diffusivities, $F$ is a feed rate and $r$ is a removal rate. The nonlinear coupling term $u v^2$ models autocatalytic production of $v$ at the expense of $u$. In our experiments we set $F=0.035$ and $r=0.060$. We simulate the system over $\mathcal{T}=1$ second, recording $10$ evenly spaced time steps, and generate trajectories using FEM with time step $1\times 10^{-4}$. Initial conditions are sampled as a perturbed uniform state with a centered square perturbation: $u_0(c)\approx 1$ and $v_0(c)\approx 0$ throughout the domain, except on a centered patch where
+$u_0(c)\approx 0.5$ and $v_0(c)\approx 0.25$, with small additive Gaussian noise. We learn the joint distribution of the initial and final states $(u_0,v_0)$ and $(u_{\mathcal{T}},v_{\mathcal{T}})$.
+
+We define the PDE guidance function as the reaction--diffusion residual $f=(f_u,f_v)$, where $f_u = \partial_\tau u - D_u\Delta u + uv^2 - F(1-u)$ and $f_v = \partial_\tau v - D_v\Delta v - uv^2 + (F+k)v$.
+
+\paragraph{Three-species reaction--diffusion equation:}
+We also consider a three-species reaction--diffusion system with solution fields
+$u(c,\tau)$, $v(c,\tau)$, and $z(c,\tau)$ governed by diffusion and competitive interactions:
+\begin{equation}
+\begin{aligned}
+\frac{\partial u(c,\tau)}{\partial \tau} &=
+\nabla\cdot\!\big(D_u \nabla u(c,\tau)\big)
++ u(c,\tau)\Big(1 - u(c,\tau) - a_{12}v(c,\tau) - a_{13}z(c,\tau)\Big),
+&& c\in\Omega, &&&\tau\in[0,\mathcal{T}],\\
+\frac{\partial v(c,\tau)}{\partial \tau} &=
+\nabla\cdot\!\big(D_v \nabla v(c,\tau)\big)
++ v(c,\tau)\Big(1 - v(c,\tau) - a_{21}u(c,\tau) - a_{23}z(c,\tau)\Big),
+&& c\in\Omega, &&&\tau\in[0,\mathcal{T}],\\
+\frac{\partial z(c,\tau)}{\partial \tau} &=
+\nabla\cdot\!\big(D_z \nabla z(c,\tau)\big)
++ z(c,\tau)\Big(1 - z(c,\tau) - a_{31}u(c,\tau) - a_{32}v(c,\tau)\Big),
+&& c\in\Omega, &&&\tau\in[0,\mathcal{T}],\\
+\end{aligned}
+\label{eq:rd_3species}
+\end{equation}
+Here $D_u$, $D_v$, and $D_z$ denote diffusion coefficients. Here $a_{ij}\ge 0$ are competition coefficients quantifying how strongly species $j$ inhibits species $i$, and we collect them in a coupling matrix $A=(a_{ij})\in\mathbb{R}^{3\times 3}$ (with $a_{11}=a_{22}=a_{33}=0$). In our data generation procedure, we sample the dominant cyclic interaction terms $a_{12}, a_{23}, a_{31} \sim \mathcal{U}(1.2, 2.0)$ and the remaining cross-interaction terms $a_{13}, a_{21}, a_{32} \sim \mathcal{U}(0.3, 0.8)$. $u_0(c)\approx 0.6$, $v_0(c)\approx 0.2$, and $z_0(c)\approx 0.2$ throughout the domain, except on three localized patches near the domain center where $u_0(c)\approx 0.9$, $v_0(c)\approx 0.7$, and $z_0(c)\approx 0.7$, respectively, with small additive Gaussian noise. We learn the joint distribution of the initial and final states $(u_0,v_0,z_0)$ and $(u_{\mathcal{T}},v_{\mathcal{T}},z_{\mathcal{T}})$.
+
+
+Similarly, we define the PDE guidance function as the reaction--diffusion residual $f=(f_u,f_v,f_z)$, where
+$f_u = \partial_\tau u - D_u\Delta u - u(1-u-a_{12}v-a_{13}z)$,
+$f_v = \partial_\tau v - D_v\Delta v - v(1-v-a_{21}u-a_{23}z)$, and
+$f_z = \partial_\tau z - D_z\Delta z - z(1-z-a_{31}u-a_{32}v)$.
+
+\subsection{Model Training and Evaluation}
+
+For the benchmark PDEs we used the pretrained model parameters from \citet{huang2024diffusionpdegenerativepdesolvingpartial}. The model is the modified UNet \citep{ronneberger2015u} implementation used in \citet{song2021scorebasedgenerativemodelingstochastic} with each model trained on 50000 training images for each experiment. We refer the user to \citet{huang2024diffusionpdegenerativepdesolvingpartial} for further details on this. 
+
+For the multiphysics equations, we generated our own data using FEM to train the model architecture. For both the 2 species and 3 species variants, we generated 10000 training images and trained the model by doing 100,000 gradient passes over the dataset. A single A100 NVIDIA GPU was used for training. 
+
+For the evaluation, we generated 1000 test images and randomly chose a trajectory and then evaluated on the midpoint. We repeated this 20 times for each experiment and method, keeping the same image and known observations but with a different starting seed for particle initialization.  
+
+It is worth noting that we do not believe that our model was optimized with a scheme that leads to the optimal parameters. When training was terminated, the loss was still decreasing, albeit slowly. Therefore we think we all models could have superior results by optimizing this process. However, we felt that this task was outside the purview of this work as all methods including baselines still obtained good results. We also believe that there are potentially better architectures in the literature that would work better as a model prior than what we have chosen. The \citet{song2021scorebasedgenerativemodelingstochastic} was used for convenience and as that is what our baselines comparisons used for the pretrained models.  
+
+We found during some of our training runs that increasing $K$ improved all results across every sampling method, which is expected but the result was more pronounced for the stochastic sampling methods. We decided to use $K=2000$ for each experiment and method, however we feel that experimenting with this parameter would be fruitful for more optimized results in future work. This obviously comes at an increased wall-clock time cost. 
+
+Table~\ref{tab:weights} gives the guidance parameters used for the forward, inverse and joint problems. It is worth noting that for the joint inference problems, a strong weighting on $a$ can cause a negative impact on the estimation of $u$ and vice versa. Therefore in the joint inference scenario, guidance parameters have been tuned to minimise the overall residual error across the coefficient and solution fields. 
+
+\begin{table}[ht]
+\centering
+\caption{The weights assigned to the PDE loss and the observation loss vary depending on whether the observations pertain to the coefficients (or initial states) $a$ or to the solutions (or final states) $u$.}
+\label{tab:weights}
+\setlength{\tabcolsep}{5pt}
+\small
+\begin{tabular}{l cccccc cc}
+\toprule
+& \multicolumn{5}{c}{\textit{Benchmarks}} & \multicolumn{2}{c}{\textit{Reaction Diffusion}} \\
+\cmidrule(lr){2-6} \cmidrule(lr){7-8}
+& Darcy & Poisson & Helmholtz & NS (Unbounded) & NS (Bounded) & 2SRD & 3SRD \\
+\midrule
+$\gamma$ & $5$ & $0.8$ & $0.8$ & $0.5$ & $1$ & $7$ & $5$ \\
+$\beta$   & $5000$ & $40$ & $60$ & $0.5$ & $1$ & $20$ & $30$ \\
+$\omega$  & $100$ & $1$ & $1$ & $1$ & $1$ & $2$ & $1$  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\newpage
+
+\section{Further Results} \label{app:further_results}
+
+\subsection{ESS Graphs}
+\begin{figure}[h]
+    \centering
+
+    \subfigure[\label{fig:ess_benchmark}]{
+        \includegraphics[width=0.85\columnwidth]{figures/analysis_plots/ess_grid.pdf}
+    }
+
+    \subfigure[\label{fig:ess_rd}]{
+        \includegraphics[width=0.85\columnwidth]{figures/analysis_rd_plots/ess_grid.pdf}
+    }
+
+    \caption{ESS plots for the Benchmark and RD experiments.}
+\end{figure}
+
+
+\newpage
+\subsection{Equal Computational Expense} \label{app:comp_expense}
+
+One valid criticism of our algorithm is that we incur an extra computational cost when using the SMC methods compared to a single particle method such as DiffPDE. Table~\ref{tab:results_pde_single} give results on the benchmark datasets, but with the SMC framework removed. We still find that generally the stochastic methods produce better results than DiffPDE, and SMC often augments this advantage. 
+
+\begin{table*}[ht]
+\centering
+\caption{Comparison of different models on five PDE problems (in $L_2$ relative error, except in the Darcy inverse problem where error rate is reported).}
+\label{tab:results_pde_single}
+\resizebox{0.7\textwidth}{!}{%
+\begin{tabular}{l cc cc cc cc cc}
+\toprule
+\multirow{2}{*}{\textbf{Method}} &
+\multicolumn{2}{c}{\textbf{Darcy}} &
+\multicolumn{2}{c}{\textbf{Poisson}} &
+\multicolumn{2}{c}{\textbf{Helmholtz}} &
+\multicolumn{2}{c}{\textbf{NS}} &
+\multicolumn{2}{c}{\textbf{NS (BCs)}} \\
+\cmidrule(lr){2-3}\cmidrule(lr){4-5}\cmidrule(lr){6-7}\cmidrule(lr){8-9}\cmidrule(lr){10-11}
+& \textbf{Fwd} & \textbf{Inv}
+& \textbf{Fwd} & \textbf{Inv}
+& \textbf{Fwd} & \textbf{Inv}
+& \textbf{Fwd} & \textbf{Inv}
+& \textbf{Fwd} & \textbf{Inv} \\
+\midrule
+DiffPDE & 5.58          & 8.31          & 8.67          & \textbf{19.88} & 17.49          & \textbf{19.14} & 4.27          & \textbf{9.34} & 2.78          & 3.43          \\
+GEM     & 5.28          & \textbf{7.34} & \textbf{6.53} & 22.28          & \textbf{11.22} & 19.30          & \textbf{4.16} & 10.10         & \textbf{2.31} & \textbf{2.36} \\
+SOSaG   & \textbf{4.47} & 8.00          & 7.88          & 25.55          & 11.71          & 20.70          & 4.18          & 11.10         & 2.52          & 3.23          \\
+\bottomrule
+\end{tabular}
+}
+\end{table*}
+
+\subsection{Error and Reconstruction Plots}
+\begin{figure}[h]
+    \centering
+
+    \subfigure[Helmholtz\label{fig:recon_helmholtz}]{
+        \includegraphics[width=0.85\columnwidth]{figures/recon_plots/recon_helmholtz_seed0.pdf}
+    }
+
+    \subfigure[Navier--Stokes (Bounded)\label{fig:recon_ns_bounded}]{
+        \includegraphics[width=0.85\columnwidth]{figures/recon_plots/recon_ns_bounded_seed0.pdf}
+    }
+
+    \subfigure[Navier--Stokes (Non-bounded)\label{fig:recon_ns_nonbounded}]{
+        \includegraphics[width=0.85\columnwidth]{figures/recon_plots/recon_ns_nonbounded_seed0.pdf}
+    }
+
+    \subfigure[Poisson\label{fig:recon_poisson}]{
+        \includegraphics[width=0.85\columnwidth]{figures/recon_plots/recon_poisson_seed0.pdf}
+    }
+
+    \caption{Reconstruction comparison for the benchmark PDE experiments. The top row shows the contour plots of the reconstruction of $a$ while the bottom row shows the reconstruction of $u$. The final two plots on the left show the ground truth of the respective fields. The figures show a single example run of each method.}
+    \label{fig:all_recon_panels}
+\end{figure}
+
+\begin{figure*}[h]
+    \centering
+
+    % ---------- Row 1 ----------
+    \subfigure[$\sigma_O = 0.000$\label{fig:recon_rd2_000}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/recon_gsrd_clean_seed0.pdf}
+    }
+    \hfill
+    \subfigure[$\sigma_O = 0.005$\label{fig:recon_rd2_005}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/recon_gsrd_noise_0p005_seed0.pdf}
+    }
+
+    \vspace{0.6em}
+
+    % ---------- Row 2 ----------
+    \subfigure[$\sigma_O = 0.010$\label{fig:recon_rd2_010}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/recon_gsrd_noise_0p01_seed0.pdf}
+    }
+    \hfill
+    \subfigure[$\sigma_O = 0.020$\label{fig:recon_rd2_020}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/recon_gsrd_noise_0p02_seed0.pdf}
+    }
+
+    \caption{Reconstruction comparison for all 2SRD experiments across varying noise levels. The left most column show the ground truth contours. The figures show a single example run of each method.}
+    \label{fig:rd2_recon_panels}
+\end{figure*}
+
+\begin{figure*}[h]
+    \centering
+
+    % ---------- Row 1 ----------
+    \subfigure[$\sigma_O = 0.000$\label{fig:recon_rd3_000}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/recon_rd3_clean_seed0.pdf}
+    }
+    \hfill
+    \subfigure[$\sigma_O = 0.005$\label{fig:recon_rd3_005}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/recon_rd3_noise_0p005_seed0.pdf}
+    }
+
+    \vspace{0.5em}
+
+    % ---------- Row 2 ----------
+    \subfigure[$\sigma_O = 0.010$\label{fig:recon_rd3_010}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/recon_rd3_noise_0p01_seed0.pdf}
+    }
+    \hfill
+    \subfigure[$\sigma_O = 0.020$\label{fig:recon_rd3_020}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/recon_rd3_noise_0p02_seed0.pdf}
+    }
+
+    \caption{Reconstruction comparison for all 3SRD experiments across varying noise levels. The left most column show the ground truth contours. The figures show a single example run of each method.}
+    \label{fig:rd3_recon_panels}
+\end{figure*}
+
+\begin{figure}[h]
+    \centering
+
+    \subfigure[Helmholtz\label{fig:error_helmholtz}]{
+        \includegraphics[width=0.7\columnwidth]{figures/recon_plots/error_helmholtz_seed0.pdf}
+    }
+
+    \subfigure[Navier--Stokes (Bounded)\label{fig:error_ns_bounded}]{
+        \includegraphics[width=0.7\columnwidth]{figures/recon_plots/error_ns_bounded_seed0.pdf}
+    }
+
+    \subfigure[Navier--Stokes (Non-bounded)\label{fig:error_ns_nonbounded}]{
+        \includegraphics[width=0.7\columnwidth]{figures/recon_plots/error_ns_nonbounded_seed0.pdf}
+    }
+
+    \subfigure[Poisson\label{fig:error_poisson}]{
+        \includegraphics[width=0.7\columnwidth]{figures/recon_plots/error_poisson_seed0.pdf}
+    }
+
+    \caption{
+        Corresponding error comparison panels for all PDE experiments:
+        Helmholtz, Navier--Stokes bounded, Navier--Stokes non-bounded, and Poisson. The errors tend to be more erroneous near the high frequency information regions, this is most obvious in the Bounded Navier--Stokes case. 
+    }
+    \label{fig:all_error_panels}
+\end{figure}
+
+\begin{figure*}[h]
+    \centering
+
+    % ---------- Row 1 ----------
+    \subfigure[$\sigma_O = 0.000$\label{fig:error_rd2_000}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/error_gsrd_clean_seed0.pdf}
+    }
+    \hfill
+    \subfigure[$\sigma_O = 0.005$\label{fig:error_rd2_005}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/error_gsrd_noise_0p005_seed0.pdf}
+    }
+
+    % ---------- Row 2 ----------
+    \subfigure[$\sigma_O = 0.010$\label{fig:error_rd2_010}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/error_gsrd_noise_0p01_seed0.pdf}
+    }
+    \hfill
+    \subfigure[$\sigma_O = 0.020$\label{fig:error_rd2_020}]{
+        \includegraphics[width=0.48\textwidth]{figures/rd_recon_plots/error_gsrd_noise_0p02_seed0.pdf}
+    }
+
+    \caption{Corresponding error comparison panels for the 2SRD PDE system for the reconstructions. The highest error can be observed generally near the high frequency information regions, with this result being more pronounced with increasing levels of observation noise.}
+    \label{fig:error_panels_2SRD}
+\end{figure*}
+
+
+\begin{figure*}[h]
+    \centering
+
+    % ---------- Row 1 ----------
+    \subfigure[$\sigma_O = 0.000$\label{fig:error_rd3_000}]{
+        \includegraphics[width=0.45\textwidth]{figures/rd_recon_plots/error_rd3_clean_seed0.pdf}
+    }
+    \hfill
+    \subfigure[$\sigma_O = 0.005$\label{fig:error_rd3_005}]{
+        \includegraphics[width=0.45\textwidth]{figures/rd_recon_plots/error_rd3_noise_0p005_seed0.pdf}
+    }
+
+    % ---------- Row 2 ----------
+    \subfigure[$\sigma_O = 0.010$\label{fig:error_rd3_010}]{
+        \includegraphics[width=0.45\textwidth]{figures/rd_recon_plots/error_rd3_noise_0p01_seed0.pdf}
+    }
+    \hfill
+    \subfigure[$\sigma_O = 0.020$\label{fig:error_rd3_020}]{
+        \includegraphics[width=0.45\textwidth]{figures/rd_recon_plots/error_rd3_noise_0p02_seed0.pdf}
+    }
+
+    \caption{Error comparison panels for the 3SRD PDE system. Similarly to Figure~\ref{fig:all_error_panels} and Figure~\ref{fig:error_panels_2SRD}, we observe that generally the highest error regions are that near the high frequency information areas with the error increasing as we introduce more observation noise.}
+    \label{fig:error_panels_3SRD}
+\end{figure*}
+

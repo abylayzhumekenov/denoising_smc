@@ -1,0 +1,164 @@
+% \documentclass[11pt]{amsart}
+\documentclass{article}
+\usepackage[nonatbib]{neurips_2023}
+
+\input{header.tex}
+\input{def.tex}
+\usepackage{geometry}                % See geometry.pdf to learn the layout options. There are lots.
+\geometry{letterpaper}                   % ... or a4paper or a5paper or ...
+%\geometry{landscape}                % Activate for for rotated page geometry
+%\usepackage[parfill]{parskip}    % Activate to begin paragraphs with an empty line rather than an indent
+\usepackage{graphicx}
+\usepackage{amssymb}
+\usepackage{epstopdf}
+\usepackage{xcolor}
+\usepackage{upgreek}
+\def\algo{\texttt{MCGdiff}}
+\def\ddrm{\texttt{DDRM}}
+\def\dps{\texttt{DPS}}
+\def\smcdiff{\texttt{SMCdiff}}
+\def\ddim{\texttt{DDIM}}
+\newcommand{\question}[1]{\textcolor{purple}{#1}}
+\newcolumntype{M}[1]{>{\centering\arraybackslash}m{#1}}
+%\date{}                                           % Activate to display a given date or no date
+\title{Rebuttal}
+\begin{document}
+\maketitle
+
+\subsection*{Main response}
+Dear reviewers, 
+
+We would like to thank you for your reviews. Below we respond to the most common points among your reviews. 
+\begin{itemize} 
+  \item \textbf{Presentation:} We agree that some parts of the presentation could be further improved. As suggested by the 4th reviewer, we now present our method without the SVD and leave it as a remark at the end of the noiseless section. This has allowed us to drop some of the notations and has improved the readability of the paper. 
+  \item \textbf{Additional experiments:} As requested, we have added new noisy deblurring and super resolution experiments on different datasets. We show that DDRM and MCGDIFF both outperform DPS on perceptual quality. On the super resolution task, MCGDIFF produces reconstructions that are crisper than those of DDRM and DPS, which are either blurry or incoherent. 
+  \item \textbf{On quantitative evaluation:}
+  \item \textbf{Perks of our method:}
+\end{itemize}
+\subsection*{Reviewer 1} 
+\begin{itemize}
+    \item \question{I think the authors should improve the presentation of this work. For example, in the first equation for the proposed method, there are two undefined notations xtop and xbottom. It is also unclear what is Xtop. I don't think this should happen in the first paragraph of the main section, especially for a theoretical paper.} We agree that the readability of the paper could be improved. We have updated the paper by removing the presentation with the SVD (which is left as a remark) and removed some notations. Please note however that in the early submitted version of the paper, the notations $\ltopstate$ and $\lbottomstate$ as well as $\topstate$ are defined in line 142 and 144. 
+    \item \question{I think the experiments should also be improved. For example, I think it is necessary to include quantitative evaluation for inpainting experiments (e.g., FID), and the reference image should be added to Figure 2.} Quantitative assessment plays a critical role in evaluating Bayesian models. In our study, we considered a mixture of Gaussians example, where an analytical expression for the posterior of the Bayesian problem allows us to calculate distances between the target distribution (the posterior) and those sampled by different algorithms.
+    However, when dealing with ill-posed Bayesian inverse problems, such as image inpainting, the real posterior distribution is unknown. The primary objective in such cases is to explore the potentially multimodal posterior distribution, which makes comparing it to a "real image" meaningless. Therefore, metrics like Fréchet Inception Distance (FID) and LPIPS score, which require a comparison to a ground truth, are not helpful for assessing Bayesian reconstruction methods in image inpainting scenarios.
+    In our image inpainting experiment (Figure 2), we demonstrate that several plausible images can correspond to the same inpainting problem, resulting in diverse outputs with variations in gender and hair color. This highlights the inherent uncertainty in the Bayesian reconstruction process. While some competing algorithms show incoherent images, our approach produces images with only minor brightness variations in the inpainted patch, which is a much smaller distortion.
+    To capture the nuances of uncertainty inherent in Bayesian reconstruction methods, we believe that FID and LPIPS might not be adequate. Hence, in the main paper, we chose not to include quantitative evaluation using these metrics and instead focus on qualitative comparisons and visual representations of the results.
+    \item \question{In line 416, it says "the paper focus on solving this linear inverse problem in the orthonormal basis defined by V". It is quite a strong assumption that the forward model A could be decomposed via SVD, as in practice, some forward models might not have the explicit A and/or high computational complexity for SVD. Please clarify it.} This is indeed true, we are going to clarify this in the paper. We would like to point out nevertheless that most papers dealing with noisy linear inverse problems assume the feasability of the SVD (DDRM and ...).
+    \item \question{While the authors claim that the related work [39] is restricted to the inpainting problem, the experiments of this study also only cover the inpainting problem. It is unclear to me the difference between this work and [39] in the applicability aspect.} Indeed, the algorithm presented in [39] is restricted to the inpainting problem and does not allow solving noisy inverse problems. As mentionned in the main paper, The GMM example we have reported  is in fact a noisy inverse problem. To further address your point, we have added more experiments on noisy inverse problems, please see the PDF in the main rebuttal response. 
+\end{itemize}
+\subsection*{Reviewer 2}
+\begin{itemize}
+    \item \question{The authors fail to adequately justify their preference for MCMC sampling over variational inference. While the authors showcase moderately-sized examples that include computationally cheap-to-evaluate forward operators, I remain unconvinced that MCMC sampling exhibits favorable scalability with increasing dimensionality.} Please note that the primary point of the paper is to address ill posed linear inverse problems with a diffusion based prior in the same way as (citations DDRM, etc...). This particular research direction shows great promise due to its distinctive characteristics. One key advantage is that it eliminates the need for any additional training, making it more efficient and convenient to implement. Unlike other methods, which demand retraining when the underlying model changes, the diffusion-based prior remains agnostic to the specific linear inverse problem model. This adaptability is highly valuable, as it allows the method to be seamlessly applied across various scenarios.
+    \item \question{The justification for the usage of diffusion models over alternative generative models is missing. Authors seem to disregard the existence of other generative models suitable for large-scale Bayesian inverse problems, such as normalizing flows, which provide approximation-free evaluations of the model likelihood, enabling exact variational inference through both amortized and non-amortized formulations. They also enable memory-frugal training due to their invertibility, which makes them particularly well-suited for tackling high-dimensional inverse problens. It is rather disappointing that the authors overlook these compelling advantages without providing any compelling rationale.} When defining a Bayesian problem, the practitioner must establish a prior. There can be numerous priors to choose from, including the normalizing flow. However, this paper exclusively concentrates on the diffusion model prior, which has become ubiquitous in the literature, evident from the abundance of papers on the subject. We believe that comparing normalizing flow priors to diffusion model priors falls beyond the scope of this paper.
+    \item \question{The notation in this paper is excessively convoluted, with an excessive reliance on recursive subscripts, superscripts, bars, and other symbols. It poses a significant challenge to comprehend and locate the definitions for multiple variables. Furthermore, the selection of certain variables is perplexing, as exemplified by the use of $t$
+ to represent the rank of the forward operator, which can easily be mistaken for the concept of a time step in denoising diffusion probabilistic models. As it stands, this paper is incomprehensible and is imperative that the author revises the notation and provides clearer definitions and explanations to facilitate a better understanding of the content. Maybe use a table of notations somewhere in the appendix?} OK.
+ \item \question{The authors' presentation of the computational capabilities of the proposed approach appears to be exaggerated. They heavily depend on access to the SVD of the forward operator, not only for derivations but also computationally during the sampling process. However, this might not be feasible in most inverse problems in scientific applications, e.g., inverse problems that their forward operator is based on partial differential equations. It is crucial to address this issue and provide a clearer understanding of the limitations associated with the proposed approach. It is imperative that this requirement be explicitly articulated within the paper and conveyed with utmost clarity in the abstract.} OK.
+ \item \question{I appreciate the toy GMM example; however, it is concerning that no comparison has been made with existing methods that utilize different types of generative models. It is important to note that DDRM and DPS are not considered state-of-the-art solutions for solving Bayesian inverse problems with generative models. To provide a comprehensive analysis, it is crucial to include a comparison with other established methodologies.}
+ \item \question{I find the top-two rows of the CelebA inpainting results to be visually unsatisfactory. The quality of these images is subpar. See similar experiments in Figure 4.8 of https://arxiv.org/abs/2006.06755 and Figure 3 of https://arxiv.org/abs/2002.11743 where the results are much more visually appealing. I am not convinced that the proposed approach is capable of producing high-quality inpainting results.}
+\end{itemize}
+% Please note that the point of our paper is not to vent the merits of solving inverse problems with diffusion models. We are solely focus on developing 
+
+\subsection*{Reviewer 3}
+\begin{itemize}
+    \item \question{My primary complaint is the (dis)agreement between the claim of asymptotic consistency and what is shown in the theory provided. In particular, the proposition shows only that the algorithm is asymptotically unbiased in KL. For consistency, I would hope to know that as N goes to infinity that $\filter{0}{N}{}$ becomes arbitrarily close to $\filter{0}{\ltrmeas}{}$...} Thank you for bringing up this important point. In our paper, we made a deliberate choice to use a bound in KL divergence instead of the more common $L_p$ norm bounds and high probability bounds. This decision was driven by the advantages of obtaining an explicit integral expression of the constant in front of $1/N$.  Indeed, in the SMC literature, the high probability bounds obtained by Hoeffding's inequality have a constant inside the exponential that is challenging to track. See for example Theorem 10.17 in [1]. This also the case for $L_p$ norm bounds.  We could have opted for a central limit theorem where the expression of the asymptotic variance is explicit, however this is an asymptotic result in its nature. Instead, our bound in KL is explicit in the expression of the potential we use in the case of inpainting for example. The integral expression, which we have moved in the main paper following your suggestion, is rather explicit but unfortunately we haven't yet succeeded in upperbounding it with a quantity explicit in the dimension of the problem. We leave this for future work. We also believe that it can be used to devise better potentials with more favourable performance. Regarding the assumptions that allow obtaining a high probability bound, it is enough to have bounded APF weights $(\widetilde{\omega})$. As argued in the supplementary material, this is easily achievable by considering the potential $\pot{s}{\ltrmeas}{x_s} = \tfwtrans{s|0}{\ltrmeas}{x_s} + \delta$ where $\delta > 0$, in which case the instrumental kernel $p^\ltrmeas _s$ remains tractable and is a mixture. We have added the explicit conditions in the main proposition. Note also that our results are proved for multinomial resampling, i.e. the conditional law of the indices $A^{1:N} _s$ is multinomial. 
+    \item \textbf{On FK-APF terminology and consistency of SMCDiff:} We have removed the Feynman-Kac term as it only appears in the abstract and clarified how our method relates to the auxiliary particle filter. We have also added a precision on SMCDiff in the main contributions of the paper. 
+    \item \textbf{Typo equation at the bottom of page 5.} We apologize for the typo. In the left hand side of the equation we meant $\eta^y _{s}(x_s)$ and not $\eta^y _{s+1}(x_{s+1})$ and the integration in the rhs is also with respect to $x_0$.
+    \item \question{The comparison in figure 2 would be improved by some sort of quantitative analysis. For example with FID (though flawed), or classification accuracy under partial information after inpainting.} 
+    \item \question{The paper would be strengthened by either (1) demonstration of a situation in which the method does not perform well or is not easily applicable or (2) successful demonstration on more challenging problems which are currently unsolved, such as image out-painting on imagenet scale models with only very small image patches provided as input.} 
+\end{itemize}
+\subsection*{Reviewer 4}
+\begin{itemize}
+    \item \question{The paper is hard to follow. In my humble opinion, the notations that are used in the paper deviate quite heavily from the conventional use of the notations for diffusion models. As far as I can tell, there is no sufficient why this has to be the case.} - \question{Adding on 1, I do not see why SVD has to be incorporated for the explanation of the method. As the experiments are only conducted on GMM and inpainting, which does not really require an SVD computation.} Please note that we have added some non standard notations (such as the notations $\ltopstate$ and $\lbottomstate$ and the transition kernels $\tbwtrans{}{s}{}{}$ and $\bbwtrans{}{s}{}{}$ for example) in order to convey our method in the most rigourous manner. In the revised version of the paper we have followed your suggestion and removed the presentation with the SVD, which is now left as a remark in which also emphasize that our method requires computing the SVD. 
+    \item \question{While the theory is interesting, the experimental validation is too weak. Only on the Gaussian mixture model is MCGDiff shown to be superior over other diffusion model-based inverse problem solvers. For the case of inpainting, it seems to underperform against both DDRM and DPS on all the selected images.} While our method underperforms with respect to DDRM and DPS in the second row of the second figure, we de not agree that it underperforms in the first row. Our approach produces coherent images with only minor brightness variations in the inpainted patch while DPS, DDRM and SMCDiff show incoherent images. In the third row, all the methods perform the same with the exception of DPS which shows a blurry image. In the additional experiments we have provided (please see above), we show that our method outperforms both DPS and DDRM in noisy contexts. In the super-resolution example, our method is the only one that displays sharp images, while DDRM produces blurry images and DPS unconsistent images, confirming the conclusions of the GMM experiment. Finally, please see our main response for our comment on the quantitative evaluation. 
+    \item \question{Adding on weaknesses, I think it is important that
+    More experiments are conducted on more general inverse problems that generally do require the computation of SVD (e.g. SR).
+    More experiments that verify that noisy inverse problems are effectively solvable (to empirically validate "extension to the noisy case").
+    Quantitatively evaluate the performance of the proposed method against baselines on experiments other than the toy example.}
+\end{itemize}
+\clearpage
+
+\begin{figure}
+\centering
+\begin{tabular}{c c}
+     Gaussian 2D Debluring & Super Resolution \\
+     \begin{tabular}{@{} r M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}}@{} M{0.12\linewidth}@{\hspace{0\tabcolsep}}@{}}
+& \begin{tabular}{c}
+     \scriptsize MNIST \\\addlinespace[-1ex]
+     \scriptsize (28, 28, 1)
+\end{tabular} & 
+\begin{tabular}{c}
+     \scriptsize CIFAR-10 \\\addlinespace[-1ex]
+     \scriptsize (32, 32, 3)
+\end{tabular} & 
+\begin{tabular}{c}
+     \scriptsize FLOWERS \\\addlinespace[-1ex]
+     \scriptsize (64, 64, 3)
+\end{tabular} & 
+\begin{tabular}{c}
+     \scriptsize CATS\\\addlinespace[-1ex]
+     \scriptsize (128, 128, 3) 
+\end{tabular} \\
+  \scriptsize Original & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/nabdan_mnist_20_epoch_sample.pdf}
+  &  \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/google_ddpm-cifar10-32_sample.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/anton-l_ddpm-ema-flowers-64_sample.pdf} 
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/samwit_ddpm-afhq-cats-128_sample.pdf}\\ \addlinespace[-1.5ex]
+    \scriptsize Measurement & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/nabdan_mnist_20_epoch_measurement.pdf}
+  &  \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/google_ddpm-cifar10-32_measurement.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/anton-l_ddpm-ema-flowers-64_measurement.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/samwit_ddpm-afhq-cats-128_measurement.pdf} 
+  \\ \addlinespace[-1.5ex]
+  \scriptsize \dps & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/nabdan_mnist_20_epoch_furthest_dps_1.pdf}
+  &  \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/google_ddpm-cifar10-32_furthest_dps_2.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/anton-l_ddpm-ema-flowers-64_furthest_dps_1.pdf} 
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/samwit_ddpm-afhq-cats-128_furthest_dps_1.pdf}\\ \addlinespace[-1.5ex]  
+   \scriptsize \dps & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/nabdan_mnist_20_epoch_furthest_dps_2.pdf}
+  &  \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/google_ddpm-cifar10-32_furthest_dps_1.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/anton-l_ddpm-ema-flowers-64_furthest_dps_2.pdf} 
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/samwit_ddpm-afhq-cats-128_furthest_dps_2.pdf}\\ \addlinespace[-1.5ex]  
+    \scriptsize  \ddrm & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/nabdan_mnist_20_epoch_furthest_ddrm_1.pdf}
+  &  \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/google_ddpm-cifar10-32_furthest_ddrm_1.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/anton-l_ddpm-ema-flowers-64_furthest_ddrm_1.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/samwit_ddpm-afhq-cats-128_furthest_ddrm_1.pdf}\\ \addlinespace[-1.5ex]  
+   \scriptsize     \ddrm & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/nabdan_mnist_20_epoch_furthest_ddrm_2.pdf}
+  &  \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/google_ddpm-cifar10-32_furthest_ddrm_2.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/anton-l_ddpm-ema-flowers-64_furthest_ddrm_2.pdf} 
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/samwit_ddpm-afhq-cats-128_furthest_ddrm_2.pdf}\\ \addlinespace[-1.5ex]
+     \scriptsize   \algo & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/nabdan_mnist_20_epoch_furthest_mcg_diff_1.pdf}
+  &  \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/google_ddpm-cifar10-32_furthest_mcg_diff_1.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/anton-l_ddpm-ema-flowers-64_furthest_mcg_diff_1.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/samwit_ddpm-afhq-cats-128_furthest_mcg_diff_1.pdf} 
+  \\ \addlinespace[-1.5ex] 
+   \scriptsize     \algo & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/nabdan_mnist_20_epoch_furthest_mcg_diff_2.pdf}
+  &  \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/google_ddpm-cifar10-32_furthest_mcg_diff_2.pdf}
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/anton-l_ddpm-ema-flowers-64_furthest_mcg_diff_2.pdf} 
+  & \includegraphics[width=\hsize]{images/optimal/gaussian_2d_deblurring/samwit_ddpm-afhq-cats-128_furthest_mcg_diff_2.pdf} \\
+\end{tabular}
+ & 
+    \begin{tabular}{M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}} M{0.12\linewidth}@{\hspace{0\tabcolsep}}@{}}
+\begin{tabular}{c}
+     \scriptsize CelebHD\\\addlinespace[-1ex]
+     \scriptsize (256, 256, 3) 
+\end{tabular} & 
+\begin{tabular}{c}
+     \scriptsize Church \\\addlinespace[-1ex]
+     \scriptsize (256, 256, 3) 
+\end{tabular}& \\
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-celebahq-256_sample.pdf} &     \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-ema-church-256_sample.pdf}&\\\addlinespace[-1.5ex]
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-celebahq-256_measurement.pdf} &
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-ema-church-256_measurement.pdf}&\\ \addlinespace[-1.5ex]
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-celebahq-256_furthest_dps_1.pdf} & 
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-ema-church-256_furthest_dps_1.pdf}&\\\addlinespace[-1.5ex]
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-celebahq-256_furthest_dps_2.pdf} &
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-ema-church-256_furthest_dps_2.pdf}&\\\addlinespace[-1.5ex]
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-celebahq-256_furthest_ddrm_1.pdf} &  
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-ema-church-256_furthest_ddrm_1.pdf} &\\\addlinespace[-1.5ex]
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-celebahq-256_furthest_ddrm_2.pdf} &
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-ema-church-256_furthest_ddrm_2.pdf}&\\ \addlinespace[-1.5ex]
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-celebahq-256_furthest_mcg_diff_1.pdf} & 
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-ema-church-256_furthest_mcg_diff_1.pdf}&\\\addlinespace[-1.5ex]
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-celebahq-256_furthest_mcg_diff_2.pdf} &
+    \includegraphics[width=\hsize]{images/optimal/sr/google_ddpm-ema-church-256_furthest_mcg_diff_2.pdf}&\\
+\end{tabular}
+\end{tabular}
+\caption{TBW}
+\end{figure}
+\end{document}

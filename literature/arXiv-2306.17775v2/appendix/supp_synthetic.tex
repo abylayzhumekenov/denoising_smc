@@ -1,0 +1,32 @@
+\subsection{Synthetic diffusion models on two dimensional problems}
+\begin{figure}[t]
+    \tiny
+    \includegraphics[scale=0.7]{sections/figures/toy/toy_MOG_A.png}
+    \includegraphics[scale=0.7]{sections/figures/toy/toy_MOG_B.png}
+    \includegraphics[scale=0.7]{sections/figures/toy/toy_MOG_C.png}
+    \includegraphics[scale=0.6]{sections/figures/toy/toy_legend.png}
+  \centering
+    \caption{
+   % Error on small-scale problems with ground truth.  Error of estimate of conditional mean (mean +- 2SEM) with 25 replicates. 
+   Errors of conditional mean estimations with 2 SEM error bars averaged over 25 replicates on mixture of Gaussians unconditional target.
+   TDS applies to all three tasks and provides increasing accuracy with more particles.  
+}
+\label{fig:exp-toy-MOG}
+\end{figure}
+
+\paragraph{Forward process.}
+Our forward process is variance preserving (as described in \Cref{sec:supp_method}) with $T=100$ steps and a quadratic variance schedule.
+We set $\sigma^2_t=  \sigma^2_\mathrm{min} + (\frac{t}{T})^2 \sigma^2_{\mathrm{max}}$ with $\sigma^2_\mathrm{min}=10^{-5}$
+and $\sigma^2_\mathrm{max}=10^{-1}.$
+
+
+\paragraph{Unconditional target distributions and likelihood.}
+We evaluate the different methods with two different unconditional target distributions:
+\begin{enumerate}
+    \item A \textbf{bivariate Gaussian} with mean at $(\frac{1}{2},\frac{1}{2})$ and covariance $0.9$ and  
+    \item {A \textbf{Gaussian mixture} with three components with mixing proportions $[0.3, 0.5, 0.2],$ means $[(1.54, -0.29), (-2.18, 0.57), (-1.09, -1.40)]$, and $0.2$ standard deviations.}
+\end{enumerate}
+We evaluate on conditional distributions defined by the three likelihoods described in \Cref{subsec:exp-toy}.
+
+\Cref{fig:exp-toy-MOG} provides results analogous to those in \Cref{fig:exp-toy} but with the mixture of Gaussians unconditional target.
+In this second example we evaluate a with a variation of the inpainting degrees of freedom case wherein we consider $y=1$ and $\mathcal{M}=\{[1], [2]\},$ so that $\plikelihood{y}{\xzero}=\delta_y(\xzero_1) + \delta_y(\xzero_2).$

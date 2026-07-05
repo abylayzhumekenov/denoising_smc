@@ -1,0 +1,233 @@
+\def\rmd{\mathrm{d}}
+\def\pP{\mathbb{P}}
+\def\noise{\varepsilon}
+\def\pE{\mathbb{E}}
+\def\pV{\mathbb{V}}
+\def\ltrstate{\mathbf{x}}
+\def\eqdef{:=}
+\def\baseset{\Omega}
+\def\basesigma{\mathcal{F}}
+\def\baseprob{\mathbb{P}}
+\def\eqsp{\,}
+\def\1{\mathbbm{1}}
+\def\dimx{{\mathsf{d}_x}}
+\def\dimz{d_z}
+\def\dimy{{\smash{\overline{d}}}}
+% \def\dimtr{{\smash{\overline{d}}}}
+\def\dimtr{{\mathsf{d}_{\ltrmeas}}}
+\newcommand{\numsqrt}[1]{\smash{#1}^{1/2}}
+\def\dimorig{\mathsf{d}_y}
+% \def\dimb{\smash{\underline{d}}}
+\def\dimb{\mathsf{b}}
+\def\trmeas{\mathbf{Y}}
+\def\ltrmeas{\mathbf{y}}
+\def\ormeas{Y}
+\def\lmeas{y}
+\def\revmeas{\overleftarrow{Y}}
+\def\state{X}
+\def\diffltrmeas{\mathsf{\ltrmeas}}
+\def\trstate{\mathbf{X}}
+\def\rset{\mathbb{R}}
+\def\nset{\mathbb{N}}
+\def\nsetpos{\mathbb{N}_*}
+\def\idm{\operatorname{I}}
+\def\nlessc{\m{J}^0}
+\newcommand{\topvec}[1]{\overline{#1}}
+\newcommand{\botvec}[1]{\underline{#1}}
+\def\nyc{\m{J}}
+\def\inflationstd{\kappa}
+
+% \newcommand{\m}[1]{\operatorname{#1}}
+\newcommand{\m}[1]{\mathrm{#1}}
+\newcommand{\cat}[2]{{#1}^{\scriptscriptstyle\frown}#2}
+% \newcommand{\cat}[2]{\big[#1:#2\big]}
+\newcommand{\vect}[1]{\mathbf{#1}}
+\DeclareMathOperator*{\argmin}{argmin}
+\DeclareMathOperator*{\argmax}{argmax}
+\def\gauss{\mathcal{N}}
+\def\noise{\varepsilon}
+\def\iid{\overset{\mathrm{i.i.d.}}{\sim}}
+\def\R{\mathbb{R}}
+\def\bV{\mathbf{V}}
+% \DeclareMathOperator*{\argmax}{argmax}
+\def\bY{\mathbf{Y}}
+\def\stateperp{\mathbf{x}^\perp}
+\def\stateperp{\bm{\xi}^\perp}
+\def\invX{\xi}
+\def\perpstate{\bm{\xi}}
+\def\parallelstate{\bm{\zeta}}
+\def\datadistr{\pi_*}
+\def\param{\theta}
+\def\cov{\mathrm{\mathbb{C}ov}}
+\def\sigalgebra{\mathcal{B}}
+\def\normpdf{\mathcal{N}}
+\def\normdist{\mathcal{N}}
+\def\normconst{\mathcal{Z}}
+\def\sumweights{\Omega}
+\def\boundedfunc{\mathbb{F}_b}
+\def\bigo{\mathcal{O}}
+\def\eigSigmay{\sigma^y}
+\def\eigA{\sigma^A}
+\def\id{\mathbf{I}}
+\def\categorical{\mathrm{Cat}}
+\def\ouralgorithm{\algo}
+\def\motif{\mathcal{M}}
+\def\scaffold{\mathcal{S}}
+\def\bridgemean{\boldsymbol{\mu}}
+\def\bwmean{\mathsf{m}}
+\def\bwmeanV{\mathfrak{m}}
+\def\tbwmean{\overline{\mathsf{m}}}
+\def\bbwmean{\underline{\mathsf{m}}}
+\def\IPstdnoise{\sigma_\ltrmeas}
+
+\newcommand{\card}[1]{|#1|}
+\newcommand{\eigsigy}[1]{\sigma_{y, #1}}
+\newcommand{\twodvect}[2]{(#1, #2)}
+\newcommand{\xblock}[2]{x^{B_{#2}} _{#1}}
+\newcommand{\filtration}[1]{\mathcal{F}_{#1}}
+\newcommand{\fwdker}[3]{\overrightarrow{\mathbf{B}}_{#1}(#2 #3)}
+\newcommand{\uweight}[2]{\widetilde{\omega}^{#1} _{#2}}
+\newcommand{\weight}[2]{\omega^{#1} _{#2}}
+\newcommand{\wratio}[3]{\frac{\tilde{\omega}^{#1} _{#2}(#3)}{\Omega^N _{#2}}}
+\newcommand{\kldivergence}[2]{\mathsf{KL}(#1 \parallel #2)}
+\def\particle{\xi}
+\def\tparticle{\smash{\overline{\particle}}}
+\def\bparticle{\smash{\underline{\particle}}}
+\newcommand{\iparticle}[2]{x^{#1} _{#2}}
+\newcommand{\mset}[2]{\R^{#1 \times #2}}
+\newcommand{\X}[1]{X_{#1}}
+% \newcommand{\statevar}[1]{\ifthenelse{\equal{#1}{}}{\mathbf{x}}{\mathbf{x}_{#1}}}
+\newcommand{\important}[1]{\textcolor{red}{#1}}
+\newcommand{\statevar}[1]{\mathbf{x}_{#1}}
+% \newcommand{\statevar}[1]{\ifthenelse{\equal{#1}{1}}{\mathbf{x}}{\mathbf{x}_{#1}}}
+% \newcommand{\statevar}[1]{\mathbf{x}_{#1}}
+\newcommand{\Y}[1]{Y_{#1}}
+\newcommand{\revX}[1]{\overset{{}_{\leftarrow}}{X} _{#1}}
+\newcommand{\revY}[1]{Y_{#1}}
+\newcommand{\W}[1]{W_{#1}}
+\newcommand{\condprob}[2]{\baseprob\left(#1|#2\right)}
+\newcommand{\score}[3]{\mathbf{s}_{#1}(#2, #3)}
+\newcommand{\zerom}[2]{\mathbf{0}_{#1, #2}}
+\def\noisestd{\sigma_\lmeas}
+\def\tbw{...}
+\def\orthdatadistr{\tilde{\pi}_{*}}
+\def\orthmarginal{\smash{\bwmarg{0}{}^{_{\m{V}}}}}
+\newcommand{\alphacumprod}[2]{\ifthenelse{\equal{#2}{}}{\bar{\alpha}_{#1}}{\bar{\alpha}_{#1,#2}}}
+\newcommand{\fwsigma}[2]{\sigma_{#1,#2}}
+ \newcommand{\eric}[1]{\todo[color=blue!20]{{\bf E:} #1}}
+ \newcommand{\erici}[1]{\todo[inline,color=blue!20]{{\bf E:} #1}}
+\newcommand\gabriel[1]{\todo[color=green!20]{{\bf G:} #1}}
+\newcommand\yazid[1]{\todo[color=red!20]{{\bf Y:} #1}} 
+\newcommand\syl[1]{\todo[color=red!60]{{\bf Syl:} #1}}
+\newcommandx{\xpred}[2][2=]{\boldsymbol{\chi}^{#2} _{#1}}
+\newcommandx{\bottomxpred}[2][2=]{\underline{\boldsymbol{\chi}}^{#2} _{#1}}
+\newcommandx{\topxpred}[2][2=]{\overline{\boldsymbol{\chi}}^{#2} _{#1}}
+\newcommand{\ndist}[2]{\mathcal{N}(#1, #2)}
+\newcommand{\soset}[1]{\operatorname{SO}(#1)}
+\newcommand{\tstatevar}[1]{\overline{\mathbf{x}} _{#1}}
+\newcommand{\bstatevar}[1]{\underline{\mathbf{x}} _{#1}}
+\newcommand{\tstate}[1]{\overline{\state} _{#1}}
+\newcommand{\bstate}[1]{\underline{\state} _{#1}}
+% \newcommand{\tcr}[1]{\textcolor{red}{#1}}
+\newcommand{\prior}[1]{p_{#1}}
+% \newcommand{\proposal}[2]{p_{#1, #2}}
+\newcommand{\predstartprop}[2]{f_{#2}(#1)}
+\newcommand{\epsprop}[2]{\ifthenelse{\equal{#1}{}}{\mathbf{e}^{#2}}{\mathbf{e}^{#2} (#1)}}
+\newcommand{\vecidx}[3]{#1 _{#2}[#3]}
+\newcommand{\expec}[2]{\mathbb{E}_{ #1}\left[#2\right]}
+\newcommand{\realrevbridge}[3]{\ifthenelse{\equal{#2}{}}{\mathsf{q} _{#1}}{\mathsf{q} _{#1}(#3|#2)}}
+\newcommand{\revbridge}[3]{\ifthenelse{\equal{#2}{}}{\smash{{q}}^{\sigma} _{#1}}{\smash{{q}}^{\sigma} _{#1}(#3|#2)}}
+\newcommand{\idxrevbridge}[4]{\ifthenelse{\equal{#2}{}}{\smash{{q}}^{\sigma, #4} _{#1}}{\smash{{q}}^{\sigma, #4} _{#1}(#3|#2)}}
+\newcommand{\trevbridge}[3]{\ifthenelse{\equal{#2}{}}{\smash{\overline{q}}^{\sigma} _{#1}}{\smash{\overline{q}}^{\sigma} _{#1}(#3|#2)}}
+\newcommand{\brevbridge}[3]{\ifthenelse{\isempty{#2}}{\underline{q}^{\sigma} _{#1}}{\underline{q}^{\sigma} _{#1}(#3|#2)}}
+% \newcommand{\realrevbridge}[3]{\ifthenelse{\equal{#2}{}}{\smash{\overset{{}_{\leftarrow}}{q}^{\sigma_*}} _{#1}}{\smash{\overset{{}_{\leftarrow}}{q}}^{\sigma_*} _{#1}(#3|#2)}}
+\newcommand{\trealrevbridge}[3]{\ifthenelse{\equal{#2}{}}{\overline{\mathsf{q}}_{#1}}{\overline{\mathsf{q}} _{#1}(#3|#2)}}
+\newcommand{\bbridgeker}[3]{\mathsf{Q}_{#1}(#3|#2)}
+\newcommand{\sumweight}[1]{\Omega^N _{#1}}
+\newcommand{\proposal}[2]{\overleftarrow{q}_{#1,#2}}
+\newcommand{\bwproposal}[1]{\overleftarrow{Q}^{#1}}
+\newcommand{\ouproposal}[1]{\overrightarrow{P}^{#1}}
+\newcommand{\bridge}[4]{{\ifthenelse{\equal{#3}{}}{p^{#2} _{#1}}{p^{#2} _{#1}(#3, #4)}}}
+\newcommand{\outrans}[3]{\ifthenelse{\equal{#2}{}}{\overrightarrow{m}_{#1}}{\overrightarrow{m}_{#1}(#2, #3)}}
+% \newcommand{\bwtrans}[4]{\ifthenelse{\equal{#3}{}}{\smash{\overset{{}_{\leftarrow}}{m}^{#1}} _{#2}}{\smash{\overset{{}_{\leftarrow}}{m}}^{#1} _{#2}(#4|#3)}}
+\newcommand{\bwtrans}[4]{\ifthenelse{\equal{#3}{}}{p^{#1} _{#2}}{p^{#1} _{#2}(#4|#3)}}
+\newcommand{\bwtransV}[4]{\ifthenelse{\equal{#3}{}}{\lambda^{#1} _{#2}}{\lambda^{#1} _{#2}(#4|#3)}}
+\newcommand{\bbwtransV}[4]{\ifthenelse{\equal{#3}{}}{\underline{\lambda}^{#1} _{#2}}{\underline{\lambda}^{#1} _{#2}(#4|#3)}}
+\newcommand{\bbwtrans}[4]{\ifthenelse{\equal{#3}{}}{\underline{p}^{#1} _{#2}}{\underline{p}^{#1} _{#2}(#4|#3)}}
+\newcommand{\tbwtrans}[4]{\ifthenelse{\equal{#3}{}}{\overline{p}^{#1} _{#2}}{\overline{p}^{#1} _{#2}(#4|#3)}}
+\newcommand{\bwmargparam}[3]{\ifthenelse{\equal{#2}{}}{{{\mathfrak{p}}}_{#1}^{#3}}{{{\mathfrak{p}}}^{#3} _{#1}(#2)}}
+\newcommand{\oldbwmargparam}[3]{\ifthenelse{\equal{#2}{}}{{{\mathsf{p}}}_{#1}^{#3}}{{{\mathsf{p}}}^{#3} _{#1}(#2)}}
+\newcommand{\fwtrans}[3]{\ifthenelse{\equal{#2}{}}{q _{#1}}{q _{#1}(#3|#2)}}
+\newcommand{\idxfwtrans}[4]{\ifthenelse{\equal{#2}{}}{q^{#4} _{#1}}{q^{#4} _{#1}(#3|#2)}}
+\newcommand{\bfwtrans}[3]{\ifthenelse{\isempty{#2}}{\underline{q}_{#1}}{\underline{q}_{#1}(#3|#2)}}
+\newcommand{\tfwtrans}[3]{\ifthenelse{\equal{#2}{}}{\overline{q} _{#1}}{\overline{q} _{#1}(#3|#2)}}
+\newcommand{\idxtfwtrans}[4]{\ifthenelse{\equal{#2}{}}{\smash{\overline{q}}^{\sigma_\delta, #4} _{#1}}{\smash{\overline{q}}^{\sigma_\delta, #4} _{#1}(#3|#2)}}
+\newcommand{\idxbwtrans}[4]{\ifthenelse{\equal{#2}{}}{p^{#4} _{#1}}{p^{#4} _{#1}(#3|#2)}}
+\newcommand{\idxtbwtrans}[4]{\ifthenelse{\equal{#2}{}}{\smash{\overline{p}}^{#4} _{#1}}{\smash{\overline{p}}^{#4} _{#1}(#3|#2)}}
+\newcommand{\bwmarg}[2]{\ifthenelse{\equal{#2}{}}{{{\mathsf{p}}}_{#1}}{{{\mathsf{p}}}_{#1}(#2)}}
+\newcommand{\bwmargV}[2]{\ifthenelse{\equal{#2}{}}{{{\mathfrak{p}}}_{#1}}{{{\mathfrak{p}}}_{#1}(#2)}}
+\newcommand{\bwoptmarg}[3]{\ifthenelse{\equal{#3}{}}{\smash{\overset{{}_{\leftarrow}}{{\mathfrak{m}}}}^{#2} _{#1}}{\smash{\overset{{}_{\leftarrow}}{{\mathfrak{m}}}}^{#2} _{#1}(#3)}}
+\newcommand{\fwmarg}[2]{\ifthenelse{\equal{#2}{}}{{{\mathsf{q}}}_{#1}}{{{\mathsf{q}}}_{#1}(#2)}}
+\newcommand{\initdistr}[3]{\ifthenelse{\equal{#2}{}}{\chi_{#1}}{\chi_{#1}(#2, #3)}}
+% \newcommand{\bwopt}[4]{{\ifthenelse{\equal{#3}{}}{\overleftarrow{m}^{#2} _{#1}}{\overleftarrow{m}^{#2} _{#1}(#3 #4)}}}
+\newcommand{\bwopt}[4]{\ifthenelse{\equal{#3}{}}{p ^{#2} _{#1}}{p^{#2} _{#1}(#4|#3)}}
+\newcommand{\bbwopt}[4]{\ifthenelse{\equal{#3}{}}{p ^{#2} _{#1}}{\underline{p}^{#2} _{#1}(#4|#3)}}
+\newcommand{\tbwopt}[4]{\ifthenelse{\equal{#3}{}}{p ^{#2} _{#1}}{\overline{p}^{#2} _{#1}(#4|#3)}}
+\newcommand{\fwopt}[4]{\ifthenelse{\equal{#3}{}}{\overset{{}_{\rightarrow}}{m} ^{#2} _{#1}}{\smash{\overset{{}_{\rightarrow}}{m}}^{#2} _{#1}(#4|#3)}}
+\newcommand{\ufilter}[3]{{\ifthenelse{\equal{#3}{}}{\eta^{#2} _{#1}}{\eta^{#2} _{#1}(#3)}}}
+\newcommand{\filter}[3]{{\ifthenelse{\equal{#3}{}}{\phi^{#2} _{#1}}{\phi^{#2} _{#1}(#3)}}}
+\newcommand{\fwdfilter}[3]{{\ifthenelse{\equal{#3}{}}{\rho^{#2} _{#1}}{\rho^{#2} _{#1}(#3)}}}
+\newcommand{\noisyfilter}[3]{{\ifthenelse{\equal{#3}{}}{\phi^{#2} _{#1}}{\phi^{#2} _{#1}(#3)}}}
+\newcommand{\noiselessfilter}[3]{{\ifthenelse{\equal{#3}{}}{\phi^{#2} _{#1}}{\phi _{#1}(#3 | #2)}}}
+\newcommand{\pred}[3]{{\ifthenelse{\equal{#3}{}}{\eta^{#2} _{#1}}{\eta^{#2} _{#1}(#3)}}}
+\newcommand{\bfilter}[3]{{\ifthenelse{\equal{#3}{}}{\Phi^{#2} _{#1}}{\Phi^{#2} _{#1}(#3)}}}
+\newcommand{\normconstest}[1]{\gamma^N _{#1}}
+\newcommand{\Qker}[2]{Q_{#1} ^{#2}}
+\newcommand{\lawSMC}[1]{P^N _{#1}}
+\newcommand{\lawcSMC}[1]{\mathbf{P}^N _{#1}}
+\newcommand{\anc}[2]{\smash{I^{#1} _{#2}}}
+\newcommand{\ianc}[2]{a^{#1} _{#2}}
+\newcommand{\iancanc}[2]{b^{#1} _{#2}}
+\newcommand{\pot}[3]{\ifthenelse{\equal{#3}{}}{\smash{g^{#2} _{#1}}}{\smash{g^{#2} _{#1}}(#3)}}
+\newcommand{\dubpot}[3]{\ifthenelse{\equal{#3}{}}{G^{#2} _{#1}}{G^{#2} _{#1}(#3)}}
+\newcommand{\fwfilter}[1]{\rho^{\ltrmeas} _{#1}}
+% \newcommand{\dforward}[1]{\overrightarrow{m}_{#1}}
+% \newcommand{\dbackward}[1]{\overleftarrow{m}_{#1}}
+% \newcommand{\pot}[1]{g_{#1}}
+% \newcommand{\optforward}[1]{\overrightarrow{p _{#1}}}
+% \newcommand{\optbackward}[1]{\overleftarrow{p _{#1}}}
+\newcommand{\couplepot}[1]{\mathrm{G}_{#1}}
+\newcommand{\intvect}[2]{[#1:#2]}
+\def\pathmforward{\overrightarrow{\lambda}}
+\def\pathmbackward{\overleftarrow{\lambda}}
+\newcommand{\assp}[1]{(\textbf{A}\textbf{#1})}
+\newcommand{\clipleb}[3]{\nu^{#2} _{#1}(#3)}
+\newcommand{\noisytrans}[3]{\ifthenelse{\equal{#2}{}}{\mathsf{P}_{#1}}{\mathsf{P}_{#1}(#3|#2)}}
+\def\algo{\texttt{MCGdiff}}
+\def\ddrm{\texttt{DDRM}}
+\def\dps{\texttt{DPS}}
+\def\smcdiff{\texttt{SMCdiff}}
+\def\ddim{\texttt{DDIM}}
+\def\rnvp{\texttt{RNVP}}
+\def\dimg{d}
+%\newcommand{\chunk}[3]{{#1}_{#2}^{#3}}
+\newcommand{\chunk}[3]{#1_{#2:#3}}
+\newcommand{\pchunk}[3]{#1 ^{#2:#3}}
+\newcommand{\philter}[2]{\phi_{#1} ^{#2}}
+\def\Id{\mathrm{I}}
+\def\lstate{x}
+\def\ltopstate{\overline{x}}
+\def\lbottomstate{\underline{x}}
+\def\ltopstate{\overline{x}}
+\def\lbottomstate{\underline{x}}
+\def\topstate{\smash{\overline{X}}}
+\def\bottomstate{\underline{X}}
+\def\trtopstate{\smash{\overline{\mathbf{X}}}}
+\def\trbottomstate{\underline{\mathbf{X}}}
+\def\ltrtopstate{\smash{\overline{\mathbf{x}}}}
+\def\ltrbottomstate{\underline{\mathbf{x}}}
+\newcommandx\sequence[3][2=,3=]
+{\ifthenelse{\equal{#3}{}}{\ensuremath{\{ #1_{#2}\}}}{\ensuremath{\{ #1_{#2} \}_{#2 \in #3}}}}
+\newcommand\projidx[3]{\ifthenelse{\equal{#2}{}}{#1^{\setminus #3}}{#1^{\setminus #3}_{#2}}}
+\newcommand\insertidx[3]{#1^{#2, #3}}
+\newcommand{\nf}[1]{\mathsf{f}_{#1}}

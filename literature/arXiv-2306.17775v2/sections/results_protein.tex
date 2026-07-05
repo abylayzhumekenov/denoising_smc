@@ -1,0 +1,130 @@
+\section{Case study in computational protein design: the motif-scaffolding problem}\label{sec:exp-protein}
+
+The biochemical functions of proteins are typically imparted by a small number of atoms, known as a \emph{motif}, that are stabilized by the overall protein structure, known as the \emph{scaffold} \citep{wang2022scaffolding}.
+A central task in protein design is to identify stabilizing scaffolds in response to motifs expected to confer function.
+We here describe an application of TDS to this task, and compare TDS to the state-of-the-art conditionally-trained model, RFdiffusion. See additional details in \Cref{sec:supp_results_protein}.
+%We apply TDS to this task, and compare to the state-of-the-art conditionally-trained model, RFdiffusion.
+
+
+Given a generative model supported on designable protein structures $\pmodel(\xzero)$,
+suitable scaffolds may be constructed by solving a conditional generative modeling problem \citep{trippe2022diffusion}.
+Complete structures are first segmented into a motif $\xzero_\mask$ and a scaffold $\xzero_\umask,$ i.e.\@ $\xzero = [\xzero_\mask, \xzero_{\umask}].$ 
+Putative compatible scaffolds are then identified by (approximately) sampling from $\pmodel(\xzero_\umask \mid \xzero_\mask)
+$ \citep{trippe2022diffusion}.
+
+While the conditional generative modeling approach to motif-scaffolding has produced functional, experimentally validated structures for certain motifs \citep{watson2022broadly}, the general problem remains open.
+Moreover, current methods for motif-scaffolding require one to specify the location of the motif within the primary sequence of the full scaffold;
+this choice can require expert knowledge and trial and error.
+
+We hypothesized that improved motif-scaffolding could be achieved through accurate conditional sampling.
+To this end, we applied TDS to FrameDiff, a Riemannian diffusion model that parameterizes protein backbones as a collection of $N$ rigid bodies 
+ (known as residues) in the manifold $SE(3)^N$ \citep{yim2023se}.\footnote{\url{https://github.com/jasonkyuyim/se3_diffusion}}
+Each of the $N$ elements of $SE(3)$ consists of a rotation matrix and a translation that parameterize the locations of the backbone atoms of each residue.
+
+\textbf{Likelihood, twisting, and degrees of freedom.}
+The basis of our approach to the motif scaffolding problem is analogous to the inpainting case described in \Cref{subsec:conditioning-problems}.
+We let $\plikelihood{y}{\xzero}=\delta_y(\xzero_\mask),$
+where $y\in SE(3)^M$ describes the coordinates of backbone atoms of an $M=|\mathcal{M}|$ residue motif.
+As such, to define twisting function we adopt the Riemannian TDS formulation described in  \Cref{sec:TDS_riemannian_main}.
+
+
+To eliminate the requirement that the placement of the motif within the scaffold be pre-specified, we incorporate the motif placement as a degree of freedom.
+We 
+(i) treat the indices of the motif within the chain as a mask $\mask,$ 
+(ii) let $\mathcal{M}$ be a set of possible masks of size equal to the length of the motif, and 
+(iii) apply \Cref{eqn:mask_dof_twist} to average over these possible masks.
+
+For some scaffolding problems, it is known that all motif residues must appear with contiguous indices.
+In this case we choose $\mathcal{M}$ to be the set of all possible contiguous masks.
+However, when motif residues are only known to appear in two or more possibly discontiguous blocks,
+the number of possible placements can be too large and we choose $\mathcal{M}$ by
+randomly sampling at most some maximum number (\texttt{\# Motif Locs.}) of masks.
+
+
+%Prior motif-scaffolding approaches have required of pre-specification of the location of the motif within the final scaffold,
+%translation and rotation of the motif \citep{wang2022scaffolding,trippe2022diffusion,watson2022broadly}.
+%However, these nuisance degrees of freedom are ancillary to the biochemical function of a motif, which is determined by its internal geometry.
+%TDS can eliminate this degree of freedom and condition on the motif appearing at \emph{any} combination of indices 
+%by applying the strategy described in \Cref{subsec:conditioning-problems} (see \Cref{sec:supp_results_protein} for details).
+
+We similarly eliminate the global translation and rotation of the motif as a degree of freedom.
+The motivation is that restricting to one possible pose of the motif narrows the conditional distribution, thereby making inference  more challenging.
+For translation, we use a likelihood that is invariant to the motif's center-of-mass and placement in the final scaffold by choosing $\plikelihood{y}{x} = \delta_{Py}(P x_\mask)$ where $P$ is a projection matrix that removes the center of mass of a vector \citep[see e.g.][section 3.3]{yim2023se}.
+For rotation, we average the likelihood across some number (\texttt{\# Motif Rots.}) of possible rotations.
+
+
+
+%\subsection{Sensitivity to number of particles, degrees of freedom and twist scale}\label{sec:sensitivity_5IUS}
+\begin{figure}
+  \centering
+  \begin{subfigure}[c]{0.63\linewidth}
+  \centering
+    \includegraphics[width=1.0\textwidth]{sections/figures/protein/success_rate_5IUS}
+    \vspace{-1.5em}
+      \caption{TDS motif-scaffolding success rate (test case \texttt{5IUS}) 
+      improves with more particles, and degrees of freedom, and twist-scale.}
+      %on (Left) number of particles, (Middle Left) number of motif location degrees of freedom, (Middle Right) number of rotation degrees of freedom, and twist scale.  Using more particles and allowing more degrees of freedom increases success rates.}
+%    \includegraphics[width=.9\textwidth]{sections/figures/protein/benchmark_success_rates}
+  \label{fig:5IUS_results}
+  \end{subfigure}
+  \hfill 
+%  \centering
+    \begin{subfigure}[c]{0.32\linewidth}
+    {
+   %\tiny
+   %\footnotesize
+   \fontsize{7pt}{8.6pt}\selectfont
+       \renewcommand{\arraystretch}{1.5} % increase row height by 50%
+            \begin{tabular}{|lcc|}
+    \hline
+    Scaffold & TDS \& & RF \\ 
+    size & FrameDiff & diffusion \\ %\hline
+    <100 res. & 9 & 3 \\ %\hline
+    $\ge$ 100 res. & 2 & 8 \\ 
+    \hline
+    Overall & 11 & 11 \\ \hline
+    \end{tabular}
+    }
+  \caption{\# problems with higher success rate}
+    \label{tab:motif_summary}
+  \end{subfigure}
+  \caption{Protein motif-scaffolding case study results}
+    \label{fig:protein-results}
+    \vspace{-1.5em}
+  \end{figure}
+  
+\textbf{Ablation study.}
+We first examine the impact of several parameters of TDS on
+success rate in an in silico \emph{self-consistency} evaluation \citep{trippe2022diffusion}.
+We begin with single problem (\texttt{5IUS}) in the 
+benchmark set introduced by \citep{watson2022broadly},
+before testing on the full set.
+\Cref{fig:5IUS_results} (Left) shows that success rate increases monotonically with the number of particles.
+Non-zero success rates in this setting required accounting for multiple motif locations; \Cref{fig:5IUS_results} (Left) uses $1{,}000$ possible motif locations and $100$ rotations.
+
+We tested the impact of the degrees of freedom by evaluating the success rate of TDS (K=1) with increasing motif locations and 100 rotations (\Cref{fig:5IUS_results} Center Left), 
+and increasing rotations and 1{,}000 locations (\Cref{fig:5IUS_results} Center Right).
+The success rate was 0\% without accounting for either degree of freedom, and increased with larger numbers of locations and rotations.
+We also explored including a heuristic twist scale as considered for image tasks (\Cref{subsec:exp-mnist});
+in this case, the twist scale is a multiplicative factor on the logarithm of the twisting function.
+ \Cref{fig:5IUS_results} (Right) shows larger twist scales gave higher success rates on this test case, where we use 8 particles, 1,000 possible motif locations and 100 rotations.
+However, this trend is not monotonic for all problems (\Cref{fig:prot-twist-scale}).
+%We use an effective sample size threshold of $K/2$ in all cases, that is, we trigger resampling steps only when the effective sample size falls below this level.
+
+
+%\subsection{TDS on motif-scaffolding benchmark set}\label{sec:motif_benchmark}
+\textbf{Evaluation on full benchmark.}
+We next evaluate on TDS on a benchmark set of 24 motif-scaffolding problems \citep{watson2022broadly} and compare to the previous state of the art, RFdiffusion.
+RFdiffusion operates on the same rigid body representation of protein backbones as FrameDiff.
+TDS is run with K=8, twist scale=2, and 
+$100$ rotations and $1{,}000$ motif location degrees of freedom ($100{,}000$ combinations total). 
+
+Overall, TDS (applied to FrameDiff) and RFdiffusion have comparable performance 
+(\Cref{tab:motif_summary});
+each provides a success rate higher than the other in 11/24 cases; on two problems both methods have a  0\% success rate (full results in \Cref{fig:full_benchmark}).
+This performance is obtained despite the fact that FrameDiff, unlike RFdiffusion, is not trained to perform motif scaffolding.
+The division between problems on which each method performs well is primarily explained by total scaffold length, with TDS providing higher success rates on smaller scaffolds.
+
+We suspect the shift in performance with scaffold length owes properties of the underlying diffusion models.
+First, long backbones generated unconditionally by RFdiffusion are designable with higher frequency than those generated by FrameDiff \citep{yim2023se}.
+Second, unlike RFdiffusion, FrameDiff can not condition on the fixed motif sequence.

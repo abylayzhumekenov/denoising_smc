@@ -1,0 +1,68 @@
+
+
+\textbf{Sequential Monte Carlo.}
+%\label{sec:SMC_background}
+Sequential Monte Carlo (SMC) is a general tool to approximately sample from a sequence of distributions on variables $\dt{x}{0:T}$, terminating at a final target of interest
+\citep{chopin2020introduction,doucet2001sequential,gordon1993novel,naesseth2019elements}. 
+SMC approximates these targets by generating a collection of $K$ \emph{particles} $\{\dt{x}{t}_k\}_{k=1}^K$ across $T$ steps of an iterative procedure.
+The key ingredients are proposals $r_T(\xT)$, $\{r_t(\xt \mid \xtpo)\}_{t=0}^{T-1}$ 
+and weighting functions $\weight_T(\xT)$, $\{\weight_t(\xt, \xtpo)\}_{t=0}^{T-1}$. 
+At the initial step $T$, one draws $K$ particles of $\xT_k \sim \proposal_T(\xT)$ and sets $\dt{w}{T}_k:= \weight_T(\xT_k)$, 
+%setting $\dt{w}{T}_k:= \target_T(\xT_k) / \proposal_T (\xT_k)$
+and sequentially repeats the following for $t=T-1, \dots, 0$: 
+\vspace{-0.2em}
+\begin{itemize}
+    \item \emph{resample} \qquad $\{ \dt{x}{t+1:T}_k \}_{k=1}^K \sim \textrm{Multinomial}(\{ \dt{x}{t+1:T}_k \}_{k=1}^K; \{\dt{w}{t+1}_k \}_{k=1}^K)$ %\footnote{Other resampling strategies can be used as well. See Appendix for discussion.}
+    \item  \emph{propose} \qquad $\xt_k \sim \proposal_t(\xt \mid \xtpo_k), \quad k=1, \cdots, K$ 
+    \item \emph{weight}  \qquad \quad $\dt{w}{t}_k := \weight_t(\xt_k, \xtpo_k), \quad k=1,\cdots, K$
+\end{itemize}
+\vspace{-0.2em}
+
+The proposals and weighting functions together define a sequence of \emph{intermediate target} distributions,
+%$\nu_t,$ each defined on $\dt{x}{0:T}$ by the proposals, and the weighting functions at the first $T-t$ steps as
+%    The weighted set of particles form an approximation to the target distribution $\target_t$ defined by $\proposal_t$ and $\weight_t$ 
+    %for $t=T,\cdots, 0$, that is,
+%\begin{align}\label{eq:final-target}
+\begin{equation}\label{eq:final-target}
+    %\target_t(\dt{x}{0:T}) &:= \frac{1}{L_t}
+    \target_t(\dt{x}{0:T}) 
+    :=\frac{1}{\mathcal{L}_t} 
+        \Big[ \proposal_T(\dt{x}{T})  \prod_{t^\prime=0}^{T-1} \proposal_{t^\prime}(\dt{x}{t^\prime}\mid  \dt{x}{t^\prime+1})  \Big] 
+        \Big[ \weight_T(\dt{x}{T})
+        \prod_{t^\prime =t}^{T-1} \weight_{t^\prime}(\dt{x}{t^\prime}, \dt{x}{t^\prime+1}) \Big]  
+\end{equation}
+where $\mathcal{L}_t$ is a normalization constant.
+A classic example that SMC applies is the state space model 
+\citep[Chapter 1]{naesseth2019elements} 
+that describes a distribution over a sequence of latent states $\dt{x}{0:T}$ and observations  $\dt{y}{0:T}$. 
+Each intermediate target $\target_t$ is constructed to be the posterior $p(\dt{x}{0:T}\mid \dt{y}{t:T})$ given the first $T-t+1$ observations, and the final target $p(\dt{x}{0:T} \mid \dt{y}{0:T})$ is the  posterior given all observations. 
+
+
+%Then $\target_t$ is a target posterior $p(\dt{x}{0:T}\mid \dt{y}{t:T})$ after the first $T-t$ observations in a filtering equation where $p(\xT)$ and each $p(\xt \mid \xtpo)$ and $p(\dt{y}{t}\mid \dt{x}{t})$ are known but the posterior is intractable.
+%This example also points to the connection to diffusion and to our conditional sampling problem of interest.\BLT{\footnote{IIUC, John suggested a line like this last sentence. But I think we can drop it, since making it sufficiently precise is essentially the goal of the beginning of the next section.}}
+
+The defining property of SMC is that the weighted particles at each $t$ form discrete approximations
+$(\sum_{k^\prime=1}^K \dt{w}{t}_{k^\prime})^{-1}\sum_{k=1}^K w_t^k \delta_{\dt{x}{t}_k} (\dt{x}{t})$  (where $\delta$ is a Dirac measure)
+to $\target_t (\dt{x}{t})$ that become arbitrarily accurate in the limit that many particles are used \citep[Proposition 11.4]{chopin2020introduction}.
+So, by choosing $\proposal_t$ and $\weight_t$ so that $\target_0(\xzero)$ matches the desired distribution, one can guarantee arbitrarily low approximation error in the large compute limit.% wherein many particles are simulated.
+
+
+%Each step of SMC involves importance sampling of a target $\target_{t}$ with $\target_{t+1}$ as the proposal, and so the procedure inherits the operating characteristics of importance sampling.
+%This includes an exponential dependence of the number of samples needed for accurate estimation of $\target_{t}$ on the Kullback-Leibler (KL) divergence of each $\target_{t+1}$ from $\target_{t}$ \citep{chatterjee2018sample}.
+%In the context of  \Cref{eq:final-target}, the KL divergence reduces to
+%$$\mathrm{KL}(\target_{t} \| \target_{t+1})=\ln \E_{\target_{t}}[\weight_{t}(\xt, \xtpo)\inv] - \E_{\target_{t}}[\ln \weight_{t}(\xt, \xtpo)\inv].$$
+%\BLT{\footnote{If we choose to keep this equation, we should probably add a derivation of it to the appendix.}}This divergence will be large when a small fraction of particles receive a disproportionately large weight.
+%In that case only a small fraction of the particles receive nontrivial weights, the rest will be discarded, and 
+%the procedure provides a poor approximation of the target. 
+
+%See \Cref{sec:SMC_details} for details.  
+
+%the number of particles needed for accurate estimation of each $\target_t$ is exponential in the KL divergence between successive targets \citep{chatterjee2018sample}: \begin{align}\label{eq:kl-intermediate-targets}\mathrm{KL}(\target_{t-1} \| \target_t)=\ln \E_{\target_{t-1}}[\weight_{t-1}\inv(\xt, \xtpo)] - \E_{\target_{t-1}}[\ln \weight_{t-1}\inv(\xt, \xtpo)].\end{align}
+%This divergence will be large when a small fraction of particles receive a disproportionately large weight. 
+%Otherwise only a small fraction of the particles will receive nontrivial weights, and the rest will be discarded. 
+%Then exponential amount of particles in $T$ are needed for accurate approximation of $\target_0$ (see appendix for a formal discussion). 
+%In that case most particles are discarded, the procedure provides only small effective number of samples and therefore a poor approximation of the target distribution. 
+
+
+%More formally, each step of SMC involves importance sampling of a target $\target_{t-1}$ with $\target_t$ as the proposal, and so the procedure inherits the operating characteristics of importance sampling. Notably this includes an exponential dependence of the number of samples needed for accurate estimation on the Kullback-Leibler divergence of each $\target_t$ from $\target_{t-1}$ \citep{chatterjee2018sample}.In the context of \Cref{eqn:final-target} we see that $$\mathrm{KL}(\target_{t-1} \| \target_t)=\ln \E_{\target_{t-1}}[\weight_{t-1}\inv(\xt, \xtpo)] - \E_{\target_{t-1}}[\ln \weight_{t-1}\inv(\xt, \xtpo)].$$ This divergence will be large when a small fraction of particles receive a disproportionately large weight.
+
