@@ -27,6 +27,16 @@ denoising_smc/
   |-- train.py                       # Main training entry point (derived from EDM)
   |-- generate_pde.py                # Main PDE solving entry point
   |-- merge_data.py                  # Utility to merge .mat data into .npy for training
+  |-- idea.md                       # [ADDED] Research proposal: Girsanov correction, Heun-SDE, experimental design
+  |-- recipe.md                     # [ADDED] Implementation guide: architecture, pseudocode, Python code, gotchas
+  |-- papers.md                     # [ADDED] Literature survey of all 10 papers
+  |
+  |-- smc/                          # [ADDED] SMC module: proposals, weights, particle filter
+  |   |-- __init__.py
+  |   |-- schedule.py               # SigmaSchedule: noise schedule + derived quantities
+  |   |-- proposals.py               # GEM, HeunSDE, SOSaG proposals
+  |   |-- weights.py                 # UnifiedWeight: λ-ρ parameterization with Girsanov correction
+  |   |-- core.py                    # ParticleFilter: propagate → weight → resample loop
   |
   |-- configs/                       # YAML configs for each PDE & task type
   |   |-- darcy.yaml                 # Darcy flow - both spaces
@@ -176,24 +186,40 @@ Each YAML specifies:
 ### Pretrained Models (`pretrained-models/`)
 Six `.pkl` files (Darcy, Burgers, Poisson, Helmholtz, NS-bounded, NS-nonbounded). Each contains the EMA model weights from the EDM-style training.
 
-## 4. User-Added Directories (Not Part of Original Repo)
+## 4. User-Added Content (Not Part of Original Repo)
 
-The **`literature/`** directory is clearly user-added. It contains LaTeX source code and PDF metadata for 10 reference papers that the user has collected for their research, particularly related to diffusion models, SMC (Sequential Monte Carlo), and posterior sampling:
+The following were added for the SMC extension project:
+
+### Root-level Docs
+
+| File | Role |
+|------|------|
+| `idea.md` | Research proposal: methodology, derivations (Girsanov, Heun-SDE), experimental design |
+| `recipe.md` | Implementation guide: architecture, pseudocode, full Python code, gotchas |
+| `papers.md` | Comprehensive literature survey of all 10 papers in `literature/` |
+
+### `smc/` Module
+
+The `smc/` directory contains the SMC implementation: proposals (GEM, HeunSDE, SOSaG), unified λ-ρ weights with Girsanov correction, and the ParticleFilter loop. See `recipe.md` for details.
+
+### `literature/` Directory
+
+Contains LaTeX source code and PDF metadata for 10 reference papers related to diffusion models, SMC, and posterior sampling:
 
 | Directory | Paper | Relevance |
 |---|---|---|
-| `arXiv-0000.00000v/` | `paper.md` - A **custom-written summary** of the **FPS (Filtering Posterior Sampling)** and **FPS-SMC** methodology, including full mathematical derivations, algorithm pseudocode, experimental settings, and key equations. This is clearly user-authored content (arXiv ID is placeholder `0000.00000`). |
+| `arXiv-0000.00000v/` | `paper.md` - A **custom-written summary** of the **FPS (Filtering Posterior Sampling)** and **FPS-SMC** methodology |
 | `arXiv-2006.11239v2/` | Denoising Diffusion Probabilistic Models (DDPM) - Ho et al., NeurIPS 2020 |
 | `arXiv-2011.13456v2/` | Score-Based Generative Modeling through SDEs - Song et al., ICLR 2021 |
 | `arXiv-2302.13834v2/` | Diffusion Posterior Sampling (DPS) - Chung et al., ICLR 2023 |
 | `arXiv-2306.17775v2/` | Filtering Posterior Sampling (FPS) - Dou & Song, NeurIPS 2023 |
-| `arXiv-2308.07983v2/` | SMC + Diffusion papers (noisy, noiseless, auxpf, mixture models) - Dou & Song, ICLR 2024 |
+| `arXiv-2308.07983v2/` | SMC + Diffusion papers - Dou & Song, ICLR 2024 |
 | `arXiv-2402.06320v2/` | Related diffusion methodology |
 | `arXiv-2512.11012v2/` | SMC-related paper (2025) |
 | `arXiv-2601.08411v2/` | Particle filter noise paper (2026) |
-| `arXiv-2601.23262v2/` | SMC/Diffusion paper (ICML 2026 format) |
+| `arXiv-2601.23262v2/` | SMC/Diffusion paper (Millard et al., ICML 2026) |
 
-The presence of the `arXiv-0000.00000v/` directory with `paper.md` containing a full FPS/FPS-SMC methodology summary, combined with the repository name `denoising_smc`, strongly suggests the user is working on a project that **combines denoising diffusion models with Sequential Monte Carlo methods** for posterior sampling -- extending the DiffusionPDE codebase for their own research.
+The combination of `idea.md`, `recipe.md`, `smc/`, `literature/`, and the repository name `denoising_smc` indicates this is a research project that **combines denoising diffusion models with Sequential Monte Carlo methods** for posterior sampling, extending the DiffusionPDE codebase.
 
 ## 5. Tech Stack
 

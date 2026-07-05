@@ -11,6 +11,7 @@
 ## Architecture
 
 - **`training/`** — EDM-derived training loop, networks (SongUNet/DhariwalUNet), loss functions (VP/VE/EDM), dataset loader (`ImageFolderDataset`), augmentation
+- **`smc/`** — SMC module: proposals (GEM/HeunSDE/SOSaG), unified λ-ρ weights, ParticleFilter loop. Methodology in `idea.md`, implementation in `recipe.md`
 - **`scripts/generate_*.py`** — PDE-specific guided sampling. Each implements: PDE residual loss (finite-difference convs), observation loss (sparse sensor mask), and EDM reverse ODE with gradient guidance
 - **`configs/*.yaml`** — All parameters: data path/offset, pretrained model path, ODE solver params (sigma_min/sigma_max/rho), guidance weights (zeta_obs_a, zeta_obs_u, zeta_pde). Naming: `<pde>.yaml` = both spaces, `<pde>-forward.yaml` = forward, `<pde>-inverse.yaml` = inverse.
 - **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, distributed, persistence, training stats). Persistence pickles source code alongside weights; models load via `pickle.load(f)['ema']`. Device auto-detection lives in `torch_utils.misc.auto_device()`
@@ -57,6 +58,9 @@ pip install torch torchvision
 
 ## Reference Docs
 
+- `idea.md` — research proposal: methodology, derivations (Girsanov, Heun-SDE), experimental design
+- `recipe.md` — implementation guide: architecture, pseudocode, Python code, gotchas
+- `papers.md` — comprehensive literature survey of all 10 papers in `literature/`
 - `map.md` — full directory tree, file roles, tech stack, architecture summary
 - `git.md` — tracking decisions, excluded paths, .gitignore contents
 
@@ -64,4 +68,6 @@ pip install torch torchvision
 
 - `literature/` contains collected reference papers on diffusion models, SMC, and posterior sampling (DDPM, Score SDE, DPS, FPS, SMC+Diffusion)
 - `literature/arXiv-0000.00000v/paper.md` is a custom methodology writeup for FPS/FPS-SMC — the user's intended extension
+- `idea.md` contains the research proposal (Girsanov correction, Heun-SDE, experimental design)
+- `recipe.md` contains the implementation guide (architecture, pseudocode, Python code)
 - The repo name `denoising_smc` and the literature dir indicate the user plans to integrate Sequential Monte Carlo methods into the DiffusionPDE guided sampling pipeline

@@ -84,6 +84,13 @@ python3 generate_pde.py --config configs/burgers.yaml
 
 Please note that guidance weights could significantly influence the results. Weights may change depending on the count of observation points. A significant weight can swiftly decrease the error, but an excessively large weight might cause oversaturation and artifacts. Typically, the weights for forward observation loss terms range from 0.1 to 10 before the loss terms take the average. The weights of various loss terms associated with the same PDE are affected by the scaling of these loss terms. Also, the diffusion model may be stochastic with different seeds, as demonstrated in Appendix K.
 
+## SMC Extension
+
+This repo also contains a work-in-progress SMC (Sequential Monte Carlo) extension for diffusion-guided PDE solving:
+- [`idea.md`](idea.md) — research proposal (Girsanov correction, Heun-SDE, experimental design)
+- [`recipe.md`](recipe.md) — implementation guide (architecture, pseudocode, Python code)
+- [`smc/`](smc/) — SMC module (proposals, weights, particle filter)
+
 ## License
 
 <p xmlns:cc="http://creativecommons.org/ns#" xmlns:dct="http://purl.org/dc/terms/"><span property="dct:title">DiffusionPDE: Generative PDE-Solving Under Partial Observation</span> by <span property="cc:attributionName">Jiahe Huang, Guandao Yang, Zichen Wang, Jeong Joon Park</span> is licensed under <a href="https://creativecommons.org/licenses/by-nc-sa/4.0/?ref=chooser-v1" target="_blank" rel="license noopener noreferrer" style="display:inline-block;">Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International</a>.</p>
