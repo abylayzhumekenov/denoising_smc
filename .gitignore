@@ -28,6 +28,9 @@ __pycache__/
 .idea/
 *.swp
 
+# OpenCode workspace config
+.opencode/
+
 # Virtual environment
 venv/
 
