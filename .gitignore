@@ -28,6 +28,9 @@ __pycache__/
 .idea/
 *.swp
 
+# Virtual environment
+venv/
+
 # Runtime artifacts
 *.log
 outputs/

@@ -12,8 +12,8 @@
 
 - **`training/`** — EDM-derived training loop, networks (SongUNet/DhariwalUNet), loss functions (VP/VE/EDM), dataset loader (`ImageFolderDataset`), augmentation
 - **`scripts/generate_*.py`** — PDE-specific guided sampling. Each implements: PDE residual loss (finite-difference convs), observation loss (sparse sensor mask), and EDM reverse ODE with gradient guidance
-- **`configs/*.yaml`** — All parameters: data path/offset, pretrained model path, ODE solver params (sigma_min/sigma_max/rho), guidance weights (zeta_obs_a, zeta_obs_u, zeta_pde)
-- **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, distributed, persistence, training stats). Persistence pickles source code alongside weights; models load via `pickle.load(f)['ema']`
+- **`configs/*.yaml`** — All parameters: data path/offset, pretrained model path, ODE solver params (sigma_min/sigma_max/rho), guidance weights (zeta_obs_a, zeta_obs_u, zeta_pde). Naming: `<pde>.yaml` = both spaces, `<pde>-forward.yaml` = forward, `<pde>-inverse.yaml` = inverse.
+- **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, distributed, persistence, training stats). Persistence pickles source code alongside weights; models load via `pickle.load(f)['ema']`. Device auto-detection lives in `torch_utils.misc.auto_device()`
 
 ## Data Flow
 
@@ -54,6 +54,11 @@ pip install torch torchvision
 - Helper functions in `scripts/generate_*.py` use `auto_device()` from `torch_utils.misc`
 - **Training** (`train.py`) requires GPU / `torchrun` (single-GPU training is possible but impractical on CPU)
 - **Inference** (`generate_pde.py`) works on CPU (slow but functional)
+
+## Reference Docs
+
+- `map.md` — full directory tree, file roles, tech stack, architecture summary
+- `git.md` — tracking decisions, excluded paths, .gitignore contents
 
 ## Project Context (User Extension)
 
