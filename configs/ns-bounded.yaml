@@ -13,7 +13,7 @@ test:
 
 generate:
   seed: 0
-  device: 'cuda'
+  device: 'auto'
   batch_size: 1
   sigma_min: 0.002
   sigma_max: 80

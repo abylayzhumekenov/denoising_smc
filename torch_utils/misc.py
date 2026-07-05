@@ -264,3 +264,10 @@ def print_module_summary(module, inputs, max_nesting=3, skip_redundant=True):
     return outputs
 
 #----------------------------------------------------------------------------
+# Auto-detect best available device.
+
+def auto_device():
+    """Select CUDA if available, else CPU."""
+    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+#----------------------------------------------------------------------------

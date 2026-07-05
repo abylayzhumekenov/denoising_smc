@@ -6,10 +6,13 @@ import PIL.Image
 import dnnlib
 import torch.nn.functional as F
 from torch_utils import distributed as dist
+from torch_utils.misc import auto_device
 import scipy.io
 
-def random_index(k, grid_size, seed=0, device=torch.device('cuda')):
+def random_index(k, grid_size, seed=0, device=None):
     '''randomly select k indices from a [grid_size, grid_size] grid.'''
+    if device is None:
+        device = auto_device()
     np.random.seed(seed)
     indices = np.random.choice(grid_size**2, k, replace=False)
     indices_2d = np.unravel_index(indices, (grid_size, grid_size))
@@ -19,8 +22,10 @@ def random_index(k, grid_size, seed=0, device=torch.device('cuda')):
         mask[i] = 1
     return mask
 
-def get_ns_nonbounded_loss(a, u, a_GT, u_GT, a_mask, u_mask, device=torch.device('cuda')):
+def get_ns_nonbounded_loss(a, u, a_GT, u_GT, a_mask, u_mask, device=None):
     """Return the loss of the non-bounded NS equation and the observation loss."""
+    if device is None:
+        device = auto_device()
     deriv_x = torch.tensor([[-1, 0, 1]], dtype=torch.float64, device=device).view(1, 1, 1, 3) / 2
     deriv_y = torch.tensor([[-1], [0], [1]], dtype=torch.float64, device=device).view(1, 1, 3, 1) / 2
     grad_x_next_x = F.conv2d(u, deriv_x, padding=(0, 1))
@@ -47,7 +52,11 @@ def generate_ns_nonbounded(config):
     ############################ Load data and network ############################
     datapath = config['data']['datapath']
     offset = config['data']['offset']
-    device = config['generate']['device']
+    device_cfg = config['generate']['device']
+    if device_cfg == 'auto' or device_cfg is None:
+        device = auto_device()
+    else:
+        device = torch.device(device_cfg)
     data = scipy.io.loadmat(datapath)
     a_GT = data['a'][offset, :, :]
     a_GT = torch.tensor(a_GT, dtype=torch.float64, device=device)

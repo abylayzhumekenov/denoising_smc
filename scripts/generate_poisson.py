@@ -6,10 +6,13 @@ import PIL.Image
 import dnnlib
 import torch.nn.functional as F
 from torch_utils import distributed as dist
+from torch_utils.misc import auto_device
 import scipy.io
 
-def random_index(k, grid_size, seed=0, device=torch.device('cuda')):
+def random_index(k, grid_size, seed=0, device=None):
     '''randomly select k indices from a [grid_size, grid_size] grid.'''
+    if device is None:
+        device = auto_device()
     np.random.seed(seed)
     indices = np.random.choice(grid_size**2, k, replace=False)
     indices_2d = np.unravel_index(indices, (grid_size, grid_size))
@@ -19,8 +22,10 @@ def random_index(k, grid_size, seed=0, device=torch.device('cuda')):
         mask[i] = 1
     return mask
 
-def get_poisson_loss(a, u, a_GT, u_GT, a_mask, u_mask, device=torch.device('cuda')):
+def get_poisson_loss(a, u, a_GT, u_GT, a_mask, u_mask, device=None):
     """Return the loss of the Poisson equation and the observation loss."""
+    if device is None:
+        device = auto_device()
     S = u.size(2)
     h = 1 / (S - 1)
     a = a.view(1, 1, S, S)
@@ -49,7 +54,11 @@ def generate_poisson(config):
     ############################ Load data and network ############################
     datapath = config['data']['datapath']
     offset = config['data']['offset']
-    device = config['generate']['device']
+    device_cfg = config['generate']['device']
+    if device_cfg == 'auto' or device_cfg is None:
+        device = auto_device()
+    else:
+        device = torch.device(device_cfg)
     data = scipy.io.loadmat(datapath)
     a_GT = data['f_data'][offset, :, :]
     a_GT = torch.tensor(a_GT, dtype=torch.float64, device=device)

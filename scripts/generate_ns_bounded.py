@@ -6,10 +6,13 @@ import PIL.Image
 import dnnlib
 import torch.nn.functional as F
 from torch_utils import distributed as dist
+from torch_utils.misc import auto_device
 import scipy.io
 
-def random_index_and_cylinder(center, radius, k, grid_size, seed=0, device=torch.device('cuda')):
+def random_index_and_cylinder(center, radius, k, grid_size, seed=0, device=None):
     '''randomly select k% indices from a [grid_size, grid_size] grid as well as the known boundary of the cylinder.'''
+    if device is None:
+        device = auto_device()
     np.random.seed(seed)
     mask = torch.zeros((grid_size, grid_size), dtype=torch.float32).to(device)
     for i in range(grid_size):
@@ -22,8 +25,10 @@ def random_index_and_cylinder(center, radius, k, grid_size, seed=0, device=torch
     num_ones = mask.sum().item()
     return mask, num_ones
 
-def cylinder_index(center, radius, grid_size, device=torch.device('cuda')):
+def cylinder_index(center, radius, grid_size, device=None):
     '''return the known boundary of the cylinder.'''
+    if device is None:
+        device = auto_device()
     mask = torch.zeros((grid_size, grid_size), dtype=torch.float32).to(device)
     for i in range(grid_size):
         for j in range(grid_size):
@@ -32,8 +37,10 @@ def cylinder_index(center, radius, grid_size, device=torch.device('cuda')):
     num_ones = mask.sum().item()
     return mask, num_ones
 
-def get_ns_bounded_loss(a, u, a_GT, u_GT, a_mask, u_mask, device=torch.device('cuda')):
+def get_ns_bounded_loss(a, u, a_GT, u_GT, a_mask, u_mask, device=None):
     """Return the loss of the bounded NS equation and the observation loss."""
+    if device is None:
+        device = auto_device()
     deriv_x = torch.tensor([[-1, 0, 1]], dtype=torch.float64, device=device).view(1, 1, 1, 3) / 2
     deriv_y = torch.tensor([[-1], [0], [1]], dtype=torch.float64, device=device).view(1, 1, 3, 1) / 2
     grad_x_next_x = F.conv2d(u, deriv_x, padding=(0, 1))
@@ -60,7 +67,11 @@ def generate_ns_bounded(config):
     ############################ Load data and network ############################
     datapath = config['data']['datapath']
     offset = config['data']['offset']
-    device = config['generate']['device']
+    device_cfg = config['generate']['device']
+    if device_cfg == 'auto' or device_cfg is None:
+        device = auto_device()
+    else:
+        device = torch.device(device_cfg)
     data = np.load(datapath)
     a_GT = data[offset, :, :, 4]
     a_GT = torch.tensor(a_GT, dtype=torch.float64, device=device)

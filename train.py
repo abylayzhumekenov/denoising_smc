@@ -15,6 +15,7 @@ import click
 import torch
 import dnnlib
 from torch_utils import distributed as dist
+from torch_utils.misc import auto_device
 from training import training_loop
 
 import warnings
@@ -157,7 +158,7 @@ def main(**kwargs):
     if opts.seed is not None:
         c.seed = opts.seed
     else:
-        seed = torch.randint(1 << 31, size=[], device=torch.device('cuda'))
+        seed = torch.randint(1 << 31, size=[], device=auto_device())
         torch.distributed.broadcast(seed, src=0)
         c.seed = int(seed)
 
