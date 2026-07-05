@@ -76,7 +76,7 @@ function GEM.propagate(x_k, sigma_k, sigma_km1, denoiser, grad_loglik_fn):
     score ← (D_theta - x_k) / sigma_k²                      # standard convention
     z ← random_normal()
     noise_coeff ← sqrt(sigma_k² - sigma_km1²)
-    delta_sigma2 ← sigma_km1² - sigma_k²                     # negative
+    delta_sigma2 ← sigma_k² - sigma_km1²                     # > 0
     
     grad_loglik ← grad_loglik_fn(x_k)
     
@@ -94,7 +94,7 @@ function GEM.propagate(x_k, sigma_k, sigma_km1, denoiser, grad_loglik_fn):
 function HeunSDE.propagate(x_k, sigma_k, sigma_km1, denoiser, grad_loglik_fn):
     z ← random_normal()
     noise_coeff ← sqrt(sigma_k² - sigma_km1²)
-    delta_sigma2 ← sigma_km1² - sigma_k²                     # negative
+    delta_sigma2 ← sigma_k² - sigma_km1²                     # > 0
     
     # Stage 1: Euler prediction
     s_prior_k ← (denoiser(x_k, sigma_k) - x_k) / sigma_k²
@@ -131,7 +131,7 @@ function SOSaG.propagate(x_k, sigma_k, sigma_km1, denoiser, grad_loglik_fn, gamm
     
     # 3. Guidance
     grad_loglik ← grad_loglik_fn(hat_x)
-    x_km1 ← x_denoised - (sigma_km1² - sigma_k²) * grad_loglik
+    x_km1 ← x_denoised + (sigma_k² - sigma_km1²) * grad_loglik
     
     aux ← {psi, hat_x, hat_sigma, x_denoised, grad_loglik}
     return x_km1, aux
@@ -261,7 +261,7 @@ class GEM(Proposal):
         
         z = torch.randn_like(x_k, generator=key)
         noise_coeff = torch.sqrt(sigma_k ** 2 - sigma_km1 ** 2)
-        delta_sigma2 = sigma_km1 ** 2 - sigma_k ** 2  # negative
+        delta_sigma2 = sigma_k ** 2 - sigma_km1 ** 2  # > 0
         
         grad_loglik = grad_loglik_fn(x_k)
         mu_prior = x_k + delta_sigma2 * score
@@ -287,7 +287,7 @@ class HeunSDE(Proposal):
     def propagate(self, x_k, sigma_k, sigma_km1, denoiser, grad_loglik_fn, schedule, key):
         z = torch.randn_like(x_k, generator=key)
         noise_coeff = torch.sqrt(sigma_k ** 2 - sigma_km1 ** 2)
-        delta_sigma2 = sigma_km1 ** 2 - sigma_k ** 2  # negative
+        delta_sigma2 = sigma_k ** 2 - sigma_km1 ** 2  # > 0
         
         # Stage 1: Euler prediction
         s_prior_k = (denoiser(x_k, sigma_k) - x_k) / (sigma_k ** 2)
@@ -335,7 +335,7 @@ class SOSaG(Proposal):
         else:
             x_denoised = x_pred
         
-        delta_sigma2 = sigma_km1 ** 2 - sigma_k ** 2  # negative, uses original sigma
+        delta_sigma2 = sigma_k ** 2 - sigma_km1 ** 2  # > 0, uses original sigma
         grad_loglik = grad_loglik_fn(hat_x)
         x_km1 = x_denoised + delta_sigma2 * grad_loglik
         
@@ -360,7 +360,7 @@ class WeightUpdate(ABC):
 class UnifiedWeight(WeightUpdate):
     """λ-ρ unified weight with Girsanov correction.
     
-    For GEM: λ=1 exactly recovers TDS (verified in idea.md §5).
+    For GEM: λ=1 exactly recovers TDS (verified in idea.md §4).
     For Heun-SDE: λ=1 gives asymptotically consistent correction.
     For λ=0: reduces to pBS.
     """
@@ -579,7 +579,7 @@ After implementing Steps 1-4, run:
 # Compare per-step log_w_inc from:
 #   1. UnifiedWeight(lam=1.0) on GEM  → uses Girsanov correction
 #   2. Closed-form TDS formula        → Gaussian density ratio
-# They should match to numerical precision (idea.md §5).
+# They should match to numerical precision (idea.md §4).
 ```
 
 If they differ, check:
