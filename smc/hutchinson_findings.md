@@ -81,14 +81,34 @@ At the same point:
 The Laplacian term is the *smallest* of the four contributions, and the only one with any
 Monte Carlo noise -- yet it costs ~40x longer than the other three terms combined.
 
+## 5. d(ell)/d(tau): autodiff instead of finite differences
+
+`EDMPrecond.round_sigma` (line 670 of `training/networks.py`) is literally `torch.as_tensor(sigma)`
+-- a no-op, no rounding, no detaching -- and its preconditioning functions (`c_skip`, `c_out`,
+`c_in`, `c_noise`) are smooth, standard-differentiable functions of `sigma`. So `sigma_t` can be
+made a leaf tensor with `requires_grad_(True)` and differentiated directly, instead of via finite
+differences. Validated against the finite-difference values above, at the same point:
+
+| Method | Value | Cost |
+|---|---|---|
+| autodiff, `grad(loss, sigma_t)` | 0.113170 | ~40s |
+| finite diff, h=5% of sigma_t | 0.113402 | ~36s |
+| finite diff, h=1% of sigma_t | 0.113180 | ~36s |
+
+All three agree to within ~0.2% -- confirms autodiff is correct here, and that the original
+finite-difference step size was already fine (no meaningful truncation error). Autodiff is
+preferable going forward: exact rather than approximate, no step-size tuning, and it can be fused
+with the `grad_ell` computation into a *single* forward+backward pass --
+`torch.autograd.grad(loss, (x_cur, sigma_t))` -- giving both `d(ell)/d(tau)` and `grad_ell`
+for the cost of one network call instead of three. Verified this gives identical results
+(`||grad_x||=0.148802`, `d(ell)/d(sigma)=0.113170`, matching the separate computations above).
+
 ## Caveats
 
 - Single point on the trajectory (`sigma_t=5.0`); term magnitudes could look very different near
   `sigma -> 0` (likelihood sharpens) or `sigma -> sigma_max` (noise-dominated).
 - `a_bar(tau) = 2*sigma` is a convention choice (identifying diffusion "time" with the noise
   level), not verified against the exact convention intended by the Doob-transform derivation.
-- The finite-difference step for `d(ell)/d(tau)` (`h = 0.25` at `sigma_t=5`) has not been checked
-  for convergence (e.g. by halving h).
 - All measurements are CPU-only; a GPU would change absolute costs substantially but the O(M)
   vs. O(d) complexity argument, and the variance/probe-count relationship, should carry over.
 
