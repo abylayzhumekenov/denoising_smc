@@ -44,7 +44,7 @@ denoising_smc/
   |-- smc/                          # SMC module: proposals, weights, particle filter
   |   |-- __init__.py
   |   |-- toy_smc.py                # 1D Gaussian-mixture toy: validates λ-ρ weighting vs analytic posterior
-  |   |-- toy_smc_findings.md       # Findings: Girsanov sign fix, variant comparison, N-sweep
+  |   |-- toy_smc_findings.md       # Validation note / meeting report: results, W1, N-sweep
   |   |-- hutchinson.py             # Hutchinson Laplacian trace estimator (feasibility study)
   |   |-- hutchinson_findings.md    # Findings: Laplacian cost/variance on real Burgers model
   |   |   # Planned (docs/recipe.md): schedule.py, proposals.py, weights.py, core.py
@@ -163,7 +163,7 @@ Each YAML specifies:
 #### SMC Extension (`smc/` + `docs/`)
 - `docs/idea.md` — methodology: Girsanov correction, Heun-SDE, experimental design.
 - `docs/recipe.md` — implementation guide (design spec; modules not yet implemented).
-- `smc/toy_smc.py` — 1D Gaussian-mixture toy validating the λ-ρ weighting against a known analytic posterior (findings: `smc/toy_smc_findings.md`, incl. the Girsanov Itô sign fix).
+- `smc/toy_smc.py` — 1D Gaussian-mixture toy validating the λ-ρ weighting against a known analytic posterior (report: `smc/toy_smc_findings.md`).
 - `smc/hutchinson.py` — Hutchinson estimator for the Laplacian term of the Doob-transform weight (feasibility study; see `smc/hutchinson_findings.md`).
 
 #### Pretrained Models (`pretrained-models/`)

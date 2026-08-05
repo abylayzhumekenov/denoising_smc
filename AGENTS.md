@@ -63,7 +63,7 @@ pip install torch torchvision
 - `docs/recipe.md` — implementation guide: architecture, pseudocode, Python code, gotchas (design spec — `smc/` modules not yet implemented)
 - `literature/README.md` — comprehensive literature survey of all papers in `literature/`
 - `docs/repo.md` — repository map + git tracking (tree, file roles, tech stack, excluded paths)
-- `smc/toy_smc_findings.md` — toy validation results (Girsanov sign fix, variant comparisons, N-sweep)
+- `smc/toy_smc_findings.md` — toy validation note / meeting report (results, W1, N-sweep)
 
 ## Docs Policy
 

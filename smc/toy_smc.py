@@ -66,9 +66,16 @@ def posterior_stats():
 
 # ----------------------------------------------------------------- schedule
 SIGMA_MAX, SIGMA_MIN, K, RHO = 6.0, 1e-3, 500, 7.0
-idx = np.arange(K)
-sigma = (SIGMA_MAX ** (1 / RHO) + idx / (K - 1) * (SIGMA_MIN ** (1 / RHO) - SIGMA_MAX ** (1 / RHO))) ** RHO
-sigma = np.concatenate([sigma, [0.0]])  # final step ends at sigma = 0
+
+
+def build_sigma(k):
+    """EDM power-law sigma schedule of k steps + trailing 0 (final step ends at sigma = 0)."""
+    idx = np.arange(k)
+    s = (SIGMA_MAX ** (1 / RHO) + idx / (k - 1) * (SIGMA_MIN ** (1 / RHO) - SIGMA_MAX ** (1 / RHO))) ** RHO
+    return np.concatenate([s, [0.0]])
+
+
+sigma = build_sigma(K)
 
 
 # ----------------------------------------------------------------- proposals
@@ -129,13 +136,15 @@ def exact_init(N, rng):
     return (MU[m] + np.sqrt(VAR[m] + SIGMA_MAX ** 2) * rng.standard_normal(N))[:, None]
 
 
-def run_filter(proposal, lam, rho, N, seed):
+def run_filter(proposal, lam, rho, N, seed, k=None, sig=None):
+    k = K if k is None else k
+    sig = sigma if sig is None else sig
     rng = np.random.default_rng(seed)
     x = exact_init(N, rng)
     log_w = np.zeros(N)
     n_resample = 0
-    for step in range(K):
-        sk, skm1 = sigma[step], sigma[step + 1]
+    for step in range(k):
+        sk, skm1 = sig[step], sig[step + 1]
         x_km1, aux = proposal(x, sk, skm1, rng)
         dll = (loglik(x_km1) - loglik(x))[:, 0]
         log_w = log_w + weight(dll, aux, lam, rho)
@@ -150,12 +159,14 @@ def run_filter(proposal, lam, rho, N, seed):
     return x, log_w, float(ess), n_resample
 
 
-def run_ode(N, seed):
+def run_ode(N, seed, k=None, sig=None):
     """Deterministic Heun on the guided drift score + b (no weights/resampling)."""
+    k = K if k is None else k
+    sig = sigma if sig is None else sig
     rng = np.random.default_rng(seed)
     x = exact_init(N, rng)
-    for step in range(K):
-        sk, skm1 = sigma[step], sigma[step + 1]
+    for step in range(k):
+        sk, skm1 = sig[step], sig[step + 1]
         delta = sk ** 2 - skm1 ** 2
         k1 = score(x, sk ** 2) + grad_loglik(x)
         x_pred = x + delta * k1
@@ -259,6 +270,28 @@ def main():
             cells.append(fmt(c[1].mean(), sem(c[1])).rjust(15))
             cells.append(f'{c[2].mean():.0f}'.rjust(10))
         print(''.join(cells))
+
+    print(f'\nK-sweep (N=512, {seeds} seeds, mean+-SEM):')
+    print(f"{'K':>6}{'arm':>11}{'W1':>14}{'|dmean|':>13}{'w|dstd|':>13}{'u|dstd|':>13}{'ESS':>9}{'resamp':>8}")
+    for Kk in (100, 250, 500, 1000, 2000):
+        sig_k = build_sigma(Kk)
+        for name, fn in (('ODE', lambda s: (run_ode(512, s, Kk, sig_k), None, 0, 0)),
+                         ('GEM+Girs', lambda s: run_filter(gem, 1.0, 1.0, 512, s, Kk, sig_k)),
+                         ('Heun+Girs', lambda s: run_filter(heunsde, 1.0, 1.0, 512, s, Kk, sig_k))):
+            rows = []
+            for s in range(seeds):
+                x, log_w, ess, nr = fn(s)
+                if log_w is None:
+                    wmean, wstd = float(x.mean()), float(x.std())
+                    uwstd = float(x.std())
+                else:
+                    wmean, wstd = weighted_stats(x, log_w)
+                    uwstd = float(x.std())
+                rows.append((wasserstein1(x), abs(wmean - pm), abs(wstd - ps), abs(uwstd - ps), ess, nr))
+            c = [np.array([r[i] for r in rows]) for i in range(6)]
+            print(f'{Kk:>6}{name:>11}{fmt(c[0].mean(), sem(c[0])):>14}'
+                  f'{fmt(c[1].mean(), sem(c[1])):>13}{fmt(c[2].mean(), sem(c[2])):>13}'
+                  f'{fmt(c[3].mean(), sem(c[3])):>13}{c[4].mean():>9.0f}{c[5].mean():>8.1f}')
 
 
 if __name__ == '__main__':
