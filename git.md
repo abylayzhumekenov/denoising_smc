@@ -58,6 +58,7 @@ __pycache__/
 
 # Runtime artifacts
 *.log
+*.out
 outputs/
 results/
 logs/
@@ -70,7 +71,7 @@ wandb/
 
 | Category | Files |
 |----------|-------|
-| Python source | `train.py`, `generate_pde.py`, `merge_data.py`, all of `scripts/`, `training/`, `torch_utils/`, `dnnlib/`, `dataset_generation/non-bounded-ns/` |
+| Python source | `train.py`, `generate_pde.py`, `merge_data.py`, all of `scripts/`, `smc/`, `training/`, `torch_utils/`, `dnnlib/`, `dataset_generation/non-bounded-ns/` |
 | YAML configs | 16 files in `configs/` |
 | MATLAB source | `dataset_generation/static/`, `dataset_generation/burgers/` |
 | Literature | All `.tex`, `.bib`, `.sty`, `.csv` files in `literature/` (3.5 MB) |

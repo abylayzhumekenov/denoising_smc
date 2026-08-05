@@ -33,10 +33,11 @@ denoising_smc/
   |
   |-- smc/                          # [ADDED] SMC module: proposals, weights, particle filter
   |   |-- __init__.py
-  |   |-- schedule.py               # SigmaSchedule: noise schedule + derived quantities
-  |   |-- proposals.py               # GEM, HeunSDE, SOSaG proposals
-  |   |-- weights.py                 # UnifiedWeight: λ-ρ parameterization with Girsanov correction
-  |   |-- core.py                    # ParticleFilter: propagate → weight → resample loop
+  |   |-- hutchinson.py             # Hutchinson Laplacian trace estimator (feasibility study)
+  |   |-- hutchinson_findings.md    # Findings: Laplacian cost/variance on real Burgers model
+  |   |-- toy_smc.py                # 1D Gaussian-mixture toy: validates λ-ρ weighting vs analytic posterior
+  |   |-- toy_smc_findings.md       # Findings: Girsanov sign fix, variant comparison, N-sweep
+  |   |   # Planned (recipe.md): schedule.py, proposals.py, weights.py, core.py
   |
   |-- configs/                       # YAML configs for each PDE & task type
   |   |-- darcy.yaml                 # Darcy flow - both spaces
@@ -201,6 +202,9 @@ The following were added for the SMC extension project:
 ### `smc/` Module
 
 The `smc/` directory contains the SMC implementation: proposals (GEM, HeunSDE, SOSaG), unified λ-ρ weights with Girsanov correction, and the ParticleFilter loop. See `recipe.md` for details.
+
+- `smc/toy_smc.py` — self-contained 1D Gaussian-mixture toy that drives the same λ-ρ machinery against a known analytic posterior. Runs all proposal/weight variants (ODE, SOSaG+pBS, GEM+pBS, HeunSDE+pBS, GEM+Girs, HeunSDE+Girs) plus an N-sweep. `smc/toy_smc_findings.md` documents results, including the Girsanov Itô sign fix (also applied to `idea.md`/`recipe.md`).
+- `smc/hutchinson.py` — Hutchinson estimator for the Laplacian term of the Doob-transform weight (feasibility study; see `smc/hutchinson_findings.md`).
 
 ### `literature/` Directory
 

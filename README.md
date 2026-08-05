@@ -90,6 +90,8 @@ This repo also contains a work-in-progress SMC (Sequential Monte Carlo) extensio
 - [`idea.md`](idea.md) — research proposal (Girsanov correction, Heun-SDE, experimental design)
 - [`recipe.md`](recipe.md) — implementation guide (architecture, pseudocode, Python code)
 - [`smc/`](smc/) — SMC module (proposals, weights, particle filter)
+- [`smc/toy_smc.py`](smc/toy_smc.py) — 1D Gaussian-mixture toy that validates the SMC weighting against a known analytic posterior (`venv/bin/python smc/toy_smc.py`)
+- [`smc/toy_smc_findings.md`](smc/toy_smc_findings.md) — validation results (incl. a Girsanov sign fix and the N-sweep)
 
 ## License
 

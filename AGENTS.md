@@ -7,11 +7,12 @@
 | `torchrun --standalone --nproc_per_node=N train.py --outdir=DIR --data=PATH --cond=0 --arch=ddpmpp --batch=60 --batch-gpu=20 --duration=20 --ema=0.05` | Train diffusion model (EDM-style) |
 | `python3 generate_pde.py --config configs/<pde>.yaml` | Solve PDE via guided diffusion |
 | `python3 merge_data.py` | Merge raw `.mat` → scaled `.npy` for training |
+| `venv/bin/python smc/toy_smc.py` | 1D Gaussian-mixture toy: validate SMC λ-ρ weighting vs analytic posterior |
 
 ## Architecture
 
 - **`training/`** — EDM-derived training loop, networks (SongUNet/DhariwalUNet), loss functions (VP/VE/EDM), dataset loader (`ImageFolderDataset`), augmentation
-- **`smc/`** — SMC module: proposals (GEM/HeunSDE/SOSaG), unified λ-ρ weights, ParticleFilter loop. Methodology in `idea.md`, implementation in `recipe.md`
+- **`smc/`** — SMC module: proposals (GEM/HeunSDE/SOSaG), unified λ-ρ weights, ParticleFilter loop. Methodology in `idea.md`, implementation in `recipe.md`. `smc/toy_smc.py` is a 1D Gaussian-mixture validation toy (results in `smc/toy_smc_findings.md`); `smc/hutchinson.py` is a Laplacian-trace feasibility study
 - **`scripts/generate_*.py`** — PDE-specific guided sampling. Each implements: PDE residual loss (finite-difference convs), observation loss (sparse sensor mask), and EDM reverse ODE with gradient guidance
 - **`configs/*.yaml`** — All parameters: data path/offset, pretrained model path, ODE solver params (sigma_min/sigma_max/rho), guidance weights (zeta_obs_a, zeta_obs_u, zeta_pde). Naming: `<pde>.yaml` = both spaces, `<pde>-forward.yaml` = forward, `<pde>-inverse.yaml` = inverse.
 - **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, distributed, persistence, training stats). Persistence pickles source code alongside weights; models load via `pickle.load(f)['ema']`. Device auto-detection lives in `torch_utils.misc.auto_device()`
@@ -63,6 +64,7 @@ pip install torch torchvision
 - `papers.md` — comprehensive literature survey of all 10 papers in `literature/`
 - `map.md` — full directory tree, file roles, tech stack, architecture summary
 - `git.md` — tracking decisions, excluded paths, .gitignore contents
+- `smc/toy_smc_findings.md` — toy validation results (Girsanov sign fix, variant comparisons, N-sweep)
 
 ## Project Context (User Extension)
 
