@@ -1,6 +1,6 @@
 """Minimal toy SMC demo: 1D Gaussian-mixture prior with known posterior.
 
-Validates the lambda-rho weighting machinery (recipe.md) against an analytic
+Validates the lambda-rho weighting machinery (docs/recipe.md) against an analytic
 posterior, across four variants:
   1. ODE          - deterministic guided reverse ODE, no SMC (repo baseline)
   2. SOSaG+pBS    - Millard et al., lam=0 (pseudo-bootstrap)
@@ -190,7 +190,7 @@ def wasserstein1(samples, lo=-6, hi=6, grid=8000):
 
 def verify_gem_weight(seed=0):
     """Check GEM Girsanov C_k against the closed-form Gaussian log density ratio
-    log(p_P/p_Q) = -(1/2 delta)[|x_km1-mu_p|^2 - |x_km1-mu_g|^2] (idea.md Sec 4)."""
+    log(p_P/p_Q) = -(1/2 delta)[|x_km1-mu_p|^2 - |x_km1-mu_g|^2] (docs/idea.md Sec 4)."""
     rng = np.random.default_rng(seed)
     x = exact_init(8, rng)
     max_err = 0.0

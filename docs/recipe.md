@@ -1,5 +1,10 @@
 # Implementation Recipe: Girsanov-Corrected SMC for Diffusion-Guided PDE Solvers
 
+> **Status: design spec** — the `smc/` modules described here (`schedule.py`, `proposals.py`,
+> `weights.py`, `core.py`) are **not yet implemented**. The validated λ-ρ logic lives in
+> `smc/toy_smc.py`; this document should be reconciled with the toy's corrected weight sign
+> (`-√δ·bᵀz - ½δ‖b‖²`) before the modules are built.
+
 ## 1. General Setting
 
 We implement a modular SMC framework for diffusion-guided PDE solvers. Three proposals and weight updates are composed from interchangeable components:

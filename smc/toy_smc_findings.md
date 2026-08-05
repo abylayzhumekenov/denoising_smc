@@ -1,6 +1,6 @@
 # Toy SMC Validation Findings (1D Gaussian Mixture)
 
-Findings from validating the λ-ρ SMC weighting machinery (`idea.md`/`recipe.md`) against an
+Findings from validating the λ-ρ SMC weighting machinery (`docs/idea.md`/`docs/recipe.md`) against an
 analytic posterior, using a cheap 1D Gaussian-mixture model instead of the expensive
 network-based PDE pipeline. Implementation: `smc/toy_smc.py`. Run:
 
@@ -27,15 +27,15 @@ venv/bin/python smc/toy_smc.py
 | SOSaG+pBS | SOSaG (Millard et al.) | λ=0 | baseline reproduction |
 | GEM+pBS | GEM | λ=0 | proposal-controlled pBS |
 | HeunSDE+pBS | Heun-SDE | λ=0 | proposal-controlled pBS |
-| GEM+Girs | GEM | λ=1 | **= TDS exactly** (`idea.md` §4 identity) |
+| GEM+Girs | GEM | λ=1 | **= TDS exactly** (`docs/idea.md` §4 identity) |
 | HeunSDE+Girs | Heun-SDE | λ=1 | novel arm |
 
 ## Key Findings
 
 ### 1. Conceptual error found: sign of the Girsanov Itô term
 
-Re-deriving the weight exposed a genuine sign error in `idea.md` §2.2/§2.3/§3.3/§4 and
-`recipe.md` §3.4/§4.3. The weight needs `dP/dQ` (prior transition / guided transition):
+Re-deriving the weight exposed a genuine sign error in `docs/idea.md` §2.2/§2.3/§3.3/§4 and
+`docs/recipe.md` §3.4/§4.3. The weight needs `dP/dQ` (prior transition / guided transition):
 
 ```
 log(p_P/p_Q) = -√δ · bᵀz - ½δ‖b‖²
@@ -77,7 +77,7 @@ Two instances of the same `(N,)` vs `(N,1)` broadcasting trap:
 - **W1 ranks the arms correctly**: HeunSDE+Girs < GEM+Girs < pBS arms < ODE. Both λ=1 arms are
   closest to the true posterior in full distribution.
 - **`|dstd|` cleanly separates weights**: λ=1 arms ~0.14–0.17 (weighted std ≈ 0.63–0.66) vs
-  pBS arms ~0.35 (weighted std ≈ 0.45). The pBS inconsistency (`idea.md` §1) is real and is
+  pBS arms ~0.35 (weighted std ≈ 0.45). The pBS inconsistency (`docs/idea.md` §1) is real and is
   driven by the **weight (λ=0)**, not the proposal.
 - **ODE collapses to a point estimate** (std=0): deterministic guided flow gives no uncertainty,
   mirroring the current repo pipeline.
