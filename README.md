@@ -87,7 +87,9 @@ Please note that guidance weights could significantly influence the results. Wei
 ## SMC Extension
 
 This repo also contains a work-in-progress SMC (Sequential Monte Carlo) extension for diffusion-guided PDE solving:
-- [`docs/idea.md`](docs/idea.md) — research proposal (Girsanov correction, Heun-SDE, experimental design)
+- [`docs/note_2.tex`](docs/note_2.tex) — mathematical note: Girsanov-corrected SMC for guided diffusion models ($\lambda$-$\rho$ unified weight, GEM and Heun-SDE proposals, appendices with kernel-ratio verification and alternative discretisations)
+- [`docs/references_2.bib`](docs/references_2.bib) — bibliography for the note
+- [`docs/idea.md`](docs/idea.md) — original research proposal (Girsanov correction, Heun-SDE, experimental design)
 - [`docs/recipe.md`](docs/recipe.md) — implementation guide (architecture, pseudocode, Python code)
 - [`smc/`](smc/) — SMC module (proposals, weights, particle filter)
 - [`smc/toy_smc.py`](smc/toy_smc.py) — 1D Gaussian-mixture toy that validates the SMC weighting against a known analytic posterior (`venv/bin/python smc/toy_smc.py`)

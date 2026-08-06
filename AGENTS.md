@@ -59,6 +59,7 @@ pip install torch torchvision
 
 ## Reference Docs
 
+- `docs/note_2.tex` — math note: Girsanov-corrected SMC, $\lambda$-$\rho$ unified weight, Euler/Heun proposals, appendices (kernel-ratio verification, alternative Girsanov discretisations)
 - `docs/idea.md` — research proposal: methodology, derivations (Girsanov, Heun-SDE), experimental design
 - `docs/recipe.md` — implementation guide: architecture, pseudocode, Python code, gotchas (design spec — `smc/` modules not yet implemented)
 - `literature/README.md` — comprehensive literature survey of all papers in `literature/`
@@ -73,8 +74,9 @@ pip install torch torchvision
 
 ## Project Context (User Extension)
 
-- `literature/` contains collected reference papers on diffusion models, SMC, and posterior sampling (DDPM, Score SDE, DPS, FPS, SMC+Diffusion)
-- `literature/arXiv-0000.00000v/paper.md` is a custom methodology writeup for FPS/FPS-SMC — the user's intended extension
-- `idea.md` contains the research proposal (Girsanov correction, Heun-SDE, experimental design) — now `docs/idea.md`
-- `recipe.md` contains the implementation guide (architecture, pseudocode, Python code) — now `docs/recipe.md`
-- The repo name `denoising_smc` and the literature dir indicate the user plans to integrate Sequential Monte Carlo methods into the DiffusionPDE guided sampling pipeline
+- `literature/` contains collected reference papers on diffusion models, SMC, and posterior sampling
+- `literature/arXiv-0000.00000v/paper.md` is a custom methodology writeup for FPS/FPS-SMC
+- `docs/idea.md` — initial research proposal (Girsanov correction, Heun-SDE, experimental design)
+- `docs/recipe.md` — implementation guide (architecture, pseudocode, Python code)
+- `docs/note_2.tex` — current math note: Girsanov-corrected SMC for guided diffusion models with unified $\lambda$-$\rho$ weight, appendices cataloguing alternative discretisations
+- This repo integrates SMC methods into the DiffusionPDE guided sampling pipeline

@@ -38,6 +38,8 @@ denoising_smc/
   |-- docs/                         # Project documentation (all non-root markdown lives here)
   |   |-- idea.md                   # Methodology: Girsanov correction, Heun-SDE, experimental design
   |   |-- recipe.md                 # Implementation guide: architecture, pseudocode, Python code (design spec)
+  |   |-- note_2.tex                # Math note: Girsanov-corrected SMC for diffusion models
+  |   |-- references_2.bib          # Bibliography for note_2.tex
   |   |-- repo.md                   # This file: repository map + git tracking
   |   |-- architecture.jpg          # Architecture diagram from the paper
   |
@@ -161,9 +163,10 @@ Each YAML specifies:
 - `generate.zeta_obs_a`, `generate.zeta_obs_u`, `generate.zeta_pde`: guidance weights for observation and PDE losses
 
 #### SMC Extension (`smc/` + `docs/`)
-- `docs/idea.md` — methodology: Girsanov correction, Heun-SDE, experimental design.
+- `docs/note_2.tex` — math note: Girsanov-corrected SMC, unified $\lambda$-$\rho$ weight, Euler/Heun proposals, appendices.
+- `docs/idea.md` — original methodology proposal: Girsanov correction, Heun-SDE, experimental design.
 - `docs/recipe.md` — implementation guide (design spec; modules not yet implemented).
-- `smc/toy_smc.py` — 1D Gaussian-mixture toy validating the λ-ρ weighting against a known analytic posterior (report: `smc/toy_smc_findings.md`).
+- `smc/toy_smc.py` — 1D Gaussian-mixture toy validating the $\lambda$-$\rho$ weighting against a known analytic posterior (report: `smc/toy_smc_findings.md`).
 - `smc/hutchinson.py` — Hutchinson estimator for the Laplacian term of the Doob-transform weight (feasibility study; see `smc/hutchinson_findings.md`).
 
 #### Pretrained Models (`pretrained-models/`)

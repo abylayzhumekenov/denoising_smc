@@ -1,0 +1,385 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[round,authoryear]{natbib}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+
+\newcommand{\bbP}{\mathbb{P}}
+\newcommand{\bbQ}{\mathbb{Q}}
+\newcommand{\R}{\mathbb{R}}
+
+\begin{document}
+
+\title{Girsanov-Corrected Sequential Monte Carlo for Guided Diffusion Models}
+\author{}
+\date{\today}
+\maketitle
+
+\section{Setup}
+
+\subsection{Setting}
+
+We consider the Bayesian inverse problem of drawing samples from the posterior
+\begin{equation}\label{eq:posterior}
+  p(x_0 \mid y) \propto p(y \mid x_0)\,p(x_0),
+\end{equation}
+where $x_0 \in \R^d$ and $y$ denotes observations.
+The prior $p(x_0)$ is represented by a pretrained diffusion model.
+The likelihood $p(y \mid x_0)$ is assumed known.
+
+\subsection{Reverse diffusion and path measures}
+
+A diffusion model provides a time-reversed process that, when integrated from a pure-noise
+initialisation to zero noise, generates samples $x_0 \sim p(x_0)$.
+In continuous time this process is an It\^o SDE
+\begin{equation}\label{eq:sde-unguided}
+  dx_\tau = a(x_\tau, \tau)\,d\tau + g(\tau)\,dW^{\bbP}_\tau,
+\end{equation}
+where $\tau$ is a reverse-time parameter and $a$, $g$ are drift and diffusion
+coefficients of the reverse process.
+For simplicity we take $g(\tau)$ to be scalar (diffusion coefficient $g(\tau)I$),
+and $W^{\bbP}$ is a Brownian motion under the measure $\bbP$.
+The path law of this process is denoted by $\bbP$.
+
+To condition on $y$ we require the intermediate likelihood
+$p(y \mid x_\tau) = \int p(y \mid x_0)\,p(x_0 \mid x_\tau)\,dx_0$, which is intractable.
+We work with a generic approximation $\tilde p(y \mid x_\tau)$ of this intermediate likelihood;
+its construction depends on the application and is deferred to the relevant sections.
+We assume $\tilde p(y \mid x_\tau)$ is positive and differentiable in $x_\tau$.
+Define the guidance drift
+\begin{equation}\label{eq:guidance-drift}
+  b(x_\tau, \tau) \coloneqq \nabla_{x_\tau}\!\log \tilde p(y \mid x_\tau).
+\end{equation}
+The guided reverse process augments the drift by a term proportional to $b$,
+retaining the same diffusion coefficient $g$:
+\begin{equation}\label{eq:sde-guided}
+  dx_\tau = \bigl[\,a(x_\tau, \tau) + g(\tau)^2\,b(x_\tau, \tau)\bigr]\,d\tau
+            + g(\tau)\,dW^{\bbQ}_\tau,
+\end{equation}
+with path law $\bbQ$.
+The two processes share the same $g$; they differ \emph{only} in their drift.
+This is the precise setting for Girsanov's theorem.
+
+\subsection{Girsanov correction}
+
+Let $h \coloneqq g^2 b$ be the drift difference.
+Girsanov's theorem \citep[Theorem~8.6.6]{ksendal} states that $\bbP$ and $\bbQ$ are equivalent
+and the Radon-Nikodym derivative is
+\begin{equation}\label{eq:girsanov-continuous}
+  \log\frac{d\bbP}{d\bbQ}
+    = -\int \frac{h}{g}\cdot dW^{\bbQ}
+      - \frac12\int \Bigl\|\frac{h}{g}\Bigr\|^2 d\tau.
+\end{equation}
+Substituting $h = g^2 b$,
+\begin{equation}\label{eq:girsanov-simplified}
+  \log\frac{d\bbP}{d\bbQ}
+    = -\int g\,b\cdot dW^{\bbQ}
+      - \frac12\int g^2\,\|b\|^2\,d\tau.
+\end{equation}
+This is a continuous-time path integral.
+We assume the usual regularity conditions for Girsanov's theorem
+(progressive measurability of $g b$ and a Novikov-type integrability condition).
+The particle filter operates in discrete time, so we partition the reverse trajectory
+into $K$ steps.
+Fix a decreasing noise schedule $\sigma_K > \sigma_{K-1} > \cdots > \sigma_0 \approx 0$,
+indexed in reverse by $k = K,\dots,1$.
+The reverse-time parameter $\tau$ is oriented so that integration over the step
+runs from $\tau_k$ to $\tau_{k-1}$ (a positive increment).
+Over step $k$ the accumulated squared diffusion is
+\begin{equation}\label{eq:delta}
+  \int_{\tau_k}^{\tau_{k-1}} g(\tau)^2\,d\tau = \sigma_k^{2} - \sigma_{k-1}^{2}
+    \eqqcolon \delta_k \;>\; 0.
+\end{equation}
+This identification holds for variance-exploding additive-noise parametrisations
+and is assumed throughout.
+The realised Brownian increment under $\bbQ$ is
+$\int_{\tau_k}^{\tau_{k-1}} g(\tau)\,dW^{\bbQ}_\tau = \sqrt{\delta_k}\; z_k$,
+where $z_k \sim \mathcal{N}(0, I)$ is the noise drawn during the proposal step.
+
+The per-step contribution to the Radon-Nikodym derivative is the restriction of the
+integrals in~\eqref{eq:girsanov-simplified} to $[\tau_k, \tau_{k-1}]$:
+\begin{equation}\label{eq:step-integral}
+  \Delta_k \;\coloneqq\; -\int_{\tau_k}^{\tau_{k-1}} g\,b\cdot dW^{\bbQ}
+                        - \frac12\int_{\tau_k}^{\tau_{k-1}} g^2\,\|b\|^2\,d\tau.
+\end{equation}
+The function $b(\tau)$ is known only at discrete points along the trajectory.
+The standard It\^o discretisation of~\eqref{eq:step-integral} evaluates the
+integrand at the left endpoint $x_k$, which is adapted to the Brownian filtration:
+\begin{equation}\label{eq:girsanov}
+  C_k \;\coloneqq\; -\sqrt{\delta_k}\; b_k^\top z_k
+                 - \tfrac12\,\delta_k\,\|b_k\|^2,
+  \qquad b_k \coloneqq b(x_k, \tau_k).
+\end{equation}
+More accurate Girsanov discretisations are possible but require proper stochastic
+quadrature rather than a direct substitution of a different evaluation point.
+Examples include subdiscretising the interval with adapted Brownian increments,
+It\^o-Taylor expansions, midpoint or trapezoidal rules with Stratonovich-type
+correction terms, and approximate discrete kernel ratios for specific proposals.
+Optionally, the predictor-point evaluation $b_{\text{pred}}$ can be tested
+empirically as a heuristic.
+These refinements are catalogued in Appendix~\ref{app:alternatives}.
+The left-endpoint rule is the simplest It\^o-consistent discretisation and coincides
+exactly with the Gaussian kernel ratio when both $p(\cdot\mid x_k)$ and
+$q(\cdot\mid x_k)$ are Euler-Maruyama kernels
+(Appendix~\ref{app:girsanov-euler}).
+
+\subsection{Sequential Monte Carlo}
+
+The target measure over complete paths is $\nu_{0:K} \propto \tilde p(y \mid x_0)\,\bbP$.
+We use the guided path law $\bbQ$ as the proposal.
+The path-level importance weight is therefore
+\begin{equation}\label{eq:path-weight}
+  w(x_{0:K}) \;\propto\; \tilde p(y \mid x_0)\;
+                           \frac{d\bbP}{d\bbQ}(x_{0:K}).
+\end{equation}
+
+To obtain a sequential update, we factor $\tilde p(y \mid x_0)$ by telescoping
+over the schedule:
+\begin{equation}\label{eq:telescope}
+  \tilde p(y \mid x_0)
+    = \tilde p(y \mid x_K)
+      \prod_{k=K}^{1} \frac{\tilde p(y \mid x_{k-1})}{\tilde p(y \mid x_k)}.
+\end{equation}
+(Products are taken over $k = K, K-1, \dots, 1$.)
+Together with the factorisation of the Girsanov correction, this gives
+\begin{equation}\label{eq:weight-product}
+  w \;\propto\; \tilde p(y \mid x_K)
+                 \prod_{k=K}^{1}
+                   \frac{\tilde p(y \mid x_{k-1})}{\tilde p(y \mid x_k)}\,
+                   \exp(C_k).
+\end{equation}
+Define the initial weight $w_K \propto \tilde p(y \mid x_K)$.
+Then at each step the incremental log weight is
+\begin{equation}\label{eq:unified-weight-raw}
+  \log w_{k-1}
+    = \log w_k
+      + \bigl[\log\tilde p(y \mid x_{k-1}) - \log\tilde p(y \mid x_k)\bigr]
+      + C_k.
+\end{equation}
+Resampling is triggered whenever the effective sample size drops below a threshold.
+
+Equation~\eqref{eq:unified-weight-raw} uses the exact path-level Girsanov correction.
+It is also useful to introduce two tunable parameters,
+allowing a continuous interpolation between weighting strategies:
+\begin{equation}\label{eq:unified-weight}
+  \log w_{k-1}
+    = \log w_k
+      + \rho\Bigl[\log\tilde p(y \mid x_{k-1}) - \log\tilde p(y \mid x_k)\Bigr]
+      + \lambda\,C_k,
+\end{equation}
+where $\lambda \in \{0,1\}$ switches the Girsanov correction on ($1$) or off ($0$),
+and $\rho > 0$ tempers the likelihood contribution.
+When $\rho \neq 1$, the initial weight is $w_K \propto \tilde p(y \mid x_K)^\rho$
+to preserve the telescoping identity.
+The choice $\lambda = 1$, $\rho = 1$ yields the approximate posterior
+$\tilde p(x_0\mid y) \propto \tilde p(y\mid x_0)\,p(x_0)$, up to discretisation
+and Girsanov-quadrature error.
+When $\tilde p(y \mid x_0) = p(y \mid x_0)$ this coincides with the exact
+posterior~\eqref{eq:posterior}.
+The choice $\lambda = 0$ drops the path-measure correction and recovers the
+pseudo-bootstrap scheme of~\citet{millard2026particle}, which is generally biased
+relative to the approximate posterior target.
+
+\subsection{Proposals}\label{sec:proposals}
+
+A particle filter requires a proposal kernel $q(x_{k-1}\mid x_k)$ that propagates
+particles (the dependence on $y$ through the guidance drift is understood).
+The proposal is obtained by discretising~\eqref{eq:sde-guided} with a numerical
+integrator; the integrator determines both the transition $q$ and the trajectory
+accuracy.
+The Girsanov correction uses the left-endpoint rule, the baseline quadrature
+applicable to any integrator.
+More accurate integrator-specific corrections are catalogued in
+Appendix~\ref{app:alternatives}.
+We evaluate two integrators:
+\begin{itemize}
+  \item \textbf{Guided Euler-Maruyama}~(GEM).  A first-order integrator
+    producing a Gaussian proposal kernel (trajectory error $\mathcal{O}(\delta_k)$).
+    The left-endpoint correction coincides exactly with the closed-form kernel ratio
+    $\log\,p(x_{k-1}\!\mid\!x_k)/q(x_{k-1}\!\mid\!x_k)$
+    (Appendix~\ref{app:girsanov-euler}).
+    With $\lambda = 1$ the weight is therefore identical to the Twisted Diffusion
+    Sampler~\citep{wu2023tds}.
+    This arm serves as a verification baseline.
+    One score evaluation per step.
+  \item \textbf{Stochastic Heun}~(Heun-SDE).  A Runge-Kutta integrator
+    for additive-noise SDEs, second-order in the drift
+    (trajectory error $\mathcal{O}(\delta_k^2)$).
+    The first stage predicts via Euler; the second stage corrects by averaging
+    the drift at $x_k$ and the predicted midpoint $x_{\text{pred}}$;
+    both stages are driven by the same noise $z_k$.
+    The transition is non-Gaussian, so the exact finite-step kernel ratio is
+    intractable; the left-endpoint correction provides an asymptotically valid
+    weight, converging to the exact path-measure correction as $K \to \infty$.
+    Replacing $b_k$ with $b_{\text{pred}}$ in the correction is a natural
+    heuristic but not It\^o-consistent without Stratonovich-type corrections
+    (Appendix~\ref{app:alternatives}).
+    Two score evaluations per step.
+\end{itemize}
+The particle filter inherits two discretisation errors: trajectory error from the
+integrator and weight error from the Girsanov quadrature.
+With the left-endpoint rule the weight accuracy is first-order for both proposals;
+a second-order integrator improves the trajectory while the weight remains at
+the same order.
+In practice this means both integrators produce comparably reliable weights,
+while Heun-SDE yields a more accurate particle population.
+For higher-order proposals the left-endpoint correction is safe but
+potentially suboptimal: it does not exploit predictor information, and the
+weight may become the limiting error.
+Matched higher-order corrections are possible
+(Appendix~\ref{app:alternatives}) but lie outside the current experiments.
+Given $b_k$, evaluating $C_k$ adds only $\mathcal{O}(d)$ operations per particle per
+step, so the computational overhead is negligible compared to the score evaluations.
+
+\subsection{Outline}
+
+The remainder of the note validates this weighting machinery.
+Section~\ref{sec:toy} and~\ref{sec:pde} describe two application settings
+with their respective notation.
+Appendices~\ref{app:girsanov-euler} and~\ref{app:alternatives} collect the
+Euler kernel-ratio verification and the catalogue of alternative Girsanov
+discretisations.
+
+\section{Toy model: Gaussian mixture}\label{sec:toy}
+
+\section{PDE-constrained reconstruction}\label{sec:pde}
+
+\clearpage
+\appendix
+
+\section{Euler-Maruyama kernel ratio}\label{app:girsanov-euler}
+
+For the Euler-Maruyama discretisation, both the unguided kernel
+$p(x_{k-1}\mid x_k)$ and the guided proposal $q(x_{k-1}\mid x_k)$ are Gaussian
+with common covariance $\delta_k I$, differing only in their means:
+\begin{align*}
+  p(x_{k-1}\mid x_k) &= \mathcal{N}\bigl(x_{k-1};\; \mu_p,\; \delta_k I\bigr),\\
+  \mu_p &\coloneqq x_k + \delta_k\,\nabla_{x_k}\!\log p(x_k),\\[2pt]
+  q(x_{k-1}\mid x_k) &= \mathcal{N}\bigl(x_{k-1};\; \mu_q,\; \delta_k I\bigr),\\
+  \mu_q &\coloneqq x_k + \delta_k\bigl(\nabla_{x_k}\!\log p(x_k) + b_k\bigr)
+          = \mu_p + \delta_k b_k.
+\end{align*}
+Drawing $x_{k-1}$ from $q$ gives $x_{k-1} = \mu_q + \sqrt{\delta_k}\,z_k$ with
+$z_k \sim \mathcal{N}(0,I)$.
+The log density ratio is therefore
+\begin{align*}
+  \log\frac{p(x_{k-1}\mid x_k)}{q(x_{k-1}\mid x_k)}
+  &= -\frac{1}{2\delta_k}\Bigl(
+       \|x_{k-1}-\mu_p\|^2 - \|x_{k-1}-\mu_q\|^2\Bigr)\\[2pt]
+  &= -\frac{1}{2\delta_k}\Bigl(
+       \|\sqrt{\delta_k}z_k + \delta_k b_k\|^2 - \|\sqrt{\delta_k}z_k\|^2\Bigr)\\[2pt]
+  &= -\sqrt{\delta_k}\;b_k^\top z_k - \tfrac12\delta_k\,\|b_k\|^2
+     \;=\; C_k.
+\end{align*}
+Thus, for the Euler-Maruyama discretisation, the Girsanov correction $C_k$
+equals the exact Gaussian kernel ratio identically at every step size $\delta_k$.
+
+\section{Alternative Girsanov discretisations}\label{app:alternatives}
+
+The left-endpoint rule~\eqref{eq:girsanov} is the simplest It\^o-consistent
+single-step discretisation of the Girsanov integral.
+This appendix catalogues several refinements that, though not used in the
+current experiments, remain practically testable.
+
+\subsection{Subdiscretised Girsanov correction}
+
+Split step~$k$ into $m$ substeps with subincrements
+$\delta_{k,1},\dots,\delta_{k,m}$ such that $\sum_{j=1}^{m}\delta_{k,j}=\delta_k$.
+Draw adapted Brownian subincrements $\Delta B_{k,j}=\sqrt{\delta_{k,j}}\,z_{k,j}$
+and evaluate $b$ before each subincrement is drawn.
+The per-step correction becomes
+\begin{equation}\label{eq:subdisc}
+  C_k^{\text{sub}}
+  =
+  -\sum_{j=1}^{m} \sqrt{\delta_{k,j}}\; b(x_{k,j})^\top z_{k,j}
+  -\frac12\sum_{j=1}^{m} \delta_{k,j}\,\|b(x_{k,j})\|^2.
+\end{equation}
+This is It\^o-adapted and converges to the continuous Girsanov correction as
+the submesh is refined.
+Cost: $m$ additional evaluations of $b$ per step.
+
+\subsection{It\^o-Taylor correction}
+
+Let $H_k \coloneqq \nabla^2_{x_k}\log\tilde p(y\mid x_k)$ be the Hessian of
+$\log\tilde p$.
+A first-order It\^o-Taylor expansion of the stochastic integral yields
+\begin{equation}\label{eq:ito-taylor}
+  C_k^{\text{IT}}
+  =
+  -\sqrt{\delta_k}\,b_k^\top z_k
+  -\frac12\delta_k\Bigl[z_k^\top H_k z_k - \operatorname{tr}(H_k)\Bigr]
+  -\frac12\delta_k\,\|b_k\|^2.
+\end{equation}
+Cost: Hessian-vector products and a trace estimate (in high dimensions,
+Hutchinson-type estimation is required for $\operatorname{tr}(H_k)$).
+
+\subsection{Corrected midpoint and trapezoidal rules}
+
+Midpoint and trapezoidal stochastic sums approximate a Stratonovich integral.
+The conversion to an It\^o integral for diffusion coefficient $g(\tau)I$ is
+\[
+\int g\,b\cdot dW^{\bbQ}
+=
+\int g\,b\circ dW^{\bbQ}
+-\frac12\int g^2\,\nabla\!\cdot\! b\; d\tau,
+\]
+where $\nabla\!\cdot\! b = \Delta_x\log\tilde p(y\mid x)$.
+A trapezoidal rule with the correction becomes
+\[
+C_k^{\text{trap}}
+\approx
+-\frac12(b_k+b_{k-1})^\top\Delta B_k
++\frac12\delta_k\,\nabla\!\cdot\! b_k
+-\frac12\delta_k\,\|b_k\|^2.
+\]
+A simpler hybrid keeps the left-endpoint rule for the stochastic term and
+applies a higher-order quadrature only to the ordinary time integral
+$-\frac12\int g^2\|b\|^2 d\tau$, e.g.\ using the predictor point:
+\[
+C_k^{\text{hybrid}}
+=
+-\sqrt{\delta_k}\,b_k^\top z_k
+-\frac14\delta_k\bigl(\|b_k\|^2+\|b_{\text{pred}}\|^2\bigr).
+\]
+This improves part of the correction while avoiding the It\^o consistency
+issue in the stochastic term.
+
+\subsection{Approximate discrete kernel ratio}
+
+For a non-Gaussian proposal $q$, the transition is a deterministic function
+$x_{k-1} = F(x_k, z_k)$.
+If $F$ is invertible in $z_k$,
+\[
+q(x_{k-1}\mid x_k)
+=
+\phi(z_k)
+\Bigl|\det\frac{\partial x_{k-1}}{\partial z_k}\Bigr|^{-1},
+\]
+where $\phi$ is the standard Gaussian density.
+A corresponding evaluation for the unguided kernel $p(x_{k-1}\mid x_k)$ gives
+the discrete kernel ratio directly, targeting the finite-step proposal more
+accurately than a continuous-time Girsanov approximation.
+Cost: inverse maps and log-determinant computations, usually prohibitive in
+high dimensions; approximate log-determinants can be estimated with trace methods.
+
+\subsection{Heuristic predictor-point correction}
+
+Replacing $b_k$ with $b_{\text{pred}}$ in~\eqref{eq:girsanov},
+\[
+C_k^{\text{pred}}
+=
+-\sqrt{\delta_k}\,b_{\text{pred}}^\top z_k
+-\tfrac12\delta_k\,\|b_{\text{pred}}\|^2,
+\]
+is sometimes used as an empirical heuristic.
+Because $x_{\text{pred}}$ depends on the same $z_k$, this is not an
+It\^o-consistent discretisation without additional correction terms.
+Its performance can be tested experimentally but should not be claimed as an
+automatic higher-order Girsanov rule.
+
+\bibliographystyle{plainnat}
+\bibliography{references_2}
+
+\end{document}
