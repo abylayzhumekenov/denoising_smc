@@ -2,7 +2,7 @@
 
 Findings from validating whether the Hutchinson-estimated Laplacian term needed by the
 Doob-transform / Ito's-formula weight derivation ("Consistent Particle Guided Denoising" draft,
-not yet checked into this repo) is practical to compute -- as opposed to `idea.md`'s Girsanov
+not yet checked into this repo) is practical to compute -- as opposed to `docs/idea.md`'s Girsanov
 correction, which needs no second derivatives at all. Implementation: `smc/hutchinson.py`.
 
 ## Setup

@@ -1,5 +1,10 @@
 # Implementation Recipe: Girsanov-Corrected SMC for Diffusion-Guided PDE Solvers
 
+> **Status: design spec** — the `smc/` modules described here (`schedule.py`, `proposals.py`,
+> `weights.py`, `core.py`) are **not yet implemented**. The validated λ-ρ logic lives in
+> `smc/toy_smc.py`; this document should be reconciled with the toy's corrected weight sign
+> (`-√δ·bᵀz - ½δ‖b‖²`) before the modules are built.
+
 ## 1. General Setting
 
 We implement a modular SMC framework for diffusion-guided PDE solvers. Three proposals and weight updates are composed from interchangeable components:
@@ -29,6 +34,7 @@ where $C_k$ is the Girsanov correction (or, equivalently for GEM, the closed-for
 | Unified weight ($\lambda$-$\rho$) | `smc/weights.py` |
 | SMC loop | `smc/core.py` |
 | PDE runners | `scripts/generate_burgers_smc.py`, `generate_darcy_smc.py` |
+| **Validation toy** | `smc/toy_smc.py` — 1D Gaussian-mixture demo validating the $\lambda$-$\rho$ machinery vs an analytic posterior (findings: `smc/toy_smc_findings.md`). Self-contained numpy implementation; the schedule/proposals/weight/filter logic here is what migrates into the modules above. |
 
 ---
 
@@ -162,7 +168,7 @@ function UnifiedWeight.compute_log_inc(x_k, x_km1, sigma_k, sigma_km1,
     g_dW ← aux_k.noise_coeff * aux_k.z             # exact for GEM and Heun-SDE
     ito ← Σ(grad_loglik * g_dW)
     
-    C_k ← ito - quad_var
+    C_k ← -ito - quad_var
     return ρ * Δ_loglik + λ * C_k
 ```
 
@@ -389,8 +395,8 @@ class UnifiedWeight(WeightUpdate):
         # Recover g*ΔW from noise (works for GEM and Heun-SDE)
         g_dW = aux_k['noise_coeff'] * aux_k['z']        # [N, C, H, W]
         ito = torch.sum(grad * g_dW, dim=tuple(range(1, grad.dim())))
-        
-        C_k = ito - quad_var  # [N]
+
+        C_k = -ito - quad_var  # [N]
         return self.rho * log_lik_ratio + self.lam * C_k
 ```
 

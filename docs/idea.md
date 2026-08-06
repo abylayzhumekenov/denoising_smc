@@ -64,17 +64,17 @@ Let $P$ be the path measure of the prior (unguided) process and $Q$ the path mea
 
 $$
 \log \frac{dP_{[t_{k-1}, t_k]}}{dQ_{[t_{k-1}, t_k]}} =
-\int_{t_{k-1}}^{t_k} b(x_s, s)^\top \, dW_s^Q
+-\int_{t_{k-1}}^{t_k} b(x_s, s)^\top \, dW_s^Q
 \;-\;
 \int_{t_{k-1}}^{t_k} \dot{\sigma}_s \sigma_s \, \|b(x_s, s)\|^2 \, ds.
 $$
 
-The first term is an Itô integral; the second is the quadratic variation correction. Over the discrete step from $\sigma_k$ to $\sigma_{k-1}$, the Brownian increment is $\Delta W_k^Q = \sqrt{\delta_k}\,z$, and $\int \dot{\sigma}_s \sigma_s \, ds = \frac{1}{2}\delta_k$ (to first order in the discretisation).
+The first term is an Itô integral; the second is the quadratic variation correction. Both terms carry a minus sign because the ratio is $dP/dQ$: $Q$ has the extra drift $b$, so $dQ/dP$ gains $+\int b^\top dW - \int \dot{\sigma}\sigma\|b\|^2 ds$, and $dP/dQ$ is its inverse. Over the discrete step from $\sigma_k$ to $\sigma_{k-1}$, the Brownian increment is $\Delta W_k^Q = \sqrt{\delta_k}\,z$, and $\int \dot{\sigma}_s \sigma_s \, ds = \frac{1}{2}\delta_k$ (to first order in the discretisation).
 
 Using **constant interpolation** of $b$ over the interval, the incremental Girsanov correction is:
 
 $$
-C_k \coloneqq \sqrt{\delta_k} \, b_k^\top z \;-\; \frac{1}{2}\,\delta_k \|b_k\|^2.
+C_k \coloneqq -\sqrt{\delta_k} \, b_k^\top z \;-\; \frac{1}{2}\,\delta_k \|b_k\|^2.
 $$
 
 ### 2.3 Unified Weight Update
@@ -160,7 +160,7 @@ where $a(x_{\text{pred}}, \sigma_{k-1}) = \frac{D_\theta(x_{\text{pred}}, \sigma
 
 - **Same noise structure as GEM**: The noise $z$ appears identically in both stages and is the **only** source of stochasticity.
 - **Second-order deterministic drift**: The averaged drift gives $O(\delta^2)$ accuracy in the deterministic component.
-- **Clean Girsanov**: Because the noise is identical to EM, $C_k = \sqrt{\delta_k}\,b_k^\top z - \frac{1}{2}\delta_k\|b_k\|^2$ remains valid. The midpoint $x_{\text{pred}}$ provides a **free evaluation point** for higher-order quadrature (e.g., trapezoidal rule) if desired, at no extra denoiser cost.
+- **Clean Girsanov**: Because the noise is identical to EM, $C_k = -\sqrt{\delta_k}\,b_k^\top z - \frac{1}{2}\delta_k\|b_k\|^2$ remains valid. The midpoint $x_{\text{pred}}$ provides a **free evaluation point** for higher-order quadrature (e.g., trapezoidal rule) if desired, at no extra denoiser cost.
 
 ### 3.4 Proposal Comparison
 
@@ -197,13 +197,13 @@ $$
 \begin{aligned}
 \log \frac{p_\theta^{\text{EM}}}{\tilde{p}_\theta^{\text{EM}}}
 &= -\frac{1}{2\delta}\left(\|x_{k-1}-\mu_p\|^2 - \|x_{k-1}-\mu_g\|^2\right) \\
-&= \sqrt{\delta}\, b^\top z - \frac{1}{2}\delta \|b\|^2.
+&= -\sqrt{\delta}\, b^\top z - \frac{1}{2}\delta \|b\|^2.
 \end{aligned}
 $$
 
 ### Girsanov Correction (Constant Interpolation)
 
-From Section 2.2, the Girsanov increment is $C_k = \sqrt{\delta}\, b^\top z - \frac{1}{2}\delta \|b\|^2$. This matches exactly. **Thus, for GEM, Girsanov with constant interpolation recovers the TDS weight.** For Heun-SDE, the same formula holds with the same $z$, so the correction remains exact in the SDE limit, while the proposal benefits from higher-order drift accuracy.
+From Section 2.2, the Girsanov increment is $C_k = -\sqrt{\delta}\, b^\top z - \frac{1}{2}\delta \|b\|^2$. This matches exactly. **Thus, for GEM, Girsanov with constant interpolation recovers the TDS weight.** For Heun-SDE, the same formula holds with the same $z$, so the correction remains exact in the SDE limit, while the proposal benefits from higher-order drift accuracy.
 
 ---
 

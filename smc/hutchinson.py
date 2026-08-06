@@ -1,6 +1,6 @@
 """Hutchinson trace estimator for the Laplacian term in the Doob/Ito-generator SMC weight.
 
-Background: idea.md's Girsanov correction (C_k) needs only the guidance gradient and the
+Background: docs/idea.md's Girsanov correction (C_k) needs only the guidance gradient and the
 already-sampled noise -- no second derivatives. An alternative Doob-transform / Ito's-formula
 derivation of the same change-of-measure ("Consistent Particle Guided Denoising", draft not yet
 checked into this repo) instead requires the Laplacian (trace of the Hessian) of the observation
