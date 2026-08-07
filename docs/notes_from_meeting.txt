@@ -1,0 +1,9 @@
+Rumelin, W., Numerical Treatment of Stochastic Differential Equations, SIAM J. Numer. Anal., 19:604-613, 1982
+
+https://arxiv.org/abs/2403.13489
+
+https://arxiv.org/abs/2309.13557
+
+https://arxiv.org/abs/1710.04586
+
+send k high, check if pbs degenerates/collapses and gem/girsanov is stable... track ess.
