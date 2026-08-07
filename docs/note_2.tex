@@ -244,7 +244,203 @@ discretisations.
 
 \section{Toy model: Gaussian mixture}\label{sec:toy}
 
+We validate the weighting machinery on a one-dimensional Gaussian-mixture model whose
+every ingredient is available in closed form: the exact score, the exact intermediate
+likelihood, and the analytic posterior. Any deviation of the SMC output from the analytic
+posterior is therefore algorithm error, not model error. All quantities in this section
+are computed in closed form from the mixture; no learned model is involved.
+
+\subsection{Model}
+
+The prior is a two-component mixture
+\begin{equation}\label{eq:mixture-prior}
+  p_0(x) \;=\; \sum_{m=1}^{2} w_m\,\mathcal{N}\bigl(x;\; \mu_m,\; v_m\bigr),
+\end{equation}
+with $w=(0.6,0.4)$, $\mu=(-1.5,2.0)$, $v=(0.7,1.3)$.
+The observation model is linear-Gaussian,
+\begin{equation}\label{eq:obs-model}
+  y \;=\; x_0 + \varepsilon,\qquad \varepsilon\sim\mathcal{N}(0,\gamma^2),
+\end{equation}
+with $y=0.8$ and $\gamma^2=0.5$.
+Prior and likelihood are conjugate, so the posterior $p(x_0\mid y)$ is again a
+two-component mixture obtained by a per-component Kalman update:
+\begin{equation}\label{eq:analytic-posterior}
+  p(x_0\mid y)
+  \;\propto\; \sum_{m=1}^{2}
+    w_m\,\mathcal{N}\bigl(y;\; \mu_m,\; v_m+\gamma^2\bigr)\,
+    \mathcal{N}\bigl(x_0;\; m_m^y,\; c_m^y\bigr),
+\end{equation}
+with component mean $m_m^y = \mu_m + \frac{v_m}{v_m+\gamma^2}(y-\mu_m)$ and variance
+$c_m^y = \frac{v_m\,\gamma^2}{v_m+\gamma^2}$.
+For the instance above the analytic posterior has mean $0.833$ and standard deviation
+$0.802$.
+
+\subsection{Noising and exact score}
+
+We use the variance-exploding parametrisation
+\begin{equation}\label{eq:ve-forward}
+  x_\sigma \;=\; x_0 + \sigma\,z,\qquad z\sim\mathcal{N}(0,1),
+\end{equation}
+so that $\sigma^2$ is the accumulated noise variance and the identification
+$\int_{\tau_k}^{\tau_{k-1}}g^2\,d\tau=\sigma_k^2-\sigma_{k-1}^2=\delta_k$ of
+\eqref{eq:delta} is exact.
+Because Gaussians are closed under convolution, the noised marginal is the same mixture
+with widened variances $v_m+\sigma^2$, and the score is the responsibility-weighted
+average
+\begin{equation}\label{eq:exact-score}
+  \nabla_x\log p_\sigma(x)
+  \;=\; \sum_{m=1}^{2} \pi_m(x;\sigma)\,
+       \frac{\mu_m - x}{v_m+\sigma^2},
+  \qquad
+  \pi_m(x;\sigma) \;=\;
+   \frac{w_m\,\mathcal{N}\bigl(x;\;\mu_m,\;v_m+\sigma^2\bigr)}
+        {\sum_{m'} w_{m'}\,\mathcal{N}\bigl(x;\;\mu_{m'},\;v_{m'}+\sigma^2\bigr)}.
+\end{equation}
+
+\subsection{Intermediate likelihood and guidance}
+
+The intermediate likelihood $p(y\mid x_\sigma)=\int p(y\mid x_0)\,p(x_0\mid x_\sigma)\,dx_0$
+is known in closed form via the mixture-in-$y$ identity
+\begin{equation}\label{eq:exact-likelihood}
+  p(y\mid x_\sigma)
+  \;=\; \sum_{m=1}^{2} \pi_m(x;\sigma)\,
+       \mathcal{N}\bigl(y;\; m_m(x),\; \gamma^2+c_m(x)\bigr),
+\end{equation}
+with $m_m(x)=\mu_m+\frac{v_m}{v_m+\sigma^2}(x-\mu_m)$ and
+$c_m(x)=\frac{v_m\sigma^2}{v_m+\sigma^2}$.
+Guidance follows \eqref{eq:guidance-drift} with the exact drift
+\begin{equation}\label{eq:guidance-exact}
+  b(x_\sigma,\tau) \;=\; \nabla_{x_\sigma}\log p(y\mid x_\sigma),
+\end{equation}
+which is computed exactly by differentiating \eqref{eq:exact-likelihood}.
+Because the responsibilities $\pi_m(x;\sigma)$ are a genuinely nonlinear function of $x$,
+the Hessian $H_k=\nabla^2_{x_k}\log p(y\mid x_k)$ and the divergence $\nabla\!\cdot\! b$
+are non-constant, so the alternative Girsanov discretisations of
+Appendix~\ref{app:alternatives} are meaningfully distinguishable.
+(A single-Gaussian prior would make $\log p(y\mid x_\sigma)$ quadratic in $x$ and
+collapse all of them.)
+
+\subsection{Schedule, weights, and the boundary term}
+
+The reverse trajectory uses the EDM power-law schedule \citep{karras2022edm} with
+$\rho=7$, $\sigma_{\max}=6$, $\sigma_{\min}=10^{-3}$, and $K$ steps, giving step
+increments $\delta_k=\sigma_k^2-\sigma_{k-1}^2$ and realised Brownian increments
+$\sqrt{\delta_k}\,z_k$ as in \eqref{eq:girsanov}.
+The particle filter applies the unified weight \eqref{eq:unified-weight}, with adaptive
+resampling whenever the effective sample size drops below half the particle count
+\citep{chopin2020smc}.
+Particles are initialised from the exact noised marginal $p_{\sigma_{\max}}$
+(not white noise), so the initial weight is exactly
+\begin{equation}\label{eq:boundary-weight}
+  w_K \;\propto\; \tilde p(y\mid x_K)^\rho,
+\end{equation}
+the boundary term required by the telescoping identity \eqref{eq:unified-weight-raw} once
+$\rho\neq 1$; it is easily omitted in an implementation and must be kept when $\rho$ is
+varied.
+
+\subsection{Metrics}
+
+In one dimension the Wasserstein-1 distance between the particle cloud and the analytic
+posterior admits a closed form,
+\begin{equation}\label{eq:W1}
+  W_1\bigl(\hat p,\; p(\cdot\mid y)\bigr)
+  \;=\; \int_{\R} \bigl| \hat F(x) - F(x) \bigr|\,dx,
+\end{equation}
+where $\hat F$ is the empirical CDF of the particles and $F$ is the analytic posterior
+CDF obtained from \eqref{eq:analytic-posterior}.
+Alongside $W_1$ we report the errors of the weighted posterior mean and standard
+deviation, $|\hat m-m^\ast|$ and $|\hat s-s^\ast|$, the final effective sample size, and
+the number of resampling events.
+To attribute weight variance to its sources we also track the per-step decomposition
+\begin{equation}\label{eq:weight-variance}
+  \mathrm{Var}\bigl[\Delta\log w_k\bigr]
+  \;=\; \rho^2\,\mathrm{Var}[\Delta\ell]
+        + \lambda^2\,\mathrm{Var}[C_k]
+        + 2\lambda\rho\,\mathrm{Cov}[\Delta\ell, C_k],
+\end{equation}
+with $\Delta\ell=\log\tilde p(y\mid x_{k-1})-\log\tilde p(y\mid x_k)$.
+
+\subsection{Experiment: K-sweep and ESS stability}\label{sec:toy-k-sweep}
+
+The immediate validation is a sweep of the number of reverse steps
+$K\in\{500,1000,2000,4000,8000\}$ at fixed $\sigma_{\max}$ and $\sigma_{\min}$,
+$N=512$ particles, and $(\lambda,\rho)=(1,1)$, over both proposals of
+Section~\ref{sec:proposals} and the Girsanov variants of
+Appendix~\ref{app:alternatives} that are tractable in one dimension: the left-endpoint
+baseline \eqref{eq:girsanov}, the subdiscretised \eqref{eq:subdisc}, the It\^o-Taylor
+\eqref{eq:ito-taylor}, the trapezoidal and hybrid rules, and the predictor-point
+heuristic.
+All of them are exact or cheap in one dimension: $H_k$ and $\nabla\!\cdot\!b$ reduce to
+scalar derivatives of \eqref{eq:exact-likelihood}, subdiscretisation costs a few extra
+score evaluations, and the discrete kernel ratio of Appendix~\ref{app:alternatives} can
+be evaluated numerically for the Heun-SDE proposal as an optional reference arm.
+
+\textbf{Primary question.}
+Does the effective sample size stay near $N$ as $K\to\infty$, or does some method
+collapse?
+Our analysis predicts stability for every arm: the leading term
+$-\sqrt{\delta_k}\,b_k^\top z_k$ of each incremental log-weight is zero-mean with
+variance of order $\delta_k$, so the total weight variance is a Riemann sum converging to
+a constant as $K\to\infty$; the higher-order corrections \eqref{eq:subdisc} and
+\eqref{eq:ito-taylor} add only $O(\delta_k^2)$ variance and cannot change this.
+For the pseudo-bootstrap weight ($\lambda=0$) the claim holds exactly before any limit is
+taken: the telescoping likelihood-ratio sum collapses to a single endpoint difference
+$\rho[\log\tilde p(y\mid x_0)-\log\tilde p(y\mid x_K)]$, a bounded random variable whose
+variance is independent of $K$.
+Neither mechanism predicts ESS collapse in $K$ alone; the sweep verifies this empirically
+and flags any variant whose discretisation error fails to decrease fast enough to
+maintain it.
+
+\textbf{Secondary question.}
+Consistent $\lambda=1$ arms should converge to the analytic posterior
+\eqref{eq:analytic-posterior} as $K\to\infty$ (both trajectory and weight error vanish),
+while any variant carrying a persistent quadrature bias should plateau at a finite $W_1$
+floor.
+The predictor-point heuristic is the natural candidate for a persistent bias because it
+is not It\^o-consistent without extra correction terms
+(Appendix~\ref{app:alternatives}).
+For the left-endpoint baseline on GEM the weight is exact at every $\delta_k$
+(Appendix~\ref{app:girsanov-euler}), so $W_1$ should be flat in $K$ within Monte Carlo
+noise while the ESS remains near $N$; Heun-SDE's approximate weight is unbiased to within
+the noise floor at this particle count.
+Any deviation from this pattern isolates a discretisation or implementation error.
+
+\subsection{Deferred experiments}
+
+The following experiments are planned but run one at a time, after the K-sweep of
+Section~\ref{sec:toy-k-sweep}:
+
+\begin{itemize}
+  \item \textbf{$\lambda$-$\rho$ grid.} $\lambda\in\{0,0.5,1\}$ and
+        $\rho\in\{0.5,1,2\}$, with the boundary initialisation \eqref{eq:boundary-weight}.
+        This interpolates between the exact target $(\lambda{=}1,\rho{=}1)$, the tempered
+        pseudo-bootstrap ($\lambda{=}0$), and fractional corrections, and confirms that
+        $\rho\neq 1$ targets $\tilde p(y\mid x_0)^\rho\,p(x_0)$.
+  \item \textbf{Sharp-observation stress.} $\gamma^2\in\{0.5,0.1,0.02\}$.
+        Smaller $\gamma$ sharpens $\tilde p$ and amplifies $\|b\|$, increasing the
+        incremental weight variance; this is a more likely axis of ESS collapse than $K$
+        itself.
+  \item \textbf{Convergence order.} Log-log study of
+        $|C_k^{\text{variant}}-C_k^{\text{ref}}|$ versus $\delta$ to confirm the advertised
+        orders (left-endpoint $O(\delta)$, trapezoidal and hybrid $O(\delta^2)$).
+  \item \textbf{Numerical kernel ratio.} For the non-Gaussian Heun-SDE proposal, evaluate
+        the discrete kernel ratio of Appendix~\ref{app:alternatives} numerically as a
+        reference weight.
+\end{itemize}
+
 \section{PDE-constrained reconstruction}\label{sec:pde}
+
+The same machinery transfers to PDE-constrained reconstruction (Burgers and Darcy
+solvers), where the prior is a pretrained diffusion model over solution fields and the
+likelihood combines sparse sensor observations with a PDE residual.
+The exact intermediate likelihood of the toy, \eqref{eq:exact-likelihood}, is intractable
+in this setting; the guided samplers replace it with a surrogate formed from scaled
+observation and residual losses, whose gradient plays the role of the guidance drift
+\eqref{eq:guidance-exact}.
+The weighting machinery of Section~\ref{sec:toy-k-sweep} transfers directly.
+Details of scaling, sensor masks, and the experimental design are deferred; the toy model
+above serves as the closed-form ground truth for the weighting machinery before any
+trained network is involved.
 
 \clearpage
 \appendix
