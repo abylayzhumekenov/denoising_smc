@@ -261,7 +261,7 @@ The observation model is linear-Gaussian,
 \begin{equation}\label{eq:obs-model}
   y \;=\; x_0 + \varepsilon,\qquad \varepsilon\sim\mathcal{N}(0,\gamma^2),
 \end{equation}
-with $y=0.8$ and $\gamma^2=0.5$.
+with $y=0.0$ and $\gamma^2=1.0$.
 Prior and likelihood are conjugate, so the posterior $p(x_0\mid y)$ is again a
 two-component mixture obtained by a per-component Kalman update:
 \begin{equation}\label{eq:analytic-posterior}
@@ -272,8 +272,8 @@ two-component mixture obtained by a per-component Kalman update:
 \end{equation}
 with component mean $m_m^y = \mu_m + \frac{v_m}{v_m+\gamma^2}(y-\mu_m)$ and variance
 $c_m^y = \frac{v_m\,\gamma^2}{v_m+\gamma^2}$.
-For the instance above the analytic posterior has mean $0.833$ and standard deviation
-$0.802$.
+For the instance above the analytic posterior has mean $-0.326$ and standard deviation
+$1.061$.
 
 \subsection{Noising and exact score}
 
