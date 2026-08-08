@@ -2,8 +2,7 @@
 
 > **Status: design spec** — the `smc/` modules described here (`schedule.py`, `proposals.py`,
 > `weights.py`, `core.py`) are **not yet implemented**. The validated λ-ρ logic lives in
-> `smc/toy_smc.py`; this document should be reconciled with the toy's corrected weight sign
-> (`-√δ·bᵀz - ½δ‖b‖²`) before the modules are built.
+> `smc/toy_smc.py` (see `smc/toy_smc_findings.md` for results).
 
 ## 1. General Setting
 
