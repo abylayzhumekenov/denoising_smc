@@ -405,17 +405,30 @@ noise while the ESS remains near $N$; Heun-SDE's approximate weight is unbiased 
 the noise floor at this particle count.
 Any deviation from this pattern isolates a discretisation or implementation error.
 
+\subsection{Experiment: $\lambda$ sweep}
+
+Before the full K-sweep, a complementary sweep fixes $K$ and varies
+$\lambda\in\{0,0.25,0.5,0.75,1\}$ at $\rho=1$.
+This directly validates the unified weight~\eqref{eq:unified-weight}:
+the Girsanov correction strength $\lambda$ should interpolate continuously
+between the pseudo-bootstrap target ($\lambda=0$) and the exact posterior target
+($\lambda=1$).  In particular the weighted posterior variance error $|\hat s-s^\ast|$
+is predicted to decline monotonically with $\lambda$, and the effective sample
+size should remain near $N$ for all $\lambda$ since the dominant stochastic
+component cancels in the sum $\rho\Delta\ell+\lambda C_k$.
+
 \subsection{Deferred experiments}
 
 The following experiments are planned but run one at a time, after the K-sweep of
 Section~\ref{sec:toy-k-sweep}:
 
 \begin{itemize}
-  \item \textbf{$\lambda$-$\rho$ grid.} $\lambda\in\{0,0.5,1\}$ and
+  \item \textbf{$\lambda$-$\rho$ grid.} $\lambda\in\{0,0.25,0.5,0.75,1\}$ and
         $\rho\in\{0.5,1,2\}$, with the boundary initialisation \eqref{eq:boundary-weight}.
         This interpolates between the exact target $(\lambda{=}1,\rho{=}1)$, the tempered
         pseudo-bootstrap ($\lambda{=}0$), and fractional corrections, and confirms that
         $\rho\neq 1$ targets $\tilde p(y\mid x_0)^\rho\,p(x_0)$.
+        (The $\lambda$ sweep at $\rho=1$ has been completed; the $\rho$ sweep is deferred.)
   \item \textbf{Sharp-observation stress.} $\gamma^2\in\{0.5,0.1,0.02\}$.
         Smaller $\gamma$ sharpens $\tilde p$ and amplifies $\|b\|$, increasing the
         incremental weight variance; this is a more likely axis of ESS collapse than $K$
