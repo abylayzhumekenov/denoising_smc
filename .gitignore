@@ -52,5 +52,6 @@ wandb/
 *.fls
 *.toc
 
-# Generated figures referenced by the note (exception to *.pdf)
+# Generated figures referenced by the notes (exception to *.pdf)
 !docs/figs/*.pdf
+!smc/figs/*.pdf

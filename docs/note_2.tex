@@ -462,6 +462,9 @@ The left-endpoint rule~\eqref{eq:girsanov} is the simplest It\^o-consistent
 single-step discretisation of the Girsanov integral.
 This appendix catalogues several refinements that, though not used in the
 current experiments, remain practically testable.
+The It\^o-formula discretisation (B.6) is implemented and validated
+in the companion toy model of \texttt{smc/toy\_mixture.py}
+(see \texttt{smc/check\_toy\_mixture.py}).
 
 \subsection{Subdiscretised Girsanov correction}
 
@@ -494,6 +497,9 @@ A first-order It\^o-Taylor expansion of the stochastic integral yields
 \end{equation}
 Cost: Hessian-vector products and a trace estimate (in high dimensions,
 Hutchinson-type estimation is required for $\operatorname{tr}(H_k)$).
+Following the substitution of It\^o's formula to completion yields the
+It\^o-formula discretisation of Appendix~\ref{app:ito-vtau},
+of which~\eqref{eq:ito-taylor} is the first-order expansion.
 
 \subsection{Corrected midpoint and trapezoidal rules}
 
@@ -558,6 +564,58 @@ Because $x_{\text{pred}}$ depends on the same $z_k$, this is not an
 It\^o-consistent discretisation without additional correction terms.
 Its performance can be tested experimentally but should not be claimed as an
 automatic higher-order Girsanov rule.
+
+\subsection{It\^o-formula discretisation}
+\label{app:ito-vtau}
+
+Applying It\^o's formula to $\ell_\tau(x)\coloneqq\log p(y\mid
+x_{\sigma(\tau)}=x)$ under the guided process~\eqref{eq:sde-guided}
+eliminates the stochastic integral from~\eqref{eq:step-integral} entirely.
+The per-step correction becomes
+\begin{align}
+  C_k^{\text{V}}
+  &\coloneqq \int_{\tau_k}^{\tau_{k-1}} V_\tau(x_k)\,d\tau,
+  \label{eq:Vtau-step}\\[2pt]
+  V_\tau(x) &\coloneqq \partial_\tau\ell_\tau(x)
+              + a(x,\tau)\!\cdot\!\nabla\ell_\tau(x)
+              + \tfrac12\,\nabla\ell_\tau^\top\Sigma\,\nabla\ell_\tau
+              + \tfrac12\operatorname{tr}\bigl(\Sigma\,\nabla^2\ell_\tau(x)\bigr),
+  \label{eq:Vtau-def}
+\end{align}
+where the pre-step state $x_k$ is frozen during the deterministic quadrature.
+The $\partial_\tau\ell_\tau$ term integrates exactly (telescoping):
+$\int_{\tau_k}^{\tau_{k-1}}\partial_\tau\ell_\tau\,d\tau = \ell_{\tau_{k-1}}(x_k) - \ell_{\tau_k}(x_k)$.
+In practice only the remaining part,
+\begin{equation}
+  H_\tau(x) \coloneqq a(x,\tau)\!\cdot\!\nabla\ell_\tau(x)
+                    + \tfrac12\,\nabla\ell_\tau^\top\Sigma\,\nabla\ell_\tau
+                    + \tfrac12\operatorname{tr}\bigl(\Sigma\,\nabla^2\ell_\tau(x)\bigr),
+  \label{eq:Htau-def}
+\end{equation}
+requires numerical quadrature, giving
+$C_k^{\text{V}} = \ell_{\tau_{k-1}}(x_k) - \ell_{\tau_k}(x_k) + \int_{\tau_k}^{\tau_{k-1}} H_\tau(x_k)\,d\tau$
+(\texttt{smc/check\_toy\_mixture.py}).
+
+In the variance-exploding parametrisation ($\Sigma=\bar a I$,
+$a(x,\tau)=\bar a\,\nabla\!\log p$, $\partial_\tau=-\partial_\sigma$,
+$\bar a(\tau)\coloneqq 2\sigma(\tau)$) this reduces to
+$H_\tau = \bar a\,\nabla\!\log p\!\cdot\!\nabla\ell
+        + \tfrac12\bar a\,\|\nabla\ell\|^2
+        + \tfrac12\bar a\,\Delta\ell$.
+
+Unlike the left-endpoint rule~\eqref{eq:girsanov} and its
+variants~\eqref{eq:subdisc}--\eqref{eq:ito-taylor},
+\eqref{eq:Vtau-step} contains \emph{no stochastic term} --- the per-step
+weight is a deterministic function of $x_k$.
+The price is the Laplacian $\Delta\ell=\operatorname{tr}(\nabla^2\ell)$,
+which in high dimensions requires stochastic estimation
+(cf.\ Hutchinson-type trace estimators; \texttt{smc/hutchinson.py}).
+In one dimension $\Delta\ell$ reduces to an exact second derivative via
+double backward differentiation.
+The It\^o-Taylor correction~\eqref{eq:ito-taylor} is the first-order
+expansion of~\eqref{eq:Vtau-step} that \emph{retains} the stochastic term
+while adding a Hessian-based correction;
+$C_k^{\text{V}}$ completes the substitution by eliminating it entirely.
 
 \bibliographystyle{plainnat}
 \bibliography{references_2}

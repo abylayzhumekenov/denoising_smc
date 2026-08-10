@@ -12,7 +12,7 @@
 ## Architecture
 
 - **`training/`** — EDM-derived training loop, networks (SongUNet/DhariwalUNet), loss functions (VP/VE/EDM), dataset loader (`ImageFolderDataset`), augmentation
-- **`smc/`** — SMC module: proposals (GEM/HeunSDE/SOSaG), unified λ-ρ weights, ParticleFilter loop. Methodology in `docs/idea.md`, implementation in `docs/recipe.md`. `smc/toy_smc.py` is a 1D Gaussian-mixture validation toy (results in `smc/toy_smc_findings.md`); `smc/hutchinson.py` is a Laplacian-trace feasibility study
+- **`smc/`** — SMC module for diffusion-guided PDE solving. The unified $\lambda$-$\rho$ weight (`docs/note_2.tex` Eq 17) is validated on a closed-form 1D Gaussian-mixture toy in `smc/toy_smc.py` (NumPy: GEM proposal, left-endpoint Girsanov, $\lambda$/K/comparison sweeps, weighted $W_1$ metrics). The companion V$_tau$ / Doob-transform discretisation (`docs/note_3.tex`) is implemented in `smc/toy_mixture.py` (PyTorch exact mixture), `smc/v_tau.py` (PDE-ready V$_tau$ computation via Hutchinson trace estimation), and the `smc/check_*.py` validation scripts. `smc/hutchinson.py` is the Hutchinson trace estimator for the Laplacian term.
 - **`scripts/generate_*.py`** — PDE-specific guided sampling. Each implements: PDE residual loss (finite-difference convs), observation loss (sparse sensor mask), and EDM reverse ODE with gradient guidance
 - **`configs/*.yaml`** — All parameters: data path/offset, pretrained model path, ODE solver params (sigma_min/sigma_max/rho), guidance weights (zeta_obs_a, zeta_obs_u, zeta_pde). Naming: `<pde>.yaml` = both spaces, `<pde>-forward.yaml` = forward, `<pde>-inverse.yaml` = inverse.
 - **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, distributed, persistence, training stats). Persistence pickles source code alongside weights; models load via `pickle.load(f)['ema']`. Device auto-detection lives in `torch_utils.misc.auto_device()`
@@ -59,12 +59,14 @@ pip install torch torchvision
 
 ## Reference Docs
 
-- `docs/note_2.tex` — math note: Girsanov-corrected SMC, $\lambda$-$\rho$ unified weight, Euler/Heun proposals, appendices (kernel-ratio verification, alternative Girsanov discretisations)
+- `docs/note_2.tex` — math note: Girsanov-corrected SMC, $\lambda$-$\rho$ unified weight, Euler/Heun proposals, appendices (kernel-ratio verification, alternative Girsanov discretisations including the It\^o-formula $C_k^{\text{V}}$)
+- `docs/note_3.tex` — companion validation: V$_tau$ / Doob-transform discretisation on a 1D Gaussian-mixture toy with approximate plug-in likelihood; sign-convention discussion; numerical results
 - `docs/idea.md` — research proposal: methodology, derivations (Girsanov, Heun-SDE), experimental design
 - `docs/recipe.md` — implementation guide: architecture, pseudocode, Python code, gotchas (design spec — `smc/` modules not yet implemented)
 - `literature/README.md` — comprehensive literature survey of all papers in `literature/`
 - `docs/repo.md` — repository map + git tracking (tree, file roles, tech stack, excluded paths)
-- `smc/toy_smc_findings.md` — toy validation note / meeting report (results, W1, N-sweep)
+- `smc/toy_smc_findings.md` — toy validation results: $\lambda$/$K$/comparison sweeps, weighted $W_1$ metrics, figures
+- `smc/hutchinson_findings.md` — Hutchinson trace estimator cost/variance benchmark on pretrained Burgers model
 
 ## Docs Policy
 
@@ -78,5 +80,6 @@ pip install torch torchvision
 - `literature/arXiv-0000.00000v/paper.md` is a custom methodology writeup for FPS/FPS-SMC
 - `docs/idea.md` — initial research proposal (Girsanov correction, Heun-SDE, experimental design)
 - `docs/recipe.md` — implementation guide (architecture, pseudocode, Python code)
-- `docs/note_2.tex` — current math note: Girsanov-corrected SMC for guided diffusion models with unified $\lambda$-$\rho$ weight, appendices cataloguing alternative discretisations
+- `docs/note_2.tex` — current math note: Girsanov-corrected SMC for guided diffusion models with unified $\lambda$-$\rho$ weight, appendices cataloguing alternative discretisations (including $C_k^{\text{V}}$)
+- `docs/note_3.tex` — companion note: V$_tau$/Doob-transform discretisation on the Gaussian-mixture toy with plug-in approximate likelihood
 - This repo integrates SMC methods into the DiffusionPDE guided sampling pipeline

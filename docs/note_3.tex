@@ -1,0 +1,410 @@
+\documentclass[english,10pt]{article}
+
+% Encoding and page layout
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{geometry}
+\geometry{verbose,tmargin=3cm,bmargin=3cm,lmargin=2.75cm,rmargin=2.75cm}
+
+% Math
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{mathtools}
+\usepackage{mathrsfs}
+\usepackage{bm}
+\usepackage{bbm}
+
+% Graphics, tables, algorithms
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{float}
+\usepackage{algorithm,algpseudocode}
+\newcommand{\algorithmautorefname}{Algorithm}
+
+% Hyperlinks
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,
+    urlcolor=cyan,
+    citecolor=red,
+}
+
+% Bibliography
+\usepackage{natbib}
+
+% Language
+\usepackage{babel}
+\date{}
+
+% Theorem environments
+\usepackage{amsthm}
+\numberwithin{equation}{section}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{lemma}{Lemma}[section]
+\newtheorem{proposition}{Proposition}[section]
+\newtheorem{corollary}{Corollary}[section]
+\newtheorem{remark}{Remark}[section]
+\newtheorem{assumption}{Assumption}[section]
+
+\title{A Closed-Form Gaussian-Mixture Toy Model \\
+       for Validating the Girsanov-Corrected SMC Weight}
+\author{Validation note accompanying the main derivation}
+\date{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This note constructs a one-dimensional Gaussian-mixture toy problem in which the prior,
+the noised marginals, the exact score and denoiser, the true posterior, and --
+crucially -- the \emph{exact} intermediate likelihood $p(y\mid x_\sigma)$ are all
+available in closed form. Because the exact intermediate likelihood is normally
+intractable, this toy model lets us simulate both the approximate-guided diffusion
+actually used in practice and an exact-guided diffusion that targets the true
+posterior exactly, and to check the Girsanov/Doob-transform SMC correction against a
+genuine analytical ground truth rather than against itself. We derive the relevant
+quantities from scratch, discuss a sign-convention pitfall that this exercise
+uncovered in the drift of the reverse-time SDE, and report numerical results:
+the corrected sampler converges toward the analytical posterior at the canonical
+Monte Carlo rate in the number of particles, up to a small residual bias tied to
+the time-discretization step count.
+\end{abstract}
+
+\section{The toy model}
+\label{sec:model}
+
+We work in one dimension with a $K$-component Gaussian-mixture prior,
+\begin{equation}
+p(x_0) = \sum_{k=1}^K w_k \, \mathcal N(x_0;\mu_k,\sigma_k^2),
+\label{eq:prior}
+\end{equation}
+noised by the same variance-exploding (VE), EDM-style forward process used
+throughout the main derivation \citep{karras2022elucidating}:
+\begin{equation}
+x_\sigma = x_0 + \sigma\,\epsilon, \qquad \epsilon\sim\mathcal N(0,1),
+\label{eq:forward}
+\end{equation}
+with noise level identified with physical time, $\sigma(t)=t$. We use
+$K=2$, $w=(0.5,0.5)$, $\mu=(-3,3)$, $\sigma_k^2=1$ throughout the numerical
+experiments below.
+
+\begin{remark}
+The conditional law $x_\sigma\mid x_0\sim\mathcal N(x_0,\sigma^2)$ is exactly
+Gaussian at \emph{every} finite $\sigma>0$ -- there is nothing asymptotic about
+it. The marginal $p_\sigma(x_\sigma)=\int p(x_\sigma\mid x_0)p(x_0)\,dx_0$ is a
+Gaussian mixture (below) at every finite $\sigma$ as well; it only becomes
+\emph{practically} indistinguishable from a single Gaussian as $\sigma\to\infty$,
+once the fixed inter-component separation becomes negligible relative to the
+growing noise scale.
+\end{remark}
+
+Convolving a Gaussian mixture with independent Gaussian noise leaves the
+weights and means untouched and inflates each component's variance:
+\begin{equation}
+p_\sigma(x) = \sum_k w_k\,\mathcal N(x;\mu_k,\sigma_k^2+\sigma^2).
+\label{eq:marginal}
+\end{equation}
+We adopt a $K$-component Gaussian, linear observation model,
+\begin{equation}
+y = x_0 + \eta, \qquad \eta\sim\mathcal N(0,r^2).
+\label{eq:likelihood}
+\end{equation}
+A single Gaussian prior would make the Bayes-optimal denoiser affine in $x$,
+and the plug-in approximate likelihood introduced below would then be
+proportional to the true intermediate likelihood -- same mode, only a scale
+difference -- too easy a test of the correction. The mixture prior makes the
+denoiser genuinely nonlinear, so the approximation gap has the same
+qualitative character it has with a real trained network.
+
+\section{Exact quantities}
+\label{sec:exact}
+
+Write $V_k(\sigma):=\sigma_k^2+\sigma^2$ and let
+\begin{equation}
+\gamma_k(x,\sigma) := \frac{w_k\,\mathcal N(x;\mu_k,V_k(\sigma))}{\sum_j w_j\,\mathcal N(x;\mu_j,V_j(\sigma))}
+\label{eq:responsibility}
+\end{equation}
+be the posterior mixture responsibilities of the noised marginal
+\eqref{eq:marginal}. Differentiating $\log p_\sigma$ component-wise gives the
+exact score,
+\begin{equation}
+\nabla_x\log p_\sigma(x) = \sum_k \gamma_k(x,\sigma)\left(-\frac{x-\mu_k}{V_k(\sigma)}\right),
+\label{eq:score}
+\end{equation}
+and the exact Bayes-optimal denoiser $D(x,\sigma):=\mathbb E[x_0\mid x_\sigma=x]$,
+\begin{equation}
+D(x,\sigma) = \sum_k \gamma_k(x,\sigma)\left[\mu_k + \frac{\sigma_k^2}{V_k(\sigma)}(x-\mu_k)\right],
+\label{eq:denoiser}
+\end{equation}
+consistent with Tweedie's identity $D(x,\sigma)=x+\sigma^2\nabla_x\log p_\sigma(x)$
+\citep{efron2011tweedie}. Neither \eqref{eq:score} nor \eqref{eq:denoiser}
+requires a trained network -- both replace $D_\theta$ exactly, isolating the
+Girsanov/SMC machinery from any network-approximation error.
+
+The posterior $p(x_0\mid y)\propto p(y\mid x_0)p(x_0)$ under
+\eqref{eq:likelihood} is again a mixture, with the standard per-component
+conjugate update; this is our ground truth.
+
+The intermediate likelihood $p(y\mid x_\sigma)$ -- normally intractable, and
+the reason approximate guidance is used in practice at all -- is available
+here in closed form. Writing the per-component denoising posterior
+$x_0\mid x_\sigma=x,\,k\sim\mathcal N(m_k(x,\sigma),c_k(\sigma))$ with
+\begin{equation}
+m_k(x,\sigma)=\mu_k+\frac{\sigma_k^2}{V_k(\sigma)}(x-\mu_k), \qquad
+c_k(\sigma)=\frac{\sigma_k^2\sigma^2}{V_k(\sigma)},
+\label{eq:denoising_posterior}
+\end{equation}
+and convolving with the observation noise gives
+\begin{equation}
+p(y\mid x_\sigma=x) = \sum_k \gamma_k(x,\sigma)\,\mathcal N\big(y;\,m_k(x,\sigma),\,r^2+c_k(\sigma)\big).
+\label{eq:exact_intermediate}
+\end{equation}
+The approximate (plug-in) likelihood actually used for guidance in practice
+replaces the mixture \eqref{eq:exact_intermediate} with a single Gaussian at
+the denoised point estimate,
+\begin{equation}
+\tilde p_\theta(y\mid x_\sigma=x) = \mathcal N\big(y;\,D(x,\sigma),\,r^2\big).
+\label{eq:approx_likelihood}
+\end{equation}
+Two gaps between \eqref{eq:exact_intermediate} and \eqref{eq:approx_likelihood}
+are visible directly from the formulas: the exact version is a genuine mixture
+over the per-component means $m_k$, which the plug-in approximation collapses
+to a single point; and the exact version's variance is inflated by
+$c_k(\sigma)$ -- the residual uncertainty about $x_0$ given only the noisy
+$x_\sigma$ -- which the plug-in approximation ignores entirely, silently
+treating the denoiser's point estimate as if it were the true $x_0$. That
+second gap is exactly what the Girsanov correction exists to fix.
+
+\section{Exact and approximate guided diffusion}
+\label{sec:guided}
+
+Let $\tau=T-t$ be the sampling-time reparametrization ($\tau=0$ at pure noise,
+$\tau=T$ at clean data) and $\bar a(\tau):=a(T-\tau)$ with
+$a(t):=d\sigma(t)^2/dt=2\sigma(t)$ under $\sigma(t)=t$. Anderson's reverse-time
+SDE theorem \citep{anderson1982reverse,song2021score} gives the unconditional
+reverse process directly in terms of the true score, unambiguously:
+\begin{equation}
+dZ_\tau = \bar a(\tau)\,\nabla_x\log p_{\sigma(\tau)}(Z_\tau)\,d\tau + \sqrt{\bar a(\tau)}\,dW_\tau,
+\qquad \sigma(\tau):=\sigma_{T-\tau}.
+\label{eq:unconditional_sde}
+\end{equation}
+Adding the gradient of a log-likelihood $\ell_\tau$ to the drift steers the
+process toward the corresponding posterior:
+\begin{equation}
+dZ_\tau^\bullet = \bar a(\tau)\Big[\nabla_x\log p_{\sigma(\tau)}(Z_\tau^\bullet) + \nabla_x \ell_\tau(Z_\tau^\bullet)\Big]\,d\tau + \sqrt{\bar a(\tau)}\,dW_\tau.
+\label{eq:guided_sde}
+\end{equation}
+Taking $\ell_\tau(x) := \log p(y\mid x_{\sigma(\tau)}=x)$, the \emph{exact}
+intermediate likelihood \eqref{eq:exact_intermediate}, gives the exact-guided
+diffusion, whose $\tau=T$ marginal is the true posterior exactly. Taking
+$\ell_\tau(x):=\log\tilde p_\theta(y\mid x_{\sigma(\tau)}=x)$, the plug-in
+likelihood \eqref{eq:approx_likelihood}, gives the approximate-guided
+diffusion actually simulated by a practical guided sampler -- and whose
+$\tau=T$ marginal is biased, for the reasons noted above.
+
+\begin{remark}[A sign-convention pitfall]
+\label{rem:sign}
+It is common in the EDM/denoiser literature \citep{karras2022elucidating} to
+write $s_\theta(x,\sigma):=(x-D(x,\sigma))/\sigma^2$, chosen so that the
+deterministic probability-flow ODE step comes out in the clean form
+$(x-D)/\sigma$. By Tweedie's identity this $s_\theta$ is the \emph{negative}
+of the true score, $s_\theta=-\nabla_x\log p_\sigma$. Reverse-SDE formulas of
+the form $dX_t=-a(t)s_\theta(X_t,t)\,dt+\ldots$, standard throughout the
+score-based generative modeling literature, are only correct as written when
+$s_\theta$ denotes the true score directly; substituting the EDM-convention
+$s_\theta$ into such a formula introduces a spurious overall sign error in the
+unconditional part of the drift. We found exactly this: writing the drift of
+\eqref{eq:unconditional_sde} with $+s_\theta$ in place of $\nabla\log p_\sigma$
+causes the unguided reverse SDE to diverge (verified numerically -- see
+\S\ref{sec:results}), even though the formula is a one-symbol substitution
+away from \eqref{eq:unconditional_sde} and each convention is individually
+standard in its own home literature. Writing the drift directly in terms of
+$\nabla_x\log p_\sigma$ throughout, as in \eqref{eq:unconditional_sde}--\eqref{eq:guided_sde},
+avoids the ambiguity entirely and is what we implement.
+\end{remark}
+
+Both SDEs are simulated by Euler--Maruyama on a decreasing $\sigma$ grid
+(physical time, matching a practical EDM sampler rather than the
+increasing-$\tau$ convention used above for the derivation), with step
+$\Delta=\sigma_{\mathrm{cur}}-\sigma_{\mathrm{next}}>0$:
+\begin{equation}
+x_{\mathrm{next}} = x_{\mathrm{cur}} + \bar a(\sigma_{\mathrm{cur}})\Big[\nabla\log p_{\sigma_{\mathrm{cur}}}(x_{\mathrm{cur}}) + \nabla \ell(x_{\mathrm{cur}},\sigma_{\mathrm{cur}})\Big]\Delta + \sqrt{\bar a(\sigma_{\mathrm{cur}})\,\Delta}\;\xi, \qquad \xi\sim\mathcal N(0,1).
+\label{eq:euler_maruyama}
+\end{equation}
+
+\section{The Girsanov/Doob-transform correction}
+\label{sec:girsanov}
+
+Let $P^{\mathrm{pr}}$ and $P^{\mathrm{ap}}$ denote the path measures of
+\eqref{eq:unconditional_sde} and of \eqref{eq:guided_sde} with the
+\emph{approximate} likelihood, respectively. Itô's formula applied to
+$\ell_\tau(Z_\tau^{\mathrm{ap}})$ under $P^{\mathrm{ap}}$ gives
+\begin{equation}
+d\ell_\tau(Z_\tau^{\mathrm{ap}}) = \Big[\partial_\tau\ell_\tau + b^{\mathrm{ap}}\!\cdot\!\nabla\ell_\tau + \tfrac12\bar a\,\Delta\ell_\tau\Big]d\tau + \sqrt{\bar a}\,\nabla\ell_\tau^\top dW_\tau^{\mathrm{ap}},
+\label{eq:ito}
+\end{equation}
+with $b^{\mathrm{ap}}(x,\tau)=\bar a(\tau)[\nabla\log p_{\sigma(\tau)}(x)+\nabla\ell_\tau(x)]$.
+Girsanov's theorem \citep{oksendal2003stochastic} gives, for the drift
+difference $\bar a\nabla\ell_\tau$ shared diffusion coefficient $\sqrt{\bar a}$,
+\begin{equation}
+\frac{dP^{\mathrm{pr}}}{dP^{\mathrm{ap}}} = \exp\left(-\int_0^T\sqrt{\bar a}\,\nabla\ell_\tau^\top dW_\tau^{\mathrm{ap}} - \tfrac12\int_0^T \bar a\,\|\nabla\ell_\tau\|^2\,d\tau\right).
+\label{eq:girsanov_toy}
+\end{equation}
+Substituting the Itô identity \eqref{eq:ito} to eliminate the stochastic
+integral, exactly as in the main derivation, gives
+\begin{equation}
+\frac{dP^{\mathrm{pr}}}{dP^{\mathrm{ap}}} = e^{\ell_0(Z_0)-\ell_T(Z_T)}\exp\left(\int_0^T V_\tau(Z_\tau)\,d\tau\right),
+\label{eq:master}
+\end{equation}
+\begin{equation}
+V_\tau(x) := \partial_\tau\ell_\tau(x) + \bar a(\tau)\,\nabla\log p_{\sigma(\tau)}(x)\cdot\nabla\ell_\tau(x) + \tfrac12\bar a(\tau)\|\nabla\ell_\tau(x)\|^2 + \tfrac12\bar a(\tau)\Delta\ell_\tau(x).
+\label{eq:V_tau_toy}
+\end{equation}
+Written directly in terms of the true score, \eqref{eq:V_tau_toy} has no sign
+ambiguity; it is the drift-substituted, simplified form of $V_\tau$ used
+throughout, and it is what is actually implemented (with $\nabla\log
+p_{\sigma(\tau)}=-s_\theta$ if one prefers the EDM-convention $s_\theta$, cf.
+Remark~\ref{rem:sign}). Since $\sigma(t)=t$ and $\tau=T-t$, $\partial_\tau\ell_\tau(x) = -\partial_\sigma\ell(x,\sigma)|_{\sigma=\sigma(\tau)}$.
+
+\paragraph{Discretization.} Rather than a naive left-endpoint quadrature of
+the whole of \eqref{eq:V_tau_toy}, we use the exact, frozen-state telescoping
+identity for the $\partial_\tau\ell_\tau$ term,
+$\int_{\tau_{k-1}}^{\tau_k}\partial_\tau\ell_\tau(z_{k-1})\,d\tau = \ell_{\tau_k}(z_{k-1})-\ell_{\tau_{k-1}}(z_{k-1})$,
+and a quadrature only for the remaining term
+$H(x,\sigma):=\bar a(\sigma)\nabla\log p_\sigma(x)\cdot\nabla\ell(x,\sigma)+\tfrac12\bar a(\sigma)\|\nabla\ell(x,\sigma)\|^2+\tfrac12\bar a(\sigma)\Delta\ell(x,\sigma)$.
+The incremental log-weight for a step from $\sigma_{\mathrm{cur}}$ to
+$\sigma_{\mathrm{next}}$ at the frozen pre-step state $z$ is
+\begin{equation}
+\log\hat G = \big[\ell(z;\sigma_{\mathrm{next}}) - \ell(z;\sigma_{\mathrm{cur}})\big] + \int_{\sigma_{\mathrm{next}}}^{\sigma_{\mathrm{cur}}}\! H(z,\sigma)\,d\sigma,
+\label{eq:incremental_weight}
+\end{equation}
+with a one-time correction term $\ell(z_0;\sigma_{\max})$ added before the
+first step, reproducing the $e^{\ell_0(Z_0)}$ boundary factor in
+\eqref{eq:master} (the discrete analogue of absorbing the initial condition
+into the first incremental weight). We combine \eqref{eq:incremental_weight}
+with adaptive systematic resampling, triggered whenever the effective sample
+size drops below half the particle count.
+
+\section{Numerical results}
+\label{sec:results}
+
+We fix $y=0.5$, $r=1$, giving a genuinely bimodal posterior with weights
+$(0.182, 0.818)$ on the two components -- an asymmetric but non-degenerate
+target. Particles are propagated on the rho-spaced $\sigma$-schedule of
+\citep{karras2022elucidating}, $\sigma_{\min}=0.02$, $\sigma_{\max}=20$, with
+$1000$ steps.
+
+\paragraph{Histogram comparison.} Figure~\ref{fig:histogram} compares, at
+$N=200{,}000$ particles: the exact-guided diffusion (using
+\eqref{eq:exact_intermediate}), the uncorrected approximate-guided diffusion
+(using \eqref{eq:approx_likelihood} with no reweighting), the SMC-corrected
+approximate-guided diffusion (reweighted by \eqref{eq:incremental_weight} and
+resampled), and the analytical posterior density. The exact-guided diffusion
+matches the analytical posterior to within sampling noise (maximum absolute
+density deviation $0.004$, consistent with the Poisson floor at this particle
+count), confirming that the base SDE machinery -- score, discretization, drift
+sign -- is correct independently of any approximation. The uncorrected
+approximate-guided diffusion is visibly biased: narrower, mode-collapsed
+toward a single peak (maximum deviation $0.294$, about $67\times$ larger).
+The SMC-corrected diffusion recovers the bimodal shape closely, though not
+perfectly (maximum deviation in the $0.01$--$0.07$ range depending on run and
+bin width) -- the residual gap is discussed below.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{../figures/toy_histogram_comparison.pdf}
+\caption{Density comparison at $N=200{,}000$ particles. The exact-guided
+diffusion and the SMC-corrected approximate-guided diffusion both recover the
+bimodal analytical posterior; the uncorrected approximate-guided diffusion
+collapses toward a single mode.}
+\label{fig:histogram}
+\end{figure}
+
+\paragraph{Convergence in the number of particles.} We estimated the
+posterior mean $\mathbb E[x\mid y]$ from the SMC-corrected sampler at
+$N\in\{10^3,4\times10^3,1.6\times10^4,6.4\times10^4,2\times10^5\}$, with
+$4$--$10$ independent replications per $N$ (fewer at the largest $N$, for
+compute reasons). Figure~\ref{fig:mc_error}, left panel, shows both the RMSE
+against the true posterior mean ($1.2027$) and the standard deviation across
+replications, on a log-log scale, against the canonical $1/\sqrt N$
+reference. A least-squares fit of $\log(\text{std})$ against $\log N$ gives
+slope $-0.46$, close to the theoretical $-0.5$, confirming the estimator
+converges at the usual Monte Carlo rate. The right panel shows the raw bias
+(estimate minus truth) with $\pm1$ standard-error bars from the finite
+replication count; at every particle count but the largest, the error bar
+crosses zero, so the data cannot statistically distinguish a genuine residual
+bias from replication noise at that $N$. A parametric fit
+$\mathrm{MSE}(N)\approx b^2 + C/N$ under a non-negativity constraint on $b^2$
+collapses to $b^2=0$, $C\approx93$ -- i.e., the data as collected is fully
+consistent with a purely canonical $C/N$ decay and no detectable bias floor,
+though this should not be read as disproving a small bias: a separate
+experiment varying the number of discretization \emph{steps} at fixed $N$
+found the histogram deviation improving sharply from $250$ to $500$ steps but
+then plateauing from $500$ to $2000$ steps, consistent with a small residual
+bias tied to the time-discretization order rather than to particle count.
+Distinguishing these possibilities conclusively would require substantially
+more replications concentrated at large $N$, where the current error bars are
+still wide relative to the effect size in question.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.95\textwidth]{../figures/toy_mc_error_vs_N.pdf}
+\caption{Left: RMSE and across-replication standard deviation of the
+SMC-corrected posterior-mean estimate versus particle count, log-log scale,
+against the canonical $1/\sqrt N$ reference. Right: bias (estimate minus true
+posterior mean) with $\pm1$ standard-error bars from the replication count.}
+\label{fig:mc_error}
+\end{figure}
+
+The same convergence is visible directly in the sampled density itself.
+Figure~\ref{fig:histogram_vs_N} overlays the SMC-corrected histogram (a single
+representative run, not averaged over replications) against the analytical
+posterior at $N=1{,}000$, $16{,}000$, and $200{,}000$ particles. At
+$N=1{,}000$ the histogram is visibly jagged, though the bimodal shape is
+already present; at $N=16{,}000$ it is smoother but still wobbles around the
+analytical curve, with a maximum deviation ($0.036$) that happens to read
+slightly \emph{worse} than the $N=1{,}000$ run ($0.023$) on this single-run
+metric alone -- consistent with the large run-to-run variance at low $N$
+already seen in Figure~\ref{fig:mc_error}, not a reversal of the trend. At
+$N=200{,}000$ the histogram sits almost exactly on the analytical curve
+(maximum deviation $0.010$). Read together with Figure~\ref{fig:mc_error},
+the message is the same one stated quantitatively above: the single-run
+histogram error shrinks with $N$ on average, but any individual run at
+moderate $N$ can be noisier than a smaller-$N$ run purely by chance, which is
+exactly why the particle-count sweep in Figure~\ref{fig:mc_error} was run
+with multiple replications rather than read off a single realization.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{../figures/toy_histogram_vs_N.pdf}
+\caption{SMC-corrected density histogram (single representative run) at three
+particle counts, against the analytical posterior. Each run uses the same
+$1000$-step discretization and the same adaptive resampling scheme.}
+\label{fig:histogram_vs_N}
+\end{figure}
+
+\section{Discussion}
+
+This toy model isolates the Girsanov/Doob-transform SMC correction from
+network-approximation error entirely, since the exact score, denoiser,
+posterior, and intermediate likelihood are all closed form. It served two
+purposes here: it exposed a genuine sign-convention error in the drift of the
+reverse-time SDE (Remark~\ref{rem:sign}) before that error could propagate
+silently into results on the real PDE problem, and -- once corrected -- it
+gave a positive, closed-loop confirmation that the corrected SMC weight
+\eqref{eq:incremental_weight} converges to the true posterior at the
+canonical Monte Carlo rate in the particle count, up to a small residual tied
+to the time-discretization step count rather than to the correction formula
+itself. A natural extension, left for future work, is a moderate-dimensional
+($d\sim10$--$20$) version of the same construction, still fully closed form,
+in which the Laplacian term is a genuine trace over many dimensions and the
+Hutchinson estimator used on the real PDE problem can be checked directly
+against an exact analytical trace.
+
+\bibliographystyle{plain}
+\bibliography{references_2}
+
+\end{document}
