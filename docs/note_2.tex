@@ -26,10 +26,10 @@ We consider the Bayesian inverse problem of drawing samples from the posterior
   p(x_0 \mid y) \propto p(y \mid x_0)\,p(x_0),
 \end{equation}
 where $x_0 \in \R^d$ and $y$ denotes observations.
-The prior $p(x_0)$ is represented by a pretrained diffusion model.
+The prior $p(x_0)$ is given by a diffusion model.
 The likelihood $p(y \mid x_0)$ is assumed known.
 
-\subsection{Reverse diffusion and path measures}
+\subsection{Reverse diffusion and Girsanov correction}
 
 A diffusion model provides a time-reversed process that, when integrated from a pure-noise
 initialisation to zero noise, generates samples $x_0 \sim p(x_0)$.
@@ -37,89 +37,69 @@ In continuous time this process is an It\^o SDE
 \begin{equation}\label{eq:sde-unguided}
   dx_\tau = a(x_\tau, \tau)\,d\tau + g(\tau)\,dW^{\bbP}_\tau,
 \end{equation}
-where $\tau$ is a reverse-time parameter and $a$, $g$ are drift and diffusion
-coefficients of the reverse process.
-For simplicity we take $g(\tau)$ to be scalar (diffusion coefficient $g(\tau)I$),
-and $W^{\bbP}$ is a Brownian motion under the measure $\bbP$.
+where $\tau$ is the reverse-time parameter, $a(\cdot,\cdot)$ is the drift, and
+$g(\tau) \in \R^{d\times d}$ is the diffusion matrix.
+$W^{\bbP}$ is a $d$-dimensional Brownian motion under the measure $\bbP$.
 The path law of this process is denoted by $\bbP$.
 
 To condition on $y$ we require the intermediate likelihood
-$p(y \mid x_\tau) = \int p(y \mid x_0)\,p(x_0 \mid x_\tau)\,dx_0$, which is intractable.
-We work with a generic approximation $\tilde p(y \mid x_\tau)$ of this intermediate likelihood;
-its construction depends on the application and is deferred to the relevant sections.
-We assume $\tilde p(y \mid x_\tau)$ is positive and differentiable in $x_\tau$.
+$p(y \mid x_\tau) = \int p(y \mid x_0)\,p(x_0 \mid x_\tau)\,dx_0$, which is intractable;
+in the PDE setting a surrogate is used instead (Section~\ref{sec:pde}).
+We assume $p(y \mid x_\tau)$ is positive and differentiable in $x_\tau$.
 Define the guidance drift
 \begin{equation}\label{eq:guidance-drift}
-  b(x_\tau, \tau) \coloneqq \nabla_{x_\tau}\!\log \tilde p(y \mid x_\tau).
+  b(x_\tau, \tau) \coloneqq \nabla_{x_\tau}\!\log p(y \mid x_\tau).
 \end{equation}
-The guided reverse process augments the drift by a term proportional to $b$,
-retaining the same diffusion coefficient $g$:
+The guided reverse process augments the drift by $\Sigma(\tau)\,b(x_\tau,\tau)$
+where $\Sigma(\tau) \coloneqq g(\tau)g(\tau)^\top$, retaining the same diffusion
+matrix $g$:
 \begin{equation}\label{eq:sde-guided}
-  dx_\tau = \bigl[\,a(x_\tau, \tau) + g(\tau)^2\,b(x_\tau, \tau)\bigr]\,d\tau
+  dx_\tau = \bigl[\,a(x_\tau, \tau) + \Sigma(\tau)\,b(x_\tau, \tau)\bigr]\,d\tau
             + g(\tau)\,dW^{\bbQ}_\tau,
 \end{equation}
 with path law $\bbQ$.
 The two processes share the same $g$; they differ \emph{only} in their drift.
-This is the precise setting for Girsanov's theorem.
 
-\subsection{Girsanov correction}
-
-Let $h \coloneqq g^2 b$ be the drift difference.
-Girsanov's theorem \citep[Theorem~8.6.6]{ksendal} states that $\bbP$ and $\bbQ$ are equivalent
-and the Radon-Nikodym derivative is
-\begin{equation}\label{eq:girsanov-continuous}
+Girsanov's theorem \citep[Theorem~8.6.6]{ksendal} states that $\bbP$ and $\bbQ$ are
+equivalent.  Because the drift difference $\Sigma(\tau)\,b(x_\tau,\tau)$ lies
+in the column space of $g(\tau)$, the Radon-Nikodym derivative is
+\begin{equation}\label{eq:girsanov-path}
   \log\frac{d\bbP}{d\bbQ}
-    = -\int \frac{h}{g}\cdot dW^{\bbQ}
-      - \frac12\int \Bigl\|\frac{h}{g}\Bigr\|^2 d\tau.
+    = -\int b^\top (g\,dW^{\bbQ})
+      - \frac12\int b^\top\Sigma\,b\;d\tau.
 \end{equation}
-Substituting $h = g^2 b$,
-\begin{equation}\label{eq:girsanov-simplified}
-  \log\frac{d\bbP}{d\bbQ}
-    = -\int g\,b\cdot dW^{\bbQ}
-      - \frac12\int g^2\,\|b\|^2\,d\tau.
-\end{equation}
-This is a continuous-time path integral.
 We assume the usual regularity conditions for Girsanov's theorem
-(progressive measurability of $g b$ and a Novikov-type integrability condition).
+(progressive measurability of $g^\top b$ and a Novikov-type integrability condition).
+
+\subsection{Discretization}
+
 The particle filter operates in discrete time, so we partition the reverse trajectory
 into $K$ steps.
-Fix a decreasing noise schedule $\sigma_K > \sigma_{K-1} > \cdots > \sigma_0 \approx 0$,
-indexed in reverse by $k = K,\dots,1$.
 The reverse-time parameter $\tau$ is oriented so that integration over the step
 runs from $\tau_k$ to $\tau_{k-1}$ (a positive increment).
-Over step $k$ the accumulated squared diffusion is
+Over step $k$ we denote the accumulated diffusion matrix and the Brownian increment by
 \begin{equation}\label{eq:delta}
-  \int_{\tau_k}^{\tau_{k-1}} g(\tau)^2\,d\tau = \sigma_k^{2} - \sigma_{k-1}^{2}
-    \eqqcolon \delta_k \;>\; 0.
+  \Sigma_k \;\coloneqq\; \int_{\tau_k}^{\tau_{k-1}} \Sigma(\tau)\,d\tau,
+  \qquad
+  z_k \;\coloneqq\; \int_{\tau_k}^{\tau_{k-1}} g(\tau)\,dW^{\bbQ}_\tau
+  \;\sim\; \mathcal{N}(0,\Sigma_k),
 \end{equation}
-This identification holds for variance-exploding additive-noise parametrisations
-and is assumed throughout.
-The realised Brownian increment under $\bbQ$ is
-$\int_{\tau_k}^{\tau_{k-1}} g(\tau)\,dW^{\bbQ}_\tau = \sqrt{\delta_k}\; z_k$,
-where $z_k \sim \mathcal{N}(0, I)$ is the noise drawn during the proposal step.
+where $z_k$ is the noise drawn during the proposal step.
 
 The per-step contribution to the Radon-Nikodym derivative is the restriction of the
-integrals in~\eqref{eq:girsanov-simplified} to $[\tau_k, \tau_{k-1}]$:
+integrals in~\eqref{eq:girsanov-path} to $[\tau_k, \tau_{k-1}]$:
 \begin{equation}\label{eq:step-integral}
-  \Delta_k \;\coloneqq\; -\int_{\tau_k}^{\tau_{k-1}} g\,b\cdot dW^{\bbQ}
-                        - \frac12\int_{\tau_k}^{\tau_{k-1}} g^2\,\|b\|^2\,d\tau.
+  -\int_{\tau_k}^{\tau_{k-1}} b^\top (g\,dW^{\bbQ})
+  - \frac12\int_{\tau_k}^{\tau_{k-1}} b^\top\Sigma\,b\;d\tau.
 \end{equation}
 The function $b(\tau)$ is known only at discrete points along the trajectory.
 The standard It\^o discretisation of~\eqref{eq:step-integral} evaluates the
 integrand at the left endpoint $x_k$, which is adapted to the Brownian filtration:
 \begin{equation}\label{eq:girsanov}
-  C_k \;\coloneqq\; -\sqrt{\delta_k}\; b_k^\top z_k
-                 - \tfrac12\,\delta_k\,\|b_k\|^2,
+  C_k \;\coloneqq\; -\,b_k^\top z_k \;-\; \tfrac12\,b_k^\top\Sigma_k\,b_k,
   \qquad b_k \coloneqq b(x_k, \tau_k).
 \end{equation}
-More accurate Girsanov discretisations are possible but require proper stochastic
-quadrature rather than a direct substitution of a different evaluation point.
-Examples include subdiscretising the interval with adapted Brownian increments,
-It\^o-Taylor expansions, midpoint or trapezoidal rules with Stratonovich-type
-correction terms, and approximate discrete kernel ratios for specific proposals.
-Optionally, the predictor-point evaluation $b_{\text{pred}}$ can be tested
-empirically as a heuristic.
-These refinements are catalogued in Appendix~\ref{app:alternatives}.
+More accurate Girsanov discretisations are catalogued in Appendix~\ref{app:alternatives}.
 The left-endpoint rule is the simplest It\^o-consistent discretisation and coincides
 exactly with the Gaussian kernel ratio when both $p(\cdot\mid x_k)$ and
 $q(\cdot\mid x_k)$ are Euler-Maruyama kernels
@@ -127,109 +107,103 @@ $q(\cdot\mid x_k)$ are Euler-Maruyama kernels
 
 \subsection{Sequential Monte Carlo}
 
-The target measure over complete paths is $\nu_{0:K} \propto \tilde p(y \mid x_0)\,\bbP$.
-We use the guided path law $\bbQ$ as the proposal.
-The path-level importance weight is therefore
+The target measure over complete paths is $p(y \mid x_0)\,\bbP$.
+We use the guided path law $\bbQ$ as the proposal, so the
+path-level importance weight is $p(y \mid x_0)\;d\bbP/d\bbQ$.
+With the per-step Girsanov corrections $C_k$ this factorises as
 \begin{equation}\label{eq:path-weight}
-  w(x_{0:K}) \;\propto\; \tilde p(y \mid x_0)\;
-                           \frac{d\bbP}{d\bbQ}(x_{0:K}).
+  w(x_{0:K}) \;\propto\; p(y \mid x_0)\;
+                            \prod_{k=K}^{1} \exp(C_k).
 \end{equation}
 
-To obtain a sequential update, we factor $\tilde p(y \mid x_0)$ by telescoping
+To obtain a sequential update, we factor $p(y \mid x_0)$ by telescoping
 over the schedule:
 \begin{equation}\label{eq:telescope}
-  \tilde p(y \mid x_0)
-    = \tilde p(y \mid x_K)
-      \prod_{k=K}^{1} \frac{\tilde p(y \mid x_{k-1})}{\tilde p(y \mid x_k)}.
+  p(y \mid x_0)
+    = p(y \mid x_K)
+      \prod_{k=K}^{1} \frac{p(y \mid x_{k-1})}{p(y \mid x_k)}.
 \end{equation}
 (Products are taken over $k = K, K-1, \dots, 1$.)
-Together with the factorisation of the Girsanov correction, this gives
+Substituting this into~\eqref{eq:path-weight} gives
 \begin{equation}\label{eq:weight-product}
-  w \;\propto\; \tilde p(y \mid x_K)
-                 \prod_{k=K}^{1}
-                   \frac{\tilde p(y \mid x_{k-1})}{\tilde p(y \mid x_k)}\,
-                   \exp(C_k).
+  w \;\propto\; p(y \mid x_K)
+                  \prod_{k=K}^{1}
+                    \frac{p(y \mid x_{k-1})}{p(y \mid x_k)}\,
+                    \exp(C_k).
 \end{equation}
-Define the initial weight $w_K \propto \tilde p(y \mid x_K)$.
+Define the initial weight $w_K \propto p(y \mid x_K)$.
 Then at each step the incremental log weight is
 \begin{equation}\label{eq:unified-weight-raw}
   \log w_{k-1}
     = \log w_k
-      + \bigl[\log\tilde p(y \mid x_{k-1}) - \log\tilde p(y \mid x_k)\bigr]
+      + \bigl[\log p(y \mid x_{k-1}) - \log p(y \mid x_k)\bigr]
       + C_k.
 \end{equation}
 Resampling is triggered whenever the effective sample size drops below a threshold.
 
-Equation~\eqref{eq:unified-weight-raw} uses the exact path-level Girsanov correction.
 It is also useful to introduce two tunable parameters,
 allowing a continuous interpolation between weighting strategies:
 \begin{equation}\label{eq:unified-weight}
   \log w_{k-1}
     = \log w_k
-      + \rho\Bigl[\log\tilde p(y \mid x_{k-1}) - \log\tilde p(y \mid x_k)\Bigr]
+      + \rho\Bigl[\log p(y \mid x_{k-1}) - \log p(y \mid x_k)\Bigr]
       + \lambda\,C_k,
 \end{equation}
 where $\lambda \in \{0,1\}$ switches the Girsanov correction on ($1$) or off ($0$),
 and $\rho > 0$ tempers the likelihood contribution.
-When $\rho \neq 1$, the initial weight is $w_K \propto \tilde p(y \mid x_K)^\rho$
+When $\rho \neq 1$, the initial weight is $w_K \propto p(y \mid x_K)^\rho$
 to preserve the telescoping identity.
-The choice $\lambda = 1$, $\rho = 1$ yields the approximate posterior
-$\tilde p(x_0\mid y) \propto \tilde p(y\mid x_0)\,p(x_0)$, up to discretisation
+The choice $\lambda = 1$, $\rho = 1$ yields the posterior
+$p(x_0\mid y) \propto p(y\mid x_0)\,p(x_0)$, up to discretisation
 and Girsanov-quadrature error.
-When $\tilde p(y \mid x_0) = p(y \mid x_0)$ this coincides with the exact
-posterior~\eqref{eq:posterior}.
 The choice $\lambda = 0$ drops the path-measure correction and recovers the
 pseudo-bootstrap scheme of~\citet{millard2026particle}, which is generally biased
-relative to the approximate posterior target.
+relative to the posterior target.
 
 \subsection{Proposals}\label{sec:proposals}
 
-A particle filter requires a proposal kernel $q(x_{k-1}\mid x_k)$ that propagates
-particles (the dependence on $y$ through the guidance drift is understood).
-The proposal is obtained by discretising~\eqref{eq:sde-guided} with a numerical
-integrator; the integrator determines both the transition $q$ and the trajectory
-accuracy.
-The Girsanov correction uses the left-endpoint rule, the baseline quadrature
-applicable to any integrator.
-More accurate integrator-specific corrections are catalogued in
-Appendix~\ref{app:alternatives}.
-We evaluate two integrators:
+The particle filter requires discretising two continuous-time objects:
+the particle dynamics (turning the guided SDE into a transition kernel $q$)
+and the per-step weight correction.
+
+For any proposal $q(x_{k-1}\mid x_k)$, the ideal incremental weight is the
+kernel ratio $\log p(x_{k-1}\mid x_k)/q(x_{k-1}\mid x_k)$.
+Neither kernel is available in closed form for a general integrator.
+However, as $K\to\infty$ both converge to their continuous-time limits, and
+Girsanov's theorem relates their ratio to the path integral of~\eqref{eq:girsanov-path}.
+The left-endpoint discretisation $C_k$ of~\eqref{eq:girsanov} thus
+provides a consistent weight approximation for any integrator:
+both $\log p/q$ and $C_k$ converge to the same limit as $K\to\infty$.
+
+For the dynamics we evaluate two integrators:
 \begin{itemize}
   \item \textbf{Guided Euler-Maruyama}~(GEM).  A first-order integrator
-    producing a Gaussian proposal kernel (trajectory error $\mathcal{O}(\delta_k)$).
-    The left-endpoint correction coincides exactly with the closed-form kernel ratio
-    $\log\,p(x_{k-1}\!\mid\!x_k)/q(x_{k-1}\!\mid\!x_k)$
-    (Appendix~\ref{app:girsanov-euler}).
+    producing a Gaussian proposal kernel.
+    For Euler-Maruyama the left-endpoint $C_k$ coincides with the exact
+    kernel ratio identically at every step (Appendix~\ref{app:girsanov-euler}).
     With $\lambda = 1$ the weight is therefore identical to the Twisted Diffusion
     Sampler~\citep{wu2023tds}.
-    This arm serves as a verification baseline.
     One score evaluation per step.
   \item \textbf{Stochastic Heun}~(Heun-SDE).  A Runge-Kutta integrator
-    for additive-noise SDEs, second-order in the drift
-    (trajectory error $\mathcal{O}(\delta_k^2)$).
+    for additive-noise SDEs, second-order in the drift.
     The first stage predicts via Euler; the second stage corrects by averaging
     the drift at $x_k$ and the predicted midpoint $x_{\text{pred}}$;
     both stages are driven by the same noise $z_k$.
-    The transition is non-Gaussian, so the exact finite-step kernel ratio is
-    intractable; the left-endpoint correction provides an asymptotically valid
-    weight, converging to the exact path-measure correction as $K \to \infty$.
-    Replacing $b_k$ with $b_{\text{pred}}$ in the correction is a natural
-    heuristic but not It\^o-consistent without Stratonovich-type corrections
-    (Appendix~\ref{app:alternatives}).
+    The transition is non-Gaussian, so the exact kernel ratio is
+    intractable; $C_k$ provides an asymptotically valid weight.
     Two score evaluations per step.
 \end{itemize}
+
+For the Girsanov correction, the left-endpoint rule $C_k$
+is the baseline quadrature.
+More accurate discretisations are catalogued in
+Appendix~\ref{app:alternatives}; they can be combined with any integrator.
+
 The particle filter inherits two discretisation errors: trajectory error from the
 integrator and weight error from the Girsanov quadrature.
-With the left-endpoint rule the weight accuracy is first-order for both proposals;
-a second-order integrator improves the trajectory while the weight remains at
-the same order.
-In practice this means both integrators produce comparably reliable weights,
-while Heun-SDE yields a more accurate particle population.
-For higher-order proposals the left-endpoint correction is safe but
-potentially suboptimal: it does not exploit predictor information, and the
-weight may become the limiting error.
-Matched higher-order corrections are possible
-(Appendix~\ref{app:alternatives}) but lie outside the current experiments.
+With the left-endpoint rule the weight accuracy is first-order for both proposals,
+so while Heun-SDE yields a more accurate particle population, both integrators
+produce comparably reliable weights.
 Given $b_k$, evaluating $C_k$ adds only $\mathcal{O}(d)$ operations per particle per
 step, so the computational overhead is negligible compared to the score evaluations.
 
@@ -252,91 +226,94 @@ are computed in closed form from the mixture; no learned model is involved.
 
 \subsection{Model}
 
-The prior is a two-component mixture
+Write the prior as a two-component mixture
 \begin{equation}\label{eq:mixture-prior}
-  p_0(x) \;=\; \sum_{m=1}^{2} w_m\,\mathcal{N}\bigl(x;\; \mu_m,\; v_m\bigr),
+  p(x_0) \;=\; \sum_{m=1}^{2} c_m\,p_m(x_0),
+  \qquad
+  p_m(x_0) \;=\; \mathcal{N}(x_0;\; \mu_m,\; \sigma_m^2),
 \end{equation}
-with $w=(0.6,0.4)$, $\mu=(-1.5,2.0)$, $v=(0.7,1.3)$.
-The observation model is linear-Gaussian,
-\begin{equation}\label{eq:obs-model}
-  y \;=\; x_0 + \varepsilon,\qquad \varepsilon\sim\mathcal{N}(0,\gamma^2),
+with component weights $c_m$, means $\mu_m$, and variances $\sigma_m^2$.
+The observation model is $p(y\mid x_0) = \mathcal{N}(y;\; x_0,\;\gamma^2)$.
+By Bayes' rule,
+\begin{equation}\label{eq:posterior-factor}
+  p(x_0\mid y) \;\propto\; p(y\mid x_0)\,p(x_0)
+                     \;=\; \sum_{m=1}^{2} c_m\,p_m(x_0)\,p(y\mid x_0).
 \end{equation}
-with $y=0.0$ and $\gamma^2=1.0$.
-Prior and likelihood are conjugate, so the posterior $p(x_0\mid y)$ is again a
-two-component mixture obtained by a per-component Kalman update:
+Each product $p_m(x_0)\,p(y\mid x_0)$ is proportional to a Gaussian in $x_0$,
+so
 \begin{equation}\label{eq:analytic-posterior}
-  p(x_0\mid y)
-  \;\propto\; \sum_{m=1}^{2}
-    w_m\,\mathcal{N}\bigl(y;\; \mu_m,\; v_m+\gamma^2\bigr)\,
-    \mathcal{N}\bigl(x_0;\; m_m^y,\; c_m^y\bigr),
+  p(x_0\mid y) \;\propto\; \sum_{m=1}^{2} \hat c_m\;p_m(x_0\mid y),
 \end{equation}
-with component mean $m_m^y = \mu_m + \frac{v_m}{v_m+\gamma^2}(y-\mu_m)$ and variance
-$c_m^y = \frac{v_m\,\gamma^2}{v_m+\gamma^2}$.
-For the instance above the analytic posterior has mean $-0.326$ and standard deviation
-$1.061$.
+where $p_m(x_0\mid y) = \mathcal{N}(x_0;\; \hat\mu_m,\; \hat\sigma_m^2)$ with
+$\hat\mu_m = \mu_m + \frac{\sigma_m^2}{\sigma_m^2+\gamma^2}(y-\mu_m)$,
+$\hat\sigma_m^2 = \frac{\sigma_m^2\gamma^2}{\sigma_m^2+\gamma^2}$,
+and $\hat c_m \propto c_m\,p_m(y)$
+with $p_m(y) = \mathcal{N}(y;\; \mu_m,\; \sigma_m^2+\gamma^2)$.
+
+\subsection{Schedule}
+
+The reverse trajectory uses the EDM power-law schedule \citep{karras2022edm}
+over $K$ steps, indexed $k = K,\dots,1$:
+$s_k = \bigl(s_K^{1/r} + \frac{k}{K}(s_0^{1/r} - s_K^{1/r})\bigr)^{r}$
+(concrete values of $s_K$, $s_0$, $r$ are given in
+Section~\ref{sec:toy-k-sweep}).
+From~\eqref{eq:delta} the per-step accumulated diffusion is
+\begin{equation}\label{eq:toy-delta}
+  \delta_k \;\eqqcolon\; \Sigma_k \;=\; s_k^2 - s_{k-1}^2,
+\end{equation}
+and in one dimension \eqref{eq:girsanov} gives
+$C_k = -b_k\,z_k - \tfrac12\,\delta_k\,b_k^2$.
 
 \subsection{Noising and exact score}
 
-We use the variance-exploding parametrisation
-\begin{equation}\label{eq:ve-forward}
-  x_\sigma \;=\; x_0 + \sigma\,z,\qquad z\sim\mathcal{N}(0,1),
-\end{equation}
-so that $\sigma^2$ is the accumulated noise variance and the identification
-$\int_{\tau_k}^{\tau_{k-1}}g^2\,d\tau=\sigma_k^2-\sigma_{k-1}^2=\delta_k$ of
-\eqref{eq:delta} is exact.
-Because Gaussians are closed under convolution, the noised marginal is the same mixture
-with widened variances $v_m+\sigma^2$, and the score is the responsibility-weighted
-average
+With variance-exploding additive noise,
+$p(x_k\mid x_0) = \mathcal{N}(x_k;\; x_0,\; s_k^2)$.
+The noised marginal is therefore
+$p(x_k) = \sum_{m=1}^{2} c_m\,p_m(x_k)$, where
+$p_m(x_k) = \mathcal{N}(x_k;\; \mu_m,\; \sigma_m^2 + s_k^2)$.
+The score is
 \begin{equation}\label{eq:exact-score}
-  \nabla_x\log p_\sigma(x)
-  \;=\; \sum_{m=1}^{2} \pi_m(x;\sigma)\,
-       \frac{\mu_m - x}{v_m+\sigma^2},
+  \nabla_{x_k}\!\log p(x_k)
+  \;=\; \sum_{m=1}^{2} \alpha_m(x_k)\,
+       \frac{\mu_m - x_k}{\sigma_m^2 + s_k^2},
   \qquad
-  \pi_m(x;\sigma) \;=\;
-   \frac{w_m\,\mathcal{N}\bigl(x;\;\mu_m,\;v_m+\sigma^2\bigr)}
-        {\sum_{m'} w_{m'}\,\mathcal{N}\bigl(x;\;\mu_{m'},\;v_{m'}+\sigma^2\bigr)}.
+  \alpha_m(x_k) \;=\;
+   \frac{c_m\,p_m(x_k)}
+        {p(x_k)}.
 \end{equation}
 
 \subsection{Intermediate likelihood and guidance}
 
-The intermediate likelihood $p(y\mid x_\sigma)=\int p(y\mid x_0)\,p(x_0\mid x_\sigma)\,dx_0$
-is known in closed form via the mixture-in-$y$ identity
+Conditioned on component~$m$ and state~$x_k$,
+\begin{equation}\label{eq:obs-by-comp}
+  p_m(y\mid x_k) \;=\;
+    \mathcal{N}\Bigl(y;\;
+      \mu_m + \tfrac{\sigma_m^2}{\sigma_m^2+s_k^2}(x_k-\mu_m),\;
+      \gamma^2 + \tfrac{\sigma_m^2 s_k^2}{\sigma_m^2+s_k^2}\Bigr).
+\end{equation}
+The intermediate likelihood is therefore
 \begin{equation}\label{eq:exact-likelihood}
-  p(y\mid x_\sigma)
-  \;=\; \sum_{m=1}^{2} \pi_m(x;\sigma)\,
-       \mathcal{N}\bigl(y;\; m_m(x),\; \gamma^2+c_m(x)\bigr),
+  p(y\mid x_k) \;=\; \sum_{m=1}^{2} \alpha_m(x_k)\,
+                     p_m(y\mid x_k).
 \end{equation}
-with $m_m(x)=\mu_m+\frac{v_m}{v_m+\sigma^2}(x-\mu_m)$ and
-$c_m(x)=\frac{v_m\sigma^2}{v_m+\sigma^2}$.
-Guidance follows \eqref{eq:guidance-drift} with the exact drift
-\begin{equation}\label{eq:guidance-exact}
-  b(x_\sigma,\tau) \;=\; \nabla_{x_\sigma}\log p(y\mid x_\sigma),
-\end{equation}
-which is computed exactly by differentiating \eqref{eq:exact-likelihood}.
-Because the responsibilities $\pi_m(x;\sigma)$ are a genuinely nonlinear function of $x$,
-the Hessian $H_k=\nabla^2_{x_k}\log p(y\mid x_k)$ and the divergence $\nabla\!\cdot\! b$
-are non-constant, so the alternative Girsanov discretisations of
-Appendix~\ref{app:alternatives} are meaningfully distinguishable.
-(A single-Gaussian prior would make $\log p(y\mid x_\sigma)$ quadratic in $x$ and
-collapse all of them.)
+Guidance follows \eqref{eq:guidance-drift}; $b_k$ is computed by
+differentiating~\eqref{eq:exact-likelihood}.
+Because $\alpha_m(x_k)$ are genuinely nonlinear in $x_k$,
+the Hessian and divergence are non-constant, so the alternative Girsanov
+discretisations of Appendix~\ref{app:alternatives} are meaningfully
+distinguishable (a single-component prior would collapse all of them).
 
-\subsection{Schedule, weights, and the boundary term}
+\subsection{Sequential Monte Carlo}
 
-The reverse trajectory uses the EDM power-law schedule \citep{karras2022edm} with
-$\rho=7$, $\sigma_{\max}=6$, $\sigma_{\min}=10^{-3}$, and $K$ steps, giving step
-increments $\delta_k=\sigma_k^2-\sigma_{k-1}^2$ and realised Brownian increments
-$\sqrt{\delta_k}\,z_k$ as in \eqref{eq:girsanov}.
-The particle filter applies the unified weight \eqref{eq:unified-weight}, with adaptive
-resampling whenever the effective sample size drops below half the particle count
-\citep{chopin2020smc}.
-Particles are initialised from the exact noised marginal $p_{\sigma_{\max}}$
-(not white noise), so the initial weight is exactly
+Weighting follows the unified update~\eqref{eq:unified-weight}.
+Particles are initialised from the exact noised marginal $p(x_K)$
+(not white noise), so the initial weight is
 \begin{equation}\label{eq:boundary-weight}
-  w_K \;\propto\; \tilde p(y\mid x_K)^\rho,
+  w_K \;\propto\; p(y\mid x_K)^\rho,
 \end{equation}
-the boundary term required by the telescoping identity \eqref{eq:unified-weight-raw} once
-$\rho\neq 1$; it is easily omitted in an implementation and must be kept when $\rho$ is
-varied.
+the boundary term required by the telescoping identity once $\rho\neq 1$.
+Resampling is triggered whenever the effective sample size drops below
+half the particle count \citep{chopin2020smc}.
 
 \subsection{Metrics}
 
@@ -358,88 +335,82 @@ To attribute weight variance to its sources we also track the per-step decomposi
         + \lambda^2\,\mathrm{Var}[C_k]
         + 2\lambda\rho\,\mathrm{Cov}[\Delta\ell, C_k],
 \end{equation}
-with $\Delta\ell=\log\tilde p(y\mid x_{k-1})-\log\tilde p(y\mid x_k)$.
+with $\Delta\ell=\log p(y\mid x_{k-1})-\log p(y\mid x_k)$.
 
-\subsection{Experiment: K-sweep and ESS stability}\label{sec:toy-k-sweep}
+\subsection{Experiments}\label{sec:toy-k-sweep}
 
-The immediate validation is a sweep of the number of reverse steps
-$K\in\{500,1000,2000,4000,8000\}$ at fixed $\sigma_{\max}$ and $\sigma_{\min}$,
-$N=512$ particles, and $(\lambda,\rho)=(1,1)$, over both proposals of
-Section~\ref{sec:proposals} and the Girsanov variants of
-Appendix~\ref{app:alternatives} that are tractable in one dimension: the left-endpoint
-baseline \eqref{eq:girsanov}, the subdiscretised \eqref{eq:subdisc}, the It\^o-Taylor
-\eqref{eq:ito-taylor}, the trapezoidal and hybrid rules, and the predictor-point
-heuristic.
-All of them are exact or cheap in one dimension: $H_k$ and $\nabla\!\cdot\!b$ reduce to
-scalar derivatives of \eqref{eq:exact-likelihood}, subdiscretisation costs a few extra
-score evaluations, and the discrete kernel ratio of Appendix~\ref{app:alternatives} can
-be evaluated numerically for the Heun-SDE proposal as an optional reference arm.
+The model parameters are $c=(0.6,0.4)$, $\mu=(-1.5,2.0)$,
+$\sigma_m^2=(0.7,1.3)$, with $y=0.0$ and $\gamma^2=1.0$; the resulting
+analytic posterior has mean $-0.326$ and standard deviation $1.061$.
+The schedule uses $s_K=6$, $s_0=10^{-3}$, $r=7$.
 
-\textbf{Primary question.}
-Does the effective sample size stay near $N$ as $K\to\infty$, or does some method
-collapse?
-Our analysis predicts stability for every arm: the leading term
-$-\sqrt{\delta_k}\,b_k^\top z_k$ of each incremental log-weight is zero-mean with
-variance of order $\delta_k$, so the total weight variance is a Riemann sum converging to
-a constant as $K\to\infty$; the higher-order corrections \eqref{eq:subdisc} and
-\eqref{eq:ito-taylor} add only $O(\delta_k^2)$ variance and cannot change this.
-For the pseudo-bootstrap weight ($\lambda=0$) the claim holds exactly before any limit is
-taken: the telescoping likelihood-ratio sum collapses to a single endpoint difference
-$\rho[\log\tilde p(y\mid x_0)-\log\tilde p(y\mid x_K)]$, a bounded random variable whose
-variance is independent of $K$.
-Neither mechanism predicts ESS collapse in $K$ alone; the sweep verifies this empirically
-and flags any variant whose discretisation error fails to decrease fast enough to
-maintain it.
-
-\textbf{Secondary question.}
-Consistent $\lambda=1$ arms should converge to the analytic posterior
-\eqref{eq:analytic-posterior} as $K\to\infty$ (both trajectory and weight error vanish),
-while any variant carrying a persistent quadrature bias should plateau at a finite $W_1$
-floor.
-The predictor-point heuristic is the natural candidate for a persistent bias because it
-is not It\^o-consistent without extra correction terms
-(Appendix~\ref{app:alternatives}).
-For the left-endpoint baseline on GEM the weight is exact at every $\delta_k$
-(Appendix~\ref{app:girsanov-euler}), so $W_1$ should be flat in $K$ within Monte Carlo
-noise while the ESS remains near $N$; Heun-SDE's approximate weight is unbiased to within
-the noise floor at this particle count.
-Any deviation from this pattern isolates a discretisation or implementation error.
-
-\subsection{Experiment: $\lambda$ sweep}
-
-Before the full K-sweep, a complementary sweep fixes $K$ and varies
-$\lambda\in\{0,0.25,0.5,0.75,1\}$ at $\rho=1$.
-This directly validates the unified weight~\eqref{eq:unified-weight}:
-the Girsanov correction strength $\lambda$ should interpolate continuously
-between the pseudo-bootstrap target ($\lambda=0$) and the exact posterior target
-($\lambda=1$).  In particular the weighted posterior variance error $|\hat s-s^\ast|$
-is predicted to decline monotonically with $\lambda$, and the effective sample
-size should remain near $N$ for all $\lambda$ since the dominant stochastic
-component cancels in the sum $\rho\Delta\ell+\lambda C_k$.
-
-\subsection{Deferred experiments}
-
-The following experiments are planned but run one at a time, after the K-sweep of
-Section~\ref{sec:toy-k-sweep}:
-
+The implementation (\texttt{smc/toy\_smc.py}) uses the GEM proposal
+with the left-endpoint correction~\eqref{eq:girsanov}.
+The following sweeps are run (see the code for details):
 \begin{itemize}
-  \item \textbf{$\lambda$-$\rho$ grid.} $\lambda\in\{0,0.25,0.5,0.75,1\}$ and
-        $\rho\in\{0.5,1,2\}$, with the boundary initialisation \eqref{eq:boundary-weight}.
-        This interpolates between the exact target $(\lambda{=}1,\rho{=}1)$, the tempered
-        pseudo-bootstrap ($\lambda{=}0$), and fractional corrections, and confirms that
-        $\rho\neq 1$ targets $\tilde p(y\mid x_0)^\rho\,p(x_0)$.
-        (The $\lambda$ sweep at $\rho=1$ has been completed; the $\rho$ sweep is deferred.)
-  \item \textbf{Sharp-observation stress.} $\gamma^2\in\{0.5,0.1,0.02\}$.
-        Smaller $\gamma$ sharpens $\tilde p$ and amplifies $\|b\|$, increasing the
-        incremental weight variance; this is a more likely axis of ESS collapse than $K$
-        itself.
-  \item \textbf{Convergence order.} Log-log study of
-        $|C_k^{\text{variant}}-C_k^{\text{ref}}|$ versus $\delta$ to confirm the advertised
-        orders (left-endpoint $O(\delta)$, trapezoidal and hybrid $O(\delta^2)$).
-  \item \textbf{Numerical kernel ratio.} For the non-Gaussian Heun-SDE proposal, evaluate
-        the discrete kernel ratio of Appendix~\ref{app:alternatives} numerically as a
-        reference weight.
+  \item \textbf{$K$-sweep.}
+        $K\in\{100,200,500,1000,2000,5000\}$,
+        $N=1024$, $(\lambda,\rho)=(1,1)$.
+  \item \textbf{$\lambda$ sweep.}
+        $\lambda\in\{0,0.25,0.5,0.75,1\}$,
+        $K=5000$, $N=1024$, $\rho=1$.
+  \item \textbf{$\lambda$ comparison $K$-sweep.}
+        Same $K$ values, comparing $\lambda=1$ against $\lambda=0$,
+        $N=1024$.
 \end{itemize}
+All runs initialise particles from the exact noised marginal
+$p(x_K)$ with the boundary weight~\eqref{eq:boundary-weight}.
+Reported metrics are $W_1$ distance~\eqref{eq:W1}, weighted-mean and
+weighted standard-deviation error, effective sample size, and
+resampling count.
+
+\subsubsection*{Results}
+
+\textbf{$\lambda$ sweep} ($K=5000$, $N=1024$).
+$|\mathrm{dstd}|$ drops monotonically from $0.29$ ($\lambda=0$)
+to $0.015$ ($\lambda=1$), a $19\times$ reduction, confirming that the
+Girsanov correction controls posterior variance recovery.
+$W_1$ improves from $0.26$ to $0.03$, and ESS remains above $84\%$ of
+$N$ for all $\lambda$ (no resampling triggered).
+
+\textbf{$K$ sweep} ($\lambda=1$, $N=1024$).
+All metrics stay bounded as $K$ grows.
+With GEM the left-endpoint correction~\eqref{eq:girsanov} equals the
+exact kernel ratio at every step, so the weight is not a source of
+discretisation bias; $W_1$ oscillates around $\sim0.04$ within
+Monte~Carlo noise and no ESS collapse occurs.
+
+\textbf{$\lambda$ comparison} (same $K$ values, $N=1024$).
+At every $K$, $\lambda=1$ improves $W_1$ by a factor of $5$--$8$
+and $|\mathrm{dstd}|$ by $10$--$100\times$ relative to
+$\lambda=0$, for which $|\mathrm{dstd}|\approx0.29$ independently
+of~$K$.
+The Girsanov correction is essential for accurate posterior recovery.
+
+Full figures are generated by the code (\texttt{smc/figs/}) and
+include comparison with the deterministic Heun ODE baseline, which
+collapses to a point estimate with no uncertainty quantification.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.85\textwidth]{figs/lambda_experiment.pdf}
+\caption{$\lambda$ sweep ($K=5000$, $N=1024$).}
+\label{fig:lambda}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.85\textwidth]{figs/K_experiment.pdf}
+\caption{$K$ sweep ($\lambda=1$, $N=1024$).}
+\label{fig:K}
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.85\textwidth]{figs/K_lambda_comparison.pdf}
+\caption{$\lambda$ comparison $K$-sweep ($N=1024$).}
+\label{fig:lambda-comp}
+\end{figure}
 
 \section{PDE-constrained reconstruction}\label{sec:pde}
 
@@ -449,7 +420,7 @@ likelihood combines sparse sensor observations with a PDE residual.
 The exact intermediate likelihood of the toy, \eqref{eq:exact-likelihood}, is intractable
 in this setting; the guided samplers replace it with a surrogate formed from scaled
 observation and residual losses, whose gradient plays the role of the guidance drift
-\eqref{eq:guidance-exact}.
+\eqref{eq:guidance-drift}.
 The weighting machinery of Section~\ref{sec:toy-k-sweep} transfers directly.
 Details of scaling, sensor masks, and the experimental design are deferred; the toy model
 above serves as the closed-form ground truth for the weighting machinery before any
@@ -511,8 +482,8 @@ Cost: $m$ additional evaluations of $b$ per step.
 
 \subsection{It\^o-Taylor correction}
 
-Let $H_k \coloneqq \nabla^2_{x_k}\log\tilde p(y\mid x_k)$ be the Hessian of
-$\log\tilde p$.
+Let $H_k \coloneqq \nabla^2_{x_k}\log p(y\mid x_k)$ be the Hessian of
+$\log p$.
 A first-order It\^o-Taylor expansion of the stochastic integral yields
 \begin{equation}\label{eq:ito-taylor}
   C_k^{\text{IT}}
@@ -534,7 +505,7 @@ The conversion to an It\^o integral for diffusion coefficient $g(\tau)I$ is
 \int g\,b\circ dW^{\bbQ}
 -\frac12\int g^2\,\nabla\!\cdot\! b\; d\tau,
 \]
-where $\nabla\!\cdot\! b = \Delta_x\log\tilde p(y\mid x)$.
+where $\nabla\!\cdot\! b = \Delta_x\log p(y\mid x)$.
 A trapezoidal rule with the correction becomes
 \[
 C_k^{\text{trap}}

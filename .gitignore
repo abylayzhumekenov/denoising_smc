@@ -51,3 +51,6 @@ wandb/
 *.fdb_latexmk
 *.fls
 *.toc
+
+# Generated figures referenced by the note (exception to *.pdf)
+!docs/figs/*.pdf

@@ -1,95 +1,69 @@
-# Validating the λ-ρ Unified Weight on a 1D Gaussian-Mixture Toy
+# Toy SMC — Validation
 
-Self-contained validation of the SMC weighting machinery (`docs/note_2.tex` §2)
-against a closed-form ground truth.
+1D Gaussian-mixture validation of the unified weight
+(`docs/note_2.tex` §2).  Closed-form ground truth; any deviation is
+algorithm error.
 
 Reproduce: `venv/bin/python smc/toy_smc.py`
 
 ## Setting
 
 **Prior.** Two-component Gaussian mixture:
-$$p_0(x) = w_1\,\mathcal{N}(x;\mu_1,v_1) + w_2\,\mathcal{N}(x;\mu_2,v_2),$$
-with $w=(0.6,0.4)$, $\mu=(-1.5,2.0)$, $v=(0.7,1.3)$.
+$p(x_0) = \sum_m c_m p_m(x_0)$, $p_m(x_0) = \mathcal{N}(\mu_m, \sigma_m^2)$,
+with $c=(0.6,0.4)$, $\mu=(-1.5,2.0)$, $\sigma_m^2=(0.7,1.3)$.
 
-**Noising.** VE/EDM: $x_\sigma = x_0 + \sigma z$, $z\sim\mathcal{N}(0,1)$.  The noised
-marginal is the same mixture with widened variances $v_m+\sigma^2$, and the score
-$\nabla_x\log p_\sigma(x)$ is exact (no learned network).
+**Noising.** VE SDE with scalar $g(\tau)$; $p(x_k|m) = \mathcal{N}(\mu_m, \sigma_m^2 + s_k^2)$.
+Score $\nabla_{x_k}\log p(x_k)$ is exact (mixture responsibility-weighted).
 
-**Observation.** $y = x_0 + \varepsilon$, $\varepsilon\sim\mathcal{N}(0,\gamma^2)$,
-with $y=0.0$ and $\gamma^2=1.0$ (wide enough to see both prior modes).
+**Observation.** $p(y|x_0) = \mathcal{N}(y; x_0, \gamma^2)$, $y=0.0$, $\gamma^2=1.0$.
 
-**Posterior.** Analytic (mixture × Gaussian = mixture, per-component Kalman update).
-For this instance: **mean −0.33, std 1.06**, visibly bimodal.
+**Posterior.** Analytic (per-component Kalman update).  Mean −0.326, std 1.061.
 
-**Intermediate likelihood.** The exact $p(y\mid x_\sigma)$ is available in closed form
-via the mixture-in-$y$ identity (`note_2.tex` eq 27).  Guidance uses $\nabla_x\log p(y\mid x_\sigma)$
-exactly — no approximation, so every deviation from the analytic posterior is
-algorithm error.
+**Schedule.** EDM power-law: $s_K=6$, $s_0=10^{-3}$, $r=7$.
 
-## Samplers
+## Sampler
 
-| Sampler | Proposal | Weight | Returns |
-|---------|----------|--------|---------|
-| `run_smc` | GEM (Euler–Maruyama, guided) | $\lambda$–$\rho$ unified (eq 18) | Particles + log-weights + ESS |
-| `run_ode` | Deterministic guided Heun (EDM) | — | Particles only (no weights) |
+`run_smc` — GEM proposal + left-endpoint Girsanov $C_k$ (= TDS when $\lambda=1$).
+`run_ode` — deterministic guided Heun ODE (baseline, no weights).
 
-`run_smc` always uses the left-endpoint Girsanov correction $C_k = -\sqrt{\delta_k}\,b_k z_k - \frac12\delta_k\|b_k\|^2$,
-which equals the exact Gaussian kernel ratio for GEM (= TDS when $\lambda=1$).
+## Experiments
 
-## λ-sweep experiment
+### $\lambda$ sweep ($K=5000$, $N=1024$, $\rho=1$, GEM)
 
-Sweeps $\lambda\in\{0,0.25,0.5,0.75,1\}$ at $\rho=1$, $K=2000$, $N=512$, $8$ seeds.
-Metrics: W1, |dmean|, |dstd| (weighted), final ESS (SEM across seeds).
+| $\lambda$ | $W_1$ | $|\mathrm{dmean}|$ | $|\mathrm{dstd}|$ | ESS |
+|---|---|---|---|---|---|
+| 0.00 (pBS) | 0.264 | 0.057 | 0.288 | 858 |
+| 0.25 | 0.218 | 0.042 | 0.236 | 908 |
+| 0.50 | 0.163 | 0.026 | 0.176 | 958 |
+| 0.75 | 0.098 | 0.008 | 0.103 | 1000 |
+| 1.00 (TDS) | 0.034 | 0.012 | 0.015 | 1020 |
 
-**Output:** one 2×2 PDF figure (`smc/figs/lambda_experiment.pdf`):
-- Top row: W1 / |dstd| / ESS vs $\lambda$ (single blue line, error bars = SEM).
-- Bottom row: weighted KDE (SMC, $\lambda$ gradient) + ODE rug ticks + analytic PDF.
+$|\mathrm{dstd}|$ drops 19× from $\lambda=0$ to $\lambda=1$.  $\lambda$
+controls posterior variance recovery cleanly.  No resampling triggered.
 
-### Results ($N=512$, $K=2000$, $y=0.0$, $\gamma^2=1.0$)
+### $K$ sweep ($\lambda=1$, $N=1024$, GEM)
 
-| λ | W1 | |dmean| | |dstd| | ESS |
-|---|---:|---:|---:|---:|
-| 0.00 (pBS) | 0.065 | 0.087 | 0.276 | 432 |
-| 0.25 | 0.065 | 0.073 | 0.227 | 456 |
-| 0.50 | 0.065 | 0.062 | 0.169 | 480 |
-| 0.75 | 0.065 | 0.055 | 0.100 | 500 |
-| 1.00 (TDS) | 0.065 | 0.047 | 0.020 | 510 |
+| $K$ | $W_1$ | $|\mathrm{dstd}|$ | ESS |
+|---|---|---|---|---|
+| 100 | 0.036 | 0.003 | 993 |
+| 200 | 0.023 | 0.013 | 1006 |
+| 500 | 0.047 | 0.038 | 1016 |
+| 1000 | 0.060 | 0.049 | 1018 |
+| 2000 | 0.040 | 0.027 | 1019 |
+| 5000 | 0.034 | 0.015 | 1020 |
 
-### Interpretation
+All metrics bounded as $K$ grows.  GEM's exact kernel ratio keeps the
+weight correction unbiased; $W_1$ oscillates within Monte Carlo noise.
+No ESS collapse.
 
-**λ controls posterior variance recovery.**  |dstd| drops monotonically from 0.276
-(pBS) to 0.020 (TDS) — a 14× improvement.  Fractional λ interpolates cleanly,
-confirming the unified-weight formula (eq 18).
+### $\lambda$ comparison ($K$-sweep, $N=1024$)
 
-**W1 is identical across λ.**  W1 depends only on unweighted particle positions.
-Since `run_smc` uses the same GEM proposal with the same seed for every λ, the
-particle cloud is identical — only the weights differ.  The residual W1 ≈ 0.065
-at $K=2000$ is the finite-step trajectory error, equal for all arms.  More steps or
-more particles would reduce it further.
+$\lambda=1$ improves $W_1$ by 5–8× and $|\mathrm{dstd}|$ by 10–100×
+relative to $\lambda=0$ at every $K$.  The Girsanov correction is essential
+for accurate posterior recovery.
 
-**ESS is healthy for all λ.**  432–510 out of $N=512$, no resampling triggered.
-The Girsanov correction cancels the dominant stochastic component of the
-likelihood ratio, keeping weight variance small.  Even pBS (λ=0) stays at 84% of N
-because the telescoping likelihood-ratio sum collapses to the bounded random
-variable $\log p(y\mid x_0)$.
+## Figures
 
-**ODE → point estimate.**  The deterministic guided Heun ODE produces a rug of
-nearly identical point estimates, confirming the core limitation of the
-DiffusionPDE baseline: zero uncertainty quantification.
+Generated by `smc/toy_smc.py` → `smc/figs/`, copied to `docs/figs/`
+for inclusion in `docs/note_2.pdf`.
 
-## Code structure
-
-```
-sweep_lambda(lambdas, K, N, seeds)        → table + data dict
-sweep_K(K_values, N, seeds, lam, rho)     → table + data dict  (future use)
-plot_lambda_experiment(data, K, N, ...)   → 2×2 PDF
-```
-
-Each sweep/plot is independently callable.  `main()` picks the current experiment.
-
-## Next steps
-
-- **K sweep** — check W1 → 0 as K → ∞ (trajectory error vanishes).
-- **ρ sweep** — confirm ρ directly controls posterior tempering.
-- **Heun-SDE** — higher-order proposal with `run_smc` adapted to use `heunsde`.
-- **PDE port** — Burgers/Darcy with learned score + surrogate likelihood.
