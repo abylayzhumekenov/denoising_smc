@@ -6,7 +6,7 @@ pretrained-models/
 *.npy
 *.npz
 
-# Images / figures
+# Images / figures (globally ignored, with exceptions below)
 *.jpg
 *.jpeg
 *.png
@@ -52,6 +52,6 @@ wandb/
 *.fls
 *.toc
 
-# Generated figures referenced by the notes (exception to *.pdf)
-!docs/figs/*.pdf
-!smc/figs/*.pdf
+# Tracked PDFs
+!docs/*.pdf
+!smc/scripts_1/figures/*.pdf
