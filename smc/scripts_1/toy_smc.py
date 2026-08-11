@@ -13,7 +13,7 @@ Plots (2×2: W1, |dstd|, ESS panels + weighted KDE density):
 
 Internals: _sweep (shared loop), _plot_experiment (shared layout)
 
-Run: venv/bin/python smc/toy_smc.py
+Run: .venv/bin/python smc/scripts_1/toy_smc.py
 """
 
 import os, resource, time
@@ -243,7 +243,7 @@ def weighted_stats(x, log_w):
 
 
 # ----------------------------------------------------------------- sweeps
-FIGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'figs')
+FIGS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'figures')
 os.makedirs(FIGS_DIR, exist_ok=True)
 
 

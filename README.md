@@ -7,23 +7,19 @@ Official PyTorch implementation.<br>
 Jiahe Huang, Guandao Yang, Zichen Wang, Jeong Joon Park<br>
 University of Michigan<br>
 Stanford University<br>
-![DiffusionPDE](docs/architecture.jpg)
-
 ## Setup
 
 Python dependencies are listed in [requirements.txt](requirements.txt). PyTorch must be installed separately depending on your hardware:
 
 ```bash
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 pip install -r requirements.txt
 # CPU only:
 pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 # GPU (CUDA):
 pip install torch torchvision
 ```
-
-Alternatively, the original conda environment can be recreated from [environment.yml](environment.yml) (if you have it).
 
 ## Data Generation
 
@@ -86,14 +82,12 @@ Please note that guidance weights could significantly influence the results. Wei
 
 ## SMC Extension
 
-This repo also contains a work-in-progress SMC (Sequential Monte Carlo) extension for diffusion-guided PDE solving:
-- [`docs/note_2.tex`](docs/note_2.tex) — mathematical note: Girsanov-corrected SMC for guided diffusion models ($\lambda$-$\rho$ unified weight, GEM and Heun-SDE proposals, appendices with kernel-ratio verification and alternative discretisations)
-- [`docs/references_2.bib`](docs/references_2.bib) — bibliography for the note
-- [`docs/idea.md`](docs/idea.md) — original research proposal (Girsanov correction, Heun-SDE, experimental design)
-- [`docs/recipe.md`](docs/recipe.md) — implementation guide (architecture, pseudocode, Python code)
-- [`smc/`](smc/) — SMC module (proposals, weights, particle filter)
-- [`smc/toy_smc.py`](smc/toy_smc.py) — 1D Gaussian-mixture toy that validates the SMC weighting against a known analytic posterior (`venv/bin/python smc/toy_smc.py`)
-- [`smc/toy_smc_findings.md`](smc/toy_smc_findings.md) — validation note / meeting report (toy results, W1/N-sweep)
+This repo also contains an SMC (Sequential Monte Carlo) extension for diffusion-guided PDE solving:
+- [`docs/note_1.pdf`](docs/note_1.pdf) — Girsanov‑corrected SMC: $\lambda$-$\rho$ unified weight, toy model experiments and figures, appendices (kernel‑ratio verification, alternative discretisations)
+- [`docs/note_2.pdf`](docs/note_2.pdf) — V$_tau$ / Doob‑transform discretisation companion
+- [`smc/`](smc/) — SMC module (proposals, weights, Hutchinson estimator, validation scripts)
+- [`smc/scripts_1/toy_smc.py`](smc/scripts_1/toy_smc.py) — 1D Gaussian‑mixture toy: validates the $\lambda$-$\rho$ weighting against an analytic posterior (`.venv/bin/python smc/scripts_1/toy_smc.py`)
+- [`smc/scripts_1/toy_smc_findings.md`](smc/scripts_1/toy_smc_findings.md) — validation report (results, figures, methodology)
 
 ## License
 

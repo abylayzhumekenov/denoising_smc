@@ -7,79 +7,49 @@
 | `torchrun --standalone --nproc_per_node=N train.py --outdir=DIR --data=PATH --cond=0 --arch=ddpmpp --batch=60 --batch-gpu=20 --duration=20 --ema=0.05` | Train diffusion model (EDM-style) |
 | `python3 generate_pde.py --config configs/<pde>.yaml` | Solve PDE via guided diffusion |
 | `python3 merge_data.py` | Merge raw `.mat` → scaled `.npy` for training |
-| `venv/bin/python smc/toy_smc.py` | 1D Gaussian-mixture toy: validate SMC λ-ρ weighting vs analytic posterior |
+| `.venv/bin/python smc/scripts_1/toy_smc.py` | 1D Gaussian-mixture toy: validate SMC λ-ρ weighting vs analytic posterior |
 
 ## Architecture
 
-- **`training/`** — EDM-derived training loop, networks (SongUNet/DhariwalUNet), loss functions (VP/VE/EDM), dataset loader (`ImageFolderDataset`), augmentation
-- **`smc/`** — SMC module for diffusion-guided PDE solving. The unified $\lambda$-$\rho$ weight (`docs/note_2.tex` Eq 17) is validated on a closed-form 1D Gaussian-mixture toy in `smc/toy_smc.py` (NumPy: GEM proposal, left-endpoint Girsanov, $\lambda$/K/comparison sweeps, weighted $W_1$ metrics). The companion V$_tau$ / Doob-transform discretisation (`docs/note_3.tex`) is implemented in `smc/toy_mixture.py` (PyTorch exact mixture), `smc/v_tau.py` (PDE-ready V$_tau$ computation via Hutchinson trace estimation), and the `smc/check_*.py` validation scripts. `smc/hutchinson.py` is the Hutchinson trace estimator for the Laplacian term.
-- **`scripts/generate_*.py`** — PDE-specific guided sampling. Each implements: PDE residual loss (finite-difference convs), observation loss (sparse sensor mask), and EDM reverse ODE with gradient guidance
-- **`configs/*.yaml`** — All parameters: data path/offset, pretrained model path, ODE solver params (sigma_min/sigma_max/rho), guidance weights (zeta_obs_a, zeta_obs_u, zeta_pde). Naming: `<pde>.yaml` = both spaces, `<pde>-forward.yaml` = forward, `<pde>-inverse.yaml` = inverse.
-- **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, distributed, persistence, training stats). Persistence pickles source code alongside weights; models load via `pickle.load(f)['ema']`. Device auto-detection lives in `torch_utils.misc.auto_device()`
+- **`training/`** — EDM-derived training loop, networks (SongUNet/DhariwalUNet), losses, dataset loader, augmentation
+- **`smc/`** — SMC module. λ-ρ unified weight (`docs/note_1.pdf`) validated in `smc/scripts_1/toy_smc.py` (NumPy). V_tau / Doob-transform (`docs/note_2.pdf`) implemented in `smc/toy_mixture.py`, `smc/v_tau.py`, `smc/hutchinson.py`, and `smc/check_*.py`.
+- **`scripts/generate_*.py`** — PDE-specific guided sampling (finite-difference convs, sensor mask, EDM reverse ODE)
+- **`configs/*.yaml`** — Parameters: data path, model path, ODE solver, guidance weights
+- **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, persistence, device auto-detect)
 
 ## Data Flow
 
-1. Raw PDE simulation → `.mat` files (or MATLAB/Python generators in `dataset_generation/`)
-2. `merge_data.py` loads .mat, scales values to (-1, 1) range, stacks coefficient+solution channels → `.npy`
+1. Raw PDE simulation → `.mat` files (`dataset_generation/`)
+2. `merge_data.py` scales to (-1, 1), stacks coefficient+solution channels → `.npy`
 3. Training: `ImageFolderDataset` reads `.npy` files
-4. Inference: `generate_pde.py` loads both the pretrained .pkl and test .mat data
+4. Inference: `generate_pde.py` loads pretrained .pkl + test .mat data
 
 ## Key Conventions & Gotchas
 
-- **Double precision**: All PDE guidance code uses `torch.float64` throughout (latents, network outputs, loss computation)
-- **Guidance two-phase**: Steps `i <= 0.8 * num_steps` apply only observation gradients; final 20% add PDE residual gradients (at 0.1× observation weight). Hardcoded in each `generate_*.py`
-- **Scaling**: Data is transformed to (-1, 1) for diffusion model. Inverse transform is applied each step before computing PDE/observation losses. Each PDE has its own scale factors (e.g. Darcy: `a = (a+1.5)/0.2`, `u = (u+0.9)/115`; Burgers: `x * 1.415`)
-- **Pretrained models**: Stored as `.pkl` pickles. Load with `pickle.load(f)['ema'].to(device)`. Models are ~208 MB each, excluded from git
-- **EDM ODE solver**: Heun's 2nd order method with sigma schedule `sigma_t = (sigma_max^(1/rho) + t/(N-1) * (sigma_min^(1/rho) - sigma_max^(1/rho)))^rho`
-- **Config observations**: Random sensor masks (`random_index`/`random_sensor`) are seeded by a separate seed from the generation seed
-- **`--cond=0`**: The diffusion model is trained unconditionally (no class labels). `--cond=1` would require labels
+- **Double precision**: All PDE guidance uses `torch.float64` throughout
+- **Guidance two-phase**: Steps `i <= 0.8 * num_steps` use observation gradients only; final 20% add PDE residual gradients (0.1× observation weight)
+- **Scaling**: Data at (-1, 1) for diffusion; inverse-transform before PDE/observation losses. Each PDE has own scale factors (Darcy: `a=(a+1.5)/0.2`, `u=(u+0.9)/115`; Burgers: `x*1.415`)
+- **Pretrained models**: `.pkl` pickles, load with `pickle.load(f)['ema'].to(device)`. ~208 MB, excluded from git
+- **EDM ODE solver**: Heun 2nd order, sigma schedule `sigma_t = (sigma_max^(1/rho) + t/(N-1) * (sigma_min^(1/rho) - sigma_max^(1/rho)))^rho`
+- **Config observations**: Random sensor masks seeded separately from generation seed
+- **`--cond=0`**: Model trained unconditionally; `--cond=1` would require labels
+- **Sign bug**: `d/dτ = −d/d(sigma_t)`. See `docs/note_1.pdf` eq.(8) for correct C_k sign.
 
 ## Setup
 
-```bash
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-# CPU only:
-pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
-# GPU (CUDA):
-pip install torch torchvision
-```
-
-- **Python**: 3.8–3.10 (PyTorch 1.12.1 compat)
-- **No tests, formatter, or linter** configured
-- **License**: CC BY-NC-SA 4.0 (EDM), MIT (PDE data generation)
+See `README.md` §Setup. Python 3.8–3.10 (PyTorch 1.12.1 compat). No tests, formatter, or linter configured. License: CC BY-NC-SA 4.0 (EDM), MIT (PDE data).
 
 ## Device Auto-Detection
 
-- All `configs/*.yaml` use `device: 'auto'` — resolves to CUDA if available, else CPU
-- Helper functions in `scripts/generate_*.py` use `auto_device()` from `torch_utils.misc`
-- **Training** (`train.py`) requires GPU / `torchrun` (single-GPU training is possible but impractical on CPU)
+- `configs/*.yaml` use `device: 'auto'` → CUDA if available, else CPU
+- `scripts/generate_*.py` helpers use `auto_device()` from `torch_utils.misc`
+- **Training** (`train.py`) requires GPU / `torchrun`
 - **Inference** (`generate_pde.py`) works on CPU (slow but functional)
 
 ## Reference Docs
 
-- `docs/note_2.tex` — math note: Girsanov-corrected SMC, $\lambda$-$\rho$ unified weight, Euler/Heun proposals, appendices (kernel-ratio verification, alternative Girsanov discretisations including the It\^o-formula $C_k^{\text{V}}$)
-- `docs/note_3.tex` — companion validation: V$_tau$ / Doob-transform discretisation on a 1D Gaussian-mixture toy with approximate plug-in likelihood; sign-convention discussion; numerical results
-- `docs/idea.md` — research proposal: methodology, derivations (Girsanov, Heun-SDE), experimental design
-- `docs/recipe.md` — implementation guide: architecture, pseudocode, Python code, gotchas (design spec — `smc/` modules not yet implemented)
-- `literature/README.md` — comprehensive literature survey of all papers in `literature/`
-- `docs/repo.md` — repository map + git tracking (tree, file roles, tech stack, excluded paths)
-- `smc/toy_smc_findings.md` — toy validation results: $\lambda$/$K$/comparison sweeps, weighted $W_1$ metrics, figures
-- `smc/hutchinson_findings.md` — Hutchinson trace estimator cost/variance benchmark on pretrained Burgers model
-
-## Docs Policy
-
-- Root holds only the two entry points: `README.md` (users) and `AGENTS.md` (agents)
-- All other markdown lives under `docs/` or co-located with its subject (`smc/`, `literature/`, `pretrained-models/`)
-- A doc that is only reachable from this reference list is a consolidation candidate
-
-## Project Context (User Extension)
-
-- `literature/` contains collected reference papers on diffusion models, SMC, and posterior sampling
-- `literature/arXiv-0000.00000v/paper.md` is a custom methodology writeup for FPS/FPS-SMC
-- `docs/idea.md` — initial research proposal (Girsanov correction, Heun-SDE, experimental design)
-- `docs/recipe.md` — implementation guide (architecture, pseudocode, Python code)
-- `docs/note_2.tex` — current math note: Girsanov-corrected SMC for guided diffusion models with unified $\lambda$-$\rho$ weight, appendices cataloguing alternative discretisations (including $C_k^{\text{V}}$)
-- `docs/note_3.tex` — companion note: V$_tau$/Doob-transform discretisation on the Gaussian-mixture toy with plug-in approximate likelihood
-- This repo integrates SMC methods into the DiffusionPDE guided sampling pipeline
+- `docs/note_1.pdf` — Girsanov‑corrected SMC: λ-ρ unified weight, toy experiments, appendices
+- `docs/note_2.pdf` — V_tau / Doob‑transform discretisation
+- `smc/scripts_1/toy_smc_findings.md` — toy validation results
+- `smc/hutchinson_findings.md` — Hutchinson trace estimator benchmark
+- `literature/README.md` — literature survey
