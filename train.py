@@ -157,7 +157,7 @@ def main(**kwargs):
     # Device (CUDA if available, else Apple Silicon MPS, else CPU).
     # Stored as a string (not a torch.device) so it stays JSON-serializable for the
     # options dump below; torch.Tensor.to()/torch.device() both accept plain strings.
-    c.device = str(auto_device())
+    c.device = str(auto_device(allow_mps=True))
 
     # Random seed.
     if opts.seed is not None:

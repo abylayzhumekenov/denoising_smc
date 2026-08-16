@@ -270,11 +270,19 @@ def print_module_summary(module, inputs, max_nesting=3, skip_redundant=True):
 #----------------------------------------------------------------------------
 # Auto-detect best available device.
 
-def auto_device():
-    """Select the best available device: CUDA, then Apple Silicon MPS, then CPU."""
+def auto_device(allow_mps=False):
+    """Select the best available device: CUDA, then (opt-in) Apple Silicon MPS, then CPU.
+
+    MPS is opt-in rather than automatic because Metal has no float64 backing at all -- it is
+    a missing *dtype*, not merely a missing kernel. Most of this repo allocates float64
+    directly on the device returned here (all six scripts/generate_*.py, both
+    smc/check_v_tau_*.py, and sample_prior.py), so defaulting to 'mps' would break every one
+    of them on their first allocation. Only callers that are float32 end-to-end should pass
+    allow_mps=True; at present that is train.py alone.
+    """
     if torch.cuda.is_available():
         return torch.device('cuda')
-    if getattr(torch.backends, 'mps', None) is not None and torch.backends.mps.is_available():
+    if allow_mps and getattr(torch.backends, 'mps', None) is not None and torch.backends.mps.is_available():
         return torch.device('mps')
     return torch.device('cpu')
 
