@@ -89,6 +89,14 @@ def report(name, value):
         elems.square().sum(),
     ])
     assert moments.ndim == 1 and moments.shape[0] == _num_moments
+    # float64 has no MPS backing; this is a 3-element bookkeeping tensor, not a hot path, so
+    # always accumulate it on CPU. _sync() below already collapses everything to CPU anyway
+    # (its `device` defaults to CPU whenever there's no multi-process sync in play), so this
+    # just makes the single-process/MPS case consistent with what already happens elsewhere.
+    # NOTE: device and dtype must change in two separate .to() calls, not one combined call --
+    # a combined `.to(device='cpu', dtype=torch.float64)` still fails on an MPS source tensor,
+    # apparently because the cast is attempted before/during the copy rather than strictly after.
+    moments = moments.detach().to('cpu')
     moments = moments.to(_counter_dtype)
 
     device = moments.device

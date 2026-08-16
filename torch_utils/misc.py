@@ -179,6 +179,10 @@ def ddp_sync(module, sync):
 
 def check_ddp_consistency(module, ignore_regex=None):
     assert isinstance(module, torch.nn.Module)
+    # Nothing to check consistency against with a single process, and torch.distributed.broadcast
+    # has no MPS kernel in current PyTorch builds -- skip entirely when there's only one rank.
+    if not (torch.distributed.is_initialized() and torch.distributed.get_world_size() > 1):
+        return
     for name, tensor in named_params_and_buffers(module):
         fullname = type(module).__name__ + '.' + name
         if ignore_regex is not None and re.fullmatch(ignore_regex, fullname):
@@ -267,7 +271,11 @@ def print_module_summary(module, inputs, max_nesting=3, skip_redundant=True):
 # Auto-detect best available device.
 
 def auto_device():
-    """Select CUDA if available, else CPU."""
-    return torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    """Select the best available device: CUDA, then Apple Silicon MPS, then CPU."""
+    if torch.cuda.is_available():
+        return torch.device('cuda')
+    if getattr(torch.backends, 'mps', None) is not None and torch.backends.mps.is_available():
+        return torch.device('mps')
+    return torch.device('cpu')
 
 #----------------------------------------------------------------------------

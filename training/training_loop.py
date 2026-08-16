@@ -86,7 +86,15 @@ def training_loop(
     loss_fn = dnnlib.util.construct_class_by_name(**loss_kwargs) # training.loss.(VP|VE|EDM)Loss
     optimizer = dnnlib.util.construct_class_by_name(params=net.parameters(), **optimizer_kwargs) # subclass of torch.optim.Optimizer
     augment_pipe = dnnlib.util.construct_class_by_name(**augment_kwargs) if augment_kwargs is not None else None # training.augment.AugmentPipe
-    ddp = torch.nn.parallel.DistributedDataParallel(net, device_ids=[device], broadcast_buffers=False)
+    # DistributedDataParallel's constructor itself does a cross-process allgather to verify
+    # parameter shapes match -- a collective op with no MPS kernel, and pointless anyway when
+    # there's only one process (nothing to synchronize). Skip the DDP wrapper entirely in that
+    # case; misc.ddp_sync() below already treats a plain nn.Module as a no-op sync context.
+    if dist.get_world_size() > 1:
+        device_ids = [device] if torch.cuda.is_available() else None
+        ddp = torch.nn.parallel.DistributedDataParallel(net, device_ids=device_ids, broadcast_buffers=False)
+    else:
+        ddp = net
     ema = copy.deepcopy(net).eval().requires_grad_(False)
 
     # Resume training from previous snapshot.
@@ -125,7 +133,10 @@ def training_loop(
         for round_idx in range(num_accumulation_rounds):
             with misc.ddp_sync(ddp, (round_idx == num_accumulation_rounds - 1)):
                 images, labels = next(dataset_iterator)
-                images = images.to(device).to(torch.float32) # normalize to -1..+1
+                # Cast to float32 *before* moving to device: MPS has no float64 support at all
+                # (not just a missing op -- the dtype itself isn't backed by Metal), and
+                # ImageFolderDataset._load_raw_image() deliberately loads .npy arrays as float64.
+                images = images.to(torch.float32).to(device) # normalize to -1..+1
                 labels = labels.to(device)
                 loss = loss_fn(net=ddp, images=images, labels=labels, augment_pipe=augment_pipe)
                 training_stats.report('Loss/loss', loss)

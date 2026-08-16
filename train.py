@@ -154,12 +154,20 @@ def main(**kwargs):
     c.update(loss_scaling=opts.ls, cudnn_benchmark=opts.bench)
     c.update(kimg_per_tick=opts.tick, snapshot_ticks=opts.snap, state_dump_ticks=opts.dump)
 
+    # Device (CUDA if available, else Apple Silicon MPS, else CPU).
+    # Stored as a string (not a torch.device) so it stays JSON-serializable for the
+    # options dump below; torch.Tensor.to()/torch.device() both accept plain strings.
+    c.device = str(auto_device())
+
     # Random seed.
     if opts.seed is not None:
         c.seed = opts.seed
     else:
-        seed = torch.randint(1 << 31, size=[], device=auto_device())
-        torch.distributed.broadcast(seed, src=0)
+        # torch.distributed.broadcast has no MPS kernel in current PyTorch builds, and is
+        # unnecessary anyway when there's only one process to begin with.
+        seed = torch.randint(1 << 31, size=[], device='cpu')
+        if dist.get_world_size() > 1:
+            torch.distributed.broadcast(seed, src=0)
         c.seed = int(seed)
 
     # Transfer learning and resume.
