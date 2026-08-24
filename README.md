@@ -86,8 +86,7 @@ This repo also contains an SMC (Sequential Monte Carlo) extension for diffusion-
 - [`docs/note_1.pdf`](docs/note_1.pdf) — Girsanov‑corrected SMC: $\lambda$-$\rho$ unified weight, toy model experiments and figures, appendices (kernel‑ratio verification, alternative discretisations)
 - [`docs/note_2.pdf`](docs/note_2.pdf) — V$_tau$ / Doob‑transform discretisation companion
 - [`smc/`](smc/) — SMC module (proposals, weights, Hutchinson estimator, validation scripts)
-- [`smc/scripts_1/toy_smc.py`](smc/scripts_1/toy_smc.py) — 1D Gaussian‑mixture toy: validates the $\lambda$-$\rho$ weighting against an analytic posterior (`.venv/bin/python smc/scripts_1/toy_smc.py`)
-- [`smc/scripts_1/toy_smc_findings.md`](smc/scripts_1/toy_smc_findings.md) — validation report (results, figures, methodology)
+- [`smc/scripts_1/toy_smc.py`](smc/scripts_1/toy_smc.py) — 1D Gaussian‑mixture toy: validates the three Girsanov‑corrected SMC weightings (pseudo‑bootstrap, Girsanov, potential) against an analytic posterior over four experiments (exact twist, surrogate twist, terminally‑consistent surrogate, step‑count sweep). Writes figures to `smc/scripts_1/figures/` and LaTeX tables to `smc/scripts_1/tables/` (`.venv/bin/python smc/scripts_1/toy_smc.py`)
 
 ## License
 

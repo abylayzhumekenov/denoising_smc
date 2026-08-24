@@ -7,12 +7,12 @@
 | `torchrun --standalone --nproc_per_node=N train.py --outdir=DIR --data=PATH --cond=0 --arch=ddpmpp --batch=60 --batch-gpu=20 --duration=20 --ema=0.05` | Train diffusion model (EDM-style) |
 | `python3 generate_pde.py --config configs/<pde>.yaml` | Solve PDE via guided diffusion |
 | `python3 merge_data.py` | Merge raw `.mat` → scaled `.npy` for training |
-| `.venv/bin/python smc/scripts_1/toy_smc.py` | 1D Gaussian-mixture toy: validate SMC λ-ρ weighting vs analytic posterior |
+| `.venv/bin/python smc/scripts_1/toy_smc.py` | 1D Gaussian-mixture toy: validate the three SMC weightings (pseudo-bootstrap, Girsanov, potential) vs analytic posterior (Exps 1–4) |
 
 ## Architecture
 
 - **`training/`** — EDM-derived training loop, networks (SongUNet/DhariwalUNet), losses, dataset loader, augmentation
-- **`smc/`** — SMC module. λ-ρ unified weight (`docs/note_1.pdf`) validated in `smc/scripts_1/toy_smc.py` (NumPy). V_tau / Doob-transform (`docs/note_2.pdf`) implemented in `smc/toy_mixture.py`, `smc/v_tau.py`, `smc/hutchinson.py`, and `smc/check_*.py`.
+- **`smc/`** — SMC module. Three weightings (pseudo-bootstrap, Girsanov, potential; `docs/note_1.pdf` §3) validated in `smc/scripts_1/toy_smc.py` (NumPy). V_tau / Doob-transform (`docs/note_2.pdf`) implemented in `smc/toy_mixture.py`, `smc/v_tau.py`, `smc/hutchinson.py`, and `smc/check_*.py`.
 - **`scripts/generate_*.py`** — PDE-specific guided sampling (finite-difference convs, sensor mask, EDM reverse ODE)
 - **`configs/*.yaml`** — Parameters: data path, model path, ODE solver, guidance weights
 - **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, persistence, device auto-detect)
@@ -48,8 +48,7 @@ See `README.md` §Setup. Python 3.8–3.10 (PyTorch 1.12.1 compat). No tests, fo
 
 ## Reference Docs
 
-- `docs/note_1.pdf` — Girsanov‑corrected SMC: λ-ρ unified weight, toy experiments, appendices
+- `docs/note_1.pdf` — Girsanov‑corrected SMC: three weightings, toy experiments, appendices
 - `docs/note_2.pdf` — V_tau / Doob‑transform discretisation
-- `smc/scripts_1/toy_smc_findings.md` — toy validation results
 - `smc/hutchinson_findings.md` — Hutchinson trace estimator benchmark
 - `literature/README.md` — literature survey
