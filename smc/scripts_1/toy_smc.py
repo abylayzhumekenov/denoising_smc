@@ -30,7 +30,17 @@ The three weightings of Sec. 3.2 (eq. 30-32), each used as the whole per-step in
     {25, 50, 100, 200, 500} at gamma_tilde = 0.5 annealed to gamma, run in the coarse regime
     where the discretisation error is visible: the corrected W1 is elevated at K = 25-50 and
     drops to the ESS/Monte-Carlo floor as K grows (eq. 33), while PBS keeps a structural bias
-    (eq. 34).  Experiments 1-3 use K = 500; all experiments use N = 2048.
+    (eq. 34).  Experiments 1-3 use K = 500; experiments 1-4 use N = 2048.
+
+  * Experiment 5 (N sweep, terminally-consistent surrogate): particle count N in
+    {32, 128, 512, 2048} at K = 500.  The corrected W1 follows 1/sqrt(N) -> 0 (no unremovable
+    bias, i.e. no bias floor as N grows), while PBS is flat (structural bias, eq. 34).
+
+  * Experiment 6 (stochastic-Heun proposal, terminally-consistent surrogate): same K sweep as
+    Exp 4 but with a stochastic Heun proposal (predictor + corrector sharing the same z), whose
+    kernel is non-Gaussian, so the left-endpoint corrections (18)/(17) are consistent-asymptotic
+    rather than finite-step exact.  Corrected W1/ESS approach the EM Exp-4 values as K grows;
+    PBS keeps its K-independent bias.
 
 Working convention (reverse-time, per Sec. 2.1/3.1): sigma decreases sigma_max -> sigma_min
 as tau goes 0 -> T, so the accumulated diffusion matrix of (12) is the positive scalar
@@ -69,6 +79,7 @@ OBS_Y = 0.0
 GAMMA2 = 1.0                  # exact observation variance gamma^2 (eq. 26)
 GAMMA_TILDE2 = 0.25           # misspecified observation variance gamma~^2 (Exp 2, Sec. 3.4)
 K_SWEEP = [25, 50, 100, 200, 500]                 # Exp 4: step count (coarse regime)
+N_SWEEP = [32, 128, 512, 2048]                    # Exp 5: particle count (powers of 4)
 
 
 def make_annealed_obs_var(gt):
@@ -214,8 +225,12 @@ def systematic_resample(log_w, rng):
 
 
 # ----------------------------------------------------------------- core sampler (Sec. 2.4-2.5)
-def run_smc(N, K, seed, obs_var, weighting, resample_threshold=0.5):
-    """Guided EM proposal + one of the three weightings.  Returns result dict.
+def run_smc(N, K, seed, obs_var, weighting, proposal='em', resample_threshold=0.5):
+    """Guided proposal + one of the three weightings.  Returns result dict.
+
+    `proposal` is 'em' (Euler-Maruyama, App. B; C_hat_k exact kernel ratio) or 'heun'
+    (stochastic Heun / 2-stage RK with the same z in both stages; the kernel is non-Gaussian,
+    so C_hat_k is consistent-asymptotic rather than finite-step exact).
 
     Pipeline (eq. 19-23): initial f0(xi_0); per-step G_k; terminal correction
     log p(y|xi_T) - fT(xi_T) (exact gamma always).  Systematic resampling at ESS < N/2.
@@ -237,7 +252,16 @@ def run_smc(N, K, seed, obs_var, weighting, resample_threshold=0.5):
 
         eps = rng.standard_normal(N)
         z = np.sqrt(delta) * eps                    # z_k ~ N(0, Sigma_k) (eq. 12)
-        x_next = x + delta * (st['score'] + st['grad']) + z    # EM proposal (App. B)
+        if proposal == 'em':
+            x_next = x + delta * (st['score'] + st['grad']) + z    # EM proposal (App. B)
+        elif proposal == 'heun':
+            # stochastic Heun: predictor then corrector, same z in both stages
+            x_pred = x + delta * (st['score'] + st['grad']) + z
+            stp = lik_stats(x_pred, skm1, _twist_obs(obs_var, skm1))
+            x_next = x + 0.5 * delta * ((st['score'] + st['grad']) +
+                                        (stp['score'] + stp['grad'])) + z
+        else:
+            raise ValueError(f'unknown proposal: {proposal}')
 
         f_km1 = loglik(x_next, skm1, _twist_obs(obs_var, skm1))  # f(xi_k; sigma_k)
         f_k = st['log_lik']                         # f(xi_{k-1}; sigma_{k-1})
@@ -319,12 +343,12 @@ WEIGHT_LABEL = {'pbs': 'PBS', 'girs': 'Girs', 'pot': 'Pot'}
 COLOR = {'pbs': '#d62728', 'girs': '#1f77b4', 'pot': '#2ca02c'}
 
 
-def _run_metrics(N, K, seed, obs_var):
+def _run_metrics(N, K, seed, obs_var, proposal='em'):
     """Run the three weightings at one setting; return results dict (no printing)."""
     pm, ps = posterior_params()[-2:]
     results = {}
     for w in WEIGHTS:
-        r = run_smc(N, K, seed, obs_var, w)
+        r = run_smc(N, K, seed, obs_var, w, proposal=proposal)
         wm, ws = weighted_stats(r['particles'], r['weights'])
         w1 = wasserstein1(r['particles'], r['weights'])
         dm = abs(wm - pm)
@@ -571,6 +595,106 @@ def run_exp4(N, seed):
                       'tab:toy_4',
                       ['K', 'W1 (PBS)', 'W1 (Girs)', 'W1 (Pot)', 'ESS (Girs)'], rows)
     plot_exp4(data, N)
+    return data
+
+
+def plot_exp6(data_heun, data_em, N):
+    """Single-panel W1-vs-K: stochastic-Heun proposal (solid) vs EM (dashed); corrected Heun
+    approaches the EM values as K grows, PBS stays flat."""
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    for w in WEIGHTS:
+        hv = [data_heun[K][w]['w1'] for K in K_SWEEP]
+        ev = [data_em[K][w]['w1'] for K in K_SWEEP]
+        ax.plot(K_SWEEP, hv, color=COLOR[w], marker=MARKER[w], markersize=5,
+                linewidth=1.3, label=f'{WEIGHT_LABEL[w]} (Heun)')
+        ax.plot(K_SWEEP, ev, color=COLOR[w], linestyle='--', linewidth=1.1,
+                label=f'{WEIGHT_LABEL[w]} (EM)')
+    ax.set_xscale('log'); ax.set_xlabel('K'); ax.set_ylabel('W1')
+    ax.legend(fontsize=7)
+    fig.suptitle(f'Experiment 6: stochastic-Heun proposal  (N={N}, '
+                 f'$\\tilde\\gamma=0.5$ annealed to $\\gamma$)')
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    path = os.path.join(FIGS_DIR, 'toy_6.pdf')
+    fig.savefig(path)
+    plt.close(fig)
+    print(f'Saved: {path}')
+
+
+def run_exp6(N, seed, em_data):
+    """Exp 6: K sweep with the stochastic-Heun proposal (non-Gaussian kernel), mirroring Exp 4.
+
+    The Heun kernel is non-Gaussian, so the left-endpoint corrections (18)/(17) are
+    consistent-asymptotic rather than finite-step exact; corrected W1/ESS should approach the
+    EM Exp-4 values as K grows, while PBS keeps its K-independent bias.
+    """
+    ov = make_annealed_obs_var(GAMMA_TILDE2)
+    print(f'\n=== Experiment 6: stochastic-Heun K sweep  (N={N}, terminally-consistent) ===')
+    print(f'{"K":>7}  {"W1(PBS)":>10}  {"W1(Girs)":>10}  {"W1(Pot)":>10}  {"ESS(Girs)":>9}')
+    print('-' * 50)
+    data, rows = {}, []
+    for K in K_SWEEP:
+        res = _run_metrics(N, K, seed, ov, proposal='heun')
+        data[K] = res
+        rows.append([f'{K}', _f4(res['pbs']['w1']), _f4(res['girs']['w1']),
+                     _f4(res['pot']['w1']), _f0(res['girs']['ess'])])
+        print(f'{K:>7}  {res["pbs"]["w1"]:>10.4f}  {res["girs"]["w1"]:>10.4f}  '
+              f'{res["pot"]["w1"]:>10.4f}  {res["girs"]["ess"]:>9.0f}')
+    write_latex_table(os.path.join(TABLES_DIR, 'toy_6.tex'),
+                      f'Exp 6: stochastic-Heun proposal (non-Gaussian kernel; '
+                      f'$\\tilde\\gamma(\\sigma)\\to\\gamma$; $N={N}$). The left-endpoint '
+                      f'corrections (18)/(17) are consistent-asymptotic rather than finite-step '
+                      f'exact; the corrected W1/ESS approach the EM Exp-4 values as $K$ grows, '
+                      f'while PBS keeps its $K$-independent bias (eq.~34).',
+                      'tab:toy_6',
+                      ['K', 'W1 (PBS)', 'W1 (Girs)', 'W1 (Pot)', 'ESS (Girs)'], rows)
+    plot_exp6(data, em_data, N)
+
+
+def plot_exp5(data, K):
+    """Single-panel log-log W1-vs-N: corrected follow 1/sqrt(N) -> 0 (no unremovable bias),
+    PBS is flat (structural bias)."""
+    fig, ax = plt.subplots(figsize=(7, 4.5))
+    for w in WEIGHTS:
+        vals = [data[N][w]['w1'] for N in N_SWEEP]
+        ax.plot(N_SWEEP, vals, color=COLOR[w], marker=MARKER[w], markersize=5,
+                linewidth=1.3, label=WEIGHT_LABEL[w])
+    c = data[N_SWEEP[2]]['girs']['w1'] * np.sqrt(N_SWEEP[2])      # fit C to Girs midpoint
+    nn = np.linspace(N_SWEEP[0], N_SWEEP[-1], 100)
+    ax.plot(nn, c / np.sqrt(nn), 'k--', linewidth=1.2, label=r'$C/\sqrt{N}$')
+    ax.set_xscale('log'); ax.set_yscale('log')
+    ax.set_xlabel('N'); ax.set_ylabel('W1')
+    ax.legend(fontsize=8)
+    fig.suptitle(f'Experiment 5: particle-count sweep  (K={K}, '
+                 f'$\\tilde\\gamma=0.5$ annealed to $\\gamma$)')
+    fig.tight_layout(rect=(0, 0, 1, 0.96))
+    path = os.path.join(FIGS_DIR, 'toy_5.pdf')
+    fig.savefig(path)
+    plt.close(fig)
+    print(f'Saved: {path}')
+
+
+def run_exp5(K, seed):
+    """Exp 5: N sweep (Monte-Carlo convergence) with a terminally-consistent surrogate."""
+    ov = make_annealed_obs_var(GAMMA_TILDE2)
+    print(f'\n=== Experiment 5: N sweep  (K={K}, terminally-consistent surrogate) ===')
+    print(f'{"N":>7}  {"W1(PBS)":>10}  {"W1(Girs)":>10}  {"W1(Pot)":>10}  {"ESS(Girs)":>9}')
+    print('-' * 50)
+    data, rows = {}, []
+    for N in N_SWEEP:
+        res = _run_metrics(N, K, seed, ov)
+        data[N] = res
+        rows.append([f'{N}', _f4(res['pbs']['w1']), _f4(res['girs']['w1']),
+                     _f4(res['pot']['w1']), _f0(res['girs']['ess'])])
+        print(f'{N:>7}  {res["pbs"]["w1"]:>10.4f}  {res["girs"]["w1"]:>10.4f}  '
+              f'{res["pot"]["w1"]:>10.4f}  {res["girs"]["ess"]:>9.0f}')
+    write_latex_table(os.path.join(TABLES_DIR, 'toy_5.tex'),
+                      f'Exp 5: terminally-consistent surrogate '
+                      f'($\\tilde\\gamma(\\sigma)\\to\\gamma$; $K={K}$). Corrected W1 follows '
+                      f'$1/\\sqrt{{N}}\\to 0$ as $N$ grows (no unremovable bias); PBS is flat '
+                      f'(structural bias, eq.~34), independent of $N$.',
+                      'tab:toy_5',
+                      ['N', 'W1 (PBS)', 'W1 (Girs)', 'W1 (Pot)', 'ESS (Girs)'], rows)
+    plot_exp5(data, K)
 
 
 # ----------------------------------------------------------------- main
@@ -610,7 +734,9 @@ def main():
     _exp3_diagnostics(N, K, seed)
     plot_exp3(res_3, N, K)
 
-    run_exp4(N=N, seed=seed)
+    em_data = run_exp4(N=N, seed=seed)
+    run_exp5(K=K, seed=seed)
+    run_exp6(N=N, seed=seed, em_data=em_data)
 
     print(f'\nDone ({time.time() - t0:.0f}s).')
 
