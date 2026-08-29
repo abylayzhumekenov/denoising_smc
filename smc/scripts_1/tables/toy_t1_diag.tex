@@ -1,0 +1,22 @@
+\begin{table}[ht]
+\centering
+\caption{T1 diagnostics ($N=2048$, $K=500$, $\kappa=0.5$, 4 seeds): under the exact twist the corrected increments vanish (eq.~33) and the pseudo-bootstrap weight telescopes to $f_T$ (eq.~34); the Girs-vs-Pot bridge gap (eq.~16) is the Pot quadrature error, smaller for the trapezoidal Pot-tr.  Terminally-consistent surrogates (consistent and plug-in, both with $r^2 = \gamma^2$) zero the terminal correction (eq.~23) and remove the last-step ESS collapse; the surrogate twist does not.}
+\label{tab:toy_t1_diag}
+\begin{tabular}{lcc}
+\toprule
+quantity & value & expected \\
+\midrule
+PBS telescoping spread $|\sum\Delta f_k - f_T|$ (eq.~34) & 7.618e-07 & $\approx 0$ \\
+mean per-step $|G_{\mathrm{Girs}} - G_{\mathrm{Pot}}|$ & 1.322e-03 & $\approx 0$ \\
+mean per-step $|G_{\mathrm{Girs}} - G_{\mathrm{Pot\text{-}tr}}|$ & 1.315e-03 & $\approx 0$ \\
+mean $|G_{\mathrm{Girs}}|$ (eq.~33) & 1.316e-03 & $\approx 0$ \\
+mean $|G_{\mathrm{Pot}}|$ (eq.~33) & 2.512e-05 & $\approx 0$ \\
+mean $|G_{\mathrm{Pot\text{-}tr}}|$ (eq.~33) & 1.520e-07 & $\approx 0$ \\
+mean $|G_{\mathrm{PBS}}|$ (eq.~34) & 2.221e-02 & >$0$ \\
+mean $|$terminal corr. (23)$|$, surrogate twist & 5.398e-01 & >$0$ \\
+mean $|$terminal corr. (23)$|$, consistent twist & 0.000e+00 & $\approx 0$ \\
+mean $|$terminal corr. (23)$|$, plug-in twist & 1.443e-16 & $\approx 0$ \\
+final ESS (Girs), sur. / cons. / plug-in & 177 / 2005 / 1643 & -- \\
+\bottomrule
+\end{tabular}
+\end{table}

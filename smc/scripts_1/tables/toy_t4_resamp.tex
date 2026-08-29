@@ -1,0 +1,19 @@
+\begin{table}[ht]
+\centering
+\caption{T4 resampling events by cell ($N=2048$, $K=500$, plug-in twist, 4 seeds, mean$\pm$std).  With the realistic plug-in surrogate the corrected weightings degenerate as $\gamma^2$ shrinks (its overconfidence, which ignores the residual uncertainty $c_k(\sigma)$, grows with $1+\sigma^2/r^2$): the resampling count rises 0 $\to$ 1 $\to$ 13 $\to$ ~65.}
+\label{tab:toy_t4_resamp}
+\begin{tabular}{lcccc}
+\toprule
+cell & $\gamma^2=4.0$ & $\gamma^2=1.0$ & $\gamma^2=0.25$ & $\gamma^2=0.0625$ \\
+\midrule
+EM PBS & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
+EM Girs & 0$\pm$0 & 1$\pm$0 & 14$\pm$1 & 68$\pm$2 \\
+EM Pot & 0$\pm$0 & 1$\pm$0 & 13$\pm$2 & 89$\pm$1 \\
+EM Pot-tr & 0$\pm$0 & 1$\pm$0 & 15$\pm$1 & 92$\pm$4 \\
+Heun PBS & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
+Heun Girs & 0$\pm$0 & 1$\pm$0 & 14$\pm$1 & 59$\pm$4 \\
+Heun Pot & 0$\pm$0 & 1$\pm$0 & 12$\pm$1 & 56$\pm$3 \\
+Heun Pot-tr & 0$\pm$0 & 1$\pm$0 & 14$\pm$3 & 58$\pm$1 \\
+\bottomrule
+\end{tabular}
+\end{table}
