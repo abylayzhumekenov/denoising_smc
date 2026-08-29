@@ -12,10 +12,17 @@ Grid axes (each experiment evaluates the full cell set with the same metrics):
       - surrogate   : gamma~ = kappa*gamma, constant (Sec. 3.4; terminally inconsistent)
       - consistent  : gamma~(sigma) annealed to gamma as sigma -> 0 (Sec. 2.5 remedy;
                       terminally consistent, terminal correction (23) vanishes)
-      - plug_in     : p~(y | xi_sigma) = N(y; D(xi,sigma), gamma^2), the realistic surrogate
+      - plug_in     : p~(y | xi_sigma) = N(y; D(xi,sigma), r^2), the realistic surrogate
                       used for guidance in practice, with D the exact Bayes-optimal denoiser
                       (note_2 eq. 2.6).  Terminally consistent (D(xi,0)=xi) but overconfident
-                      at intermediate sigma (ignores the residual uncertainty c_k(sigma)).
+                      at intermediate sigma: the naive width r^2 = gamma^2 ignores the
+                      residual uncertainty c_bar(sigma) = E_x[sigma^2 gradD], making the
+                      guidance up to ~4.5x too strong at sigma_max (gamma^2=1).
+      - plug_in_corrected : same plug-in with the residual-corrected width
+                      r^2(sigma) = gamma^2 + c_bar(sigma) (c_bar a one-time quadrature of
+                      the exact marginal; same oracle denoiser, seed-independent).  This is
+                      the deployable variant: terminally consistent and no intermediate-sigma
+                      overconfidence (see `plan_plug_in.md`).
     with kappa = gamma~_max / gamma the observation-std ratio at sigma_max.
 
   * proposal: EM (Euler-Maruyama, App. B; C_hat_k exact kernel ratio) or stochastic Heun
@@ -33,12 +40,14 @@ Tables T1-T4 (all one-perturbation from the canonical setting N=2048, K=500, gam
 kappa=0.5; every table is the mean over N_SEEDS seeds):
 
   * T1 Validity     : twist x weighting (EM)  -- machine check (eq. 33/34) + corrected-vs-PBS
-                      claim + terminal consistency, over all four twists.
-  * T2 Base grid    : proposal x weighting at the canonical plug-in twist.
+                      claim + terminal consistency, over all five twists.
+  * T2 Base grid    : proposal x weighting at the canonical plug-in corr twist
+                      (residual-corrected width, r^2(sigma) = gamma^2 + c_bar(sigma)).
   * T3 Convergence  : K-sweep and N-sweep over the base grid (discretisation and MC error).
   * T4 Regime       : gamma2-sweep over the base grid (observational regime where SMC works
-                      vs fails) with the plug-in twist, whose overconfidence grows as gamma^2
-                      shrinks.
+                      vs fails) with the plug-in corr twist: as gamma^2 shrinks the posterior
+                      sharpens and the corrected weightings degenerate at the
+                      observation-informativeness limit (no surrogate-induced overconfidence).
 
 Metrics (Sec. 3.5): Wasserstein-1 (eq. 35), weighted mean/std error, ESS, resampling count.
 For each cell we also record per-step increments, per-step ESS, the Girs-vs-Pot bridge gap
@@ -58,6 +67,7 @@ Run: .venv/bin/python smc/scripts_1/toy_smc.py
 import os
 import resource
 import time
+from functools import lru_cache
 
 import matplotlib
 matplotlib.use('Agg')
@@ -102,21 +112,23 @@ class PlugInTwist:
     """Realistic plug-in surrogate: p~(y | x_sigma) = N(y; D(x,sigma), r^2), with D the exact
     Bayes-optimal denoiser E[x0 | x_sigma] (note_2 eq. 2.3/2.6).  This is the surrogate
     structure actually used for guidance in practice (the PDE pipeline's plug-in likelihood).
-    Terminally consistent when r^2 = gamma^2: D(x,0) = x, so f(x,0) = log p(y|x).  Unlike the
-    exact-form twists it ignores the residual uncertainty c_k(sigma) at intermediate sigma, so
-    it is overconfident by a factor ~ 1 + sigma^2/r^2 that grows with sigma.  b, H are computed
-    analytically from the mixture responsibilities."""
+    Terminally consistent when r^2(sigma) -> gamma^2 as sigma -> 0: D(x,0) = x, so
+    f(x,0) = log p(y|x).  With the naive width r^2 = gamma^2 it ignores the residual
+    uncertainty c_k(sigma) at intermediate sigma and is overconfident by a factor
+    ~ 1 + sigma^2/r^2 that grows with sigma; the corrected variant r^2(sigma) = gamma^2 +
+    cbar(sigma) adds the expected residual.  `r2` is a scalar or a callable of sigma.
+    b, H are computed analytically from the mixture responsibilities."""
     def __init__(self, r2):
         self.r2 = r2
 
     def obs(self, sigma):
-        return self.r2
+        return _twist_obs(self.r2, sigma)
 
     def loglik(self, x, sigma):
         return self.stats(x, sigma)['log_lik']
 
     def stats(self, x, sigma):
-        return plug_in_stats(x, sigma, self.r2)
+        return plug_in_stats(x, sigma, self.obs(sigma))
 
 
 def exact_twist(gamma2=1.0):
@@ -142,6 +154,16 @@ def consistent_twist(gamma2=1.0, kappa=KAPPA):
 def plug_in_twist(gamma2=1.0):
     """Realistic plug-in surrogate with the true observation width r^2 = gamma^2."""
     return PlugInTwist(r2=gamma2)
+
+
+def plug_in_corrected_twist(gamma2=1.0):
+    """Plug-in surrogate with the residual-corrected width r^2(sigma) = gamma^2 + cbar(sigma),
+    cbar(sigma) = E_x[sigma^2 * gradD(x, sigma)] the expected residual posterior variance
+    (derived from the same oracle denoiser D the naive plug-in uses).  Terminally consistent
+    (cbar -> 0 as sigma -> 0, so eq. 23 vanishes) and removes the plug-in's intermediate-sigma
+    overconfidence that the naive width gamma^2 leaves (up to ~4.5x too narrow at sigma_max)."""
+    cbar = _cbar_schedule()
+    return PlugInTwist(r2=lambda sigma: gamma2 + cbar(sigma))
 
 
 # ----------------------------------------------------------------- VE schedule (Sec. 2.4 / eq. 27)
@@ -283,12 +305,31 @@ def plug_in_stats(x, sigma, r2):
     f = -0.5 * np.log(2 * np.pi * r2) - 0.5 * (OBS_Y - D) ** 2 / r2
     b = g * gradD
     H = (-gradD ** 2 + (OBS_Y - D) * grad2D) / r2
-    return dict(log_lik=f, grad=b, hess=H, score=s)
+    return dict(log_lik=f, grad=b, hess=H, score=s, D=D, gradD=gradD)
 
 
 def _twist_obs(obs_var, sigma):
     """Observation variance of the twist at noise level sigma (scalar or callable)."""
     return obs_var(sigma) if callable(obs_var) else obs_var
+
+
+@lru_cache(maxsize=None)
+def _cbar_schedule(n_grid=96, n_x=40000):
+    """Tabulate cbar(sigma) = E_x[sigma^2 * gradD(x, sigma)] on a log-sigma grid over
+    [SIGMA_MIN, SIGMA_MAX], by quadrature of sigma^2 * gradD(x, sigma) against the exact
+    mixture marginal p(x; sigma).  cbar is a prior expectation (seed-independent), so it is
+    computed once and interpolated in log-sigma; the returned object is a callable r2(sigma).
+    Independent of gamma2.  At sigma_max and gamma2=1, cbar ~ 3.5, i.e. the naive plug-in
+    width gamma^2 is ~4.5x too narrow there."""
+    sigs = np.geomspace(SIGMA_MIN, SIGMA_MAX, n_grid)
+    x = np.linspace(-40.0, 40.0, n_x)
+    cbars = np.empty_like(sigs)
+    for i, s in enumerate(sigs):
+        st = plug_in_stats(x, s, 1.0)          # r2 irrelevant for D / gradD
+        p = np.exp(noised_logpdf(x, s))
+        cbars[i] = s * s * np.trapezoid(st['gradD'] * p, x) / np.trapezoid(p, x)
+    return lambda sigma: np.interp(np.log(max(sigma, SIGMA_MIN)),
+                                   np.log(sigs), cbars)
 
 
 # ----------------------------------------------------------------- proposal (Appendix B)
@@ -413,7 +454,8 @@ def selfcheck():
     sigs = np.array([0.05, 0.5, 2.0, 5.0])
     err_b = err_H = err_score = 0.0
     for gamma2 in (1.0, 0.0625):
-        for tw in (exact_twist(gamma2), surrogate_twist(gamma2, KAPPA), plug_in_twist(gamma2)):
+        for tw in (exact_twist(gamma2), surrogate_twist(gamma2, KAPPA),
+                   plug_in_twist(gamma2), plug_in_corrected_twist(gamma2)):
             for x in xs:
                 for sig in sigs:
                     st = tw.stats(x, sig)
@@ -435,7 +477,7 @@ PROPOSAL_LABEL = {'em': 'EM', 'heun': 'Heun'}
 COLOR = {'pbs': '#d62728', 'girs': '#1f77b4', 'pot': '#2ca02c', 'pot_trap': '#9467bd'}
 MARKER = {'pbs': 'o', 'girs': 's', 'pot': '^', 'pot_trap': 'D'}
 TWIST_LABEL = {'exact': 'Exact', 'surrogate': 'Surrogate', 'consistent': 'Consistent',
-               'plug_in': 'Plug-in'}
+               'plug_in': 'Plug-in', 'plug_in_corrected': 'Plug-in corr'}
 
 
 def run_cell(N, K, seeds, twist, proposal='em', gamma2=1.0):
@@ -638,7 +680,8 @@ def run_t1(N, K, gamma2=1.0, kappa=KAPPA):
     twists = {'exact': exact_twist(gamma2),
               'surrogate': surrogate_twist(gamma2, kappa),
               'consistent': consistent_twist(gamma2, kappa),
-              'plug_in': plug_in_twist(gamma2)}
+              'plug_in': plug_in_twist(gamma2),
+              'plug_in_corrected': plug_in_corrected_twist(gamma2)}
     allres = {}
     for tname, tw in twists.items():
         res = run_cell(N, K, SEEDS, tw, 'em', gamma2)
@@ -662,8 +705,11 @@ def run_t1(N, K, gamma2=1.0, kappa=KAPPA):
                       f'($N={N}$, $K={K}$, $\\kappa={kappa}$, {N_SEEDS} seeds, mean$\\pm$std).  '
                       'The corrected weightings (Girs, Pot, Pot-tr) sit at the posterior for '
                       'every twist; PBS is biased away from the exact twist and increasingly so '
-                      'as the surrogate is misspecified.  The plug-in twist is the realistic '
-                      'surrogate ($N(y; D(x,\\sigma), \\gamma^2)$, terminally consistent).',
+                      'as the surrogate is misspecified.  The plug-in twists are the realistic '
+                      'surrogates ($N(y; D(x,\\sigma), r^2)$, terminally consistent): the naive '
+                      'width $r^2=\\gamma^2$ ignores the residual uncertainty and is overconfident, '
+                      'while plug-in corr uses the residual-corrected width '
+                      '$r^2(\\sigma)=\\gamma^2+\\bar c(\\sigma)$.',
                       'tab:toy_t1', ['twist'] + [WEIGHT_LABEL[w] for w in WEIGHTS], rows)
 
     _t1_diagnostics(allres, N, K, gamma2, kappa)
@@ -682,10 +728,12 @@ def _t1_diagnostics(allres, N, K, gamma2, kappa):
 
     rb = allres['surrogate']['girs']                          # terminally inconsistent
     rc = allres['consistent']['girs']                         # terminally consistent (idealised)
-    rp = allres['plug_in']['girs']                            # realistic plug-in
+    rp = allres['plug_in']['girs']                            # realistic plug-in (naive width)
+    rk = allres['plug_in_corrected']['girs']                  # plug-in, residual-corrected width
     tb = rb['terminal_corr']
     tc = rc['terminal_corr']
     tp = rp['terminal_corr']
+    tk = rk['terminal_corr']
 
     print('\nT1 diagnostics (mean over seeds):')
     print(f'  PBS telescoping spread (eq. 34)       = {eq34:.3e}   (expected ~0)')
@@ -694,9 +742,9 @@ def _t1_diagnostics(allres, N, K, gamma2, kappa):
     print(f'  mean|G| over steps:  PBS={meanG["pbs"]:.3e}  Girs={meanG["girs"]:.3e}  '
           f'Pot={meanG["pot"]:.3e}  Pot-tr={meanG["pot_trap"]:.3e}   (eq. 33/34)')
     print(f'  mean|terminal corr (23)|:  surrogate={tb:.3e}   consistent={tc:.3e}   '
-          f'plug-in={tp:.3e}')
+          f'plug-in={tp:.3e}   plug-in corr={tk:.3e}')
     print(f'  final ESS (Girs):                   surrogate={rb["ess"]:.0f}   '
-          f'consistent={rc["ess"]:.0f}   plug-in={rp["ess"]:.0f}')
+          f'consistent={rc["ess"]:.0f}   plug-in={rp["ess"]:.0f}   plug-in corr={rk["ess"]:.0f}')
 
     write_latex_table(
         os.path.join(TABLES_DIR, 'toy_t1_diag.tex'),
@@ -704,9 +752,11 @@ def _t1_diagnostics(allres, N, K, gamma2, kappa):
         'exact twist the corrected increments vanish (eq.~33) and the pseudo-bootstrap weight '
         'telescopes to $f_T$ (eq.~34); the Girs-vs-Pot bridge gap (eq.~16) is the Pot '
         'quadrature error, smaller for the trapezoidal Pot-tr.  Terminally-consistent '
-        'surrogates (consistent and plug-in, both with $r^2 = \\gamma^2$) zero the terminal '
-        'correction (eq.~23) and remove the last-step ESS collapse; the surrogate twist does '
-        'not.'.format(N=N, K=K, kappa=kappa, N_SEEDS=N_SEEDS),
+        'surrogates (consistent, and both plug-in widths) zero the terminal correction '
+        '(eq.~23) and remove the last-step ESS collapse; the surrogate twist does '
+        'not.  Plug-in corr ($r^2(\\sigma)=\\gamma^2+\\bar c(\\sigma)$) additionally removes '
+        'the naive plug-in\'s intermediate-$\\sigma$ overconfidence.'.format(
+            N=N, K=K, kappa=kappa, N_SEEDS=N_SEEDS),
         'tab:toy_t1_diag',
         ['quantity', 'value', 'expected'],
         [['PBS telescoping spread $|\\sum\\Delta f_k - f_T|$ (eq.~34)', _fe(eq34), r'$\approx 0$'],
@@ -719,15 +769,16 @@ def _t1_diagnostics(allres, N, K, gamma2, kappa):
          ['mean $|$terminal corr. (23)$|$, surrogate twist', _fe(tb), '>$0$'],
          ['mean $|$terminal corr. (23)$|$, consistent twist', _fe(tc), r'$\approx 0$'],
          ['mean $|$terminal corr. (23)$|$, plug-in twist', _fe(tp), r'$\approx 0$'],
-         ['final ESS (Girs), sur. / cons. / plug-in',
-          f'{rb["ess"]:.0f} / {rc["ess"]:.0f} / {rp["ess"]:.0f}', '--']])
+         ['mean $|$terminal corr. (23)$|$, plug-in corr twist', _fe(tk), r'$\approx 0$'],
+         ['final ESS (Girs), sur. / cons. / plug-in / plug-in corr',
+          f'{rb["ess"]:.0f} / {rc["ess"]:.0f} / {rp["ess"]:.0f} / {rk["ess"]:.0f}', '--']])
 
 
 # ----------------------------------------------------------------- T2: base grid (proposal x weighting)
 def run_t2(N, K, gamma2=1.0):
     pm, ps = posterior_params(gamma2)[-2:]
-    ov = plug_in_twist(gamma2)
-    print(f'\n=== T2: Base grid  (proposal x weighting, plug-in twist, N={N}, K={K}, '
+    ov = plug_in_corrected_twist(gamma2)
+    print(f'\n=== T2: Base grid  (proposal x weighting, plug-in corr twist, N={N}, K={K}, '
           f'gamma2={gamma2}, seeds={N_SEEDS}) ===')
     allres = {}
     for prop in PROPOSALS:
@@ -737,12 +788,13 @@ def run_t2(N, K, gamma2=1.0):
                        dict(N=N, K=K, proposal=prop, results=res), pm, ps, gamma2)
         write_metrics_table(dict(N=N, K=K, proposal=prop, gamma2=gamma2, results=res),
                             os.path.join(TABLES_DIR, f'toy_t2_{prop}.tex'),
-                            f'T2 ({PROPOSAL_LABEL[prop]} proposal, plug-in twist '
-                            f'($r^2=\\gamma^2$), $N={N}$, $K={K}$); W1 (eq.~35) and weighted '
-                            'posterior mean/std error.',
+                            f'T2 ({PROPOSAL_LABEL[prop]} proposal, plug-in corr twist '
+                            f'($r^2(\\sigma)=\\gamma^2+\\bar c(\\sigma)$), $N={N}$, $K={K}$); '
+                            'W1 (eq.~35) and weighted posterior mean/std error.',
                             f'tab:toy_t2_{prop}')
         plot_cell(dict(N=N, K=K, proposal=prop, gamma2=gamma2, results=res),
-                  f'T2: {PROPOSAL_LABEL[prop]} proposal, plug-in twist', f'toy_t2_{prop}.pdf')
+                  f'T2: {PROPOSAL_LABEL[prop]} proposal, plug-in corr twist',
+                  f'toy_t2_{prop}.pdf')
 
     # compact W1/ESS/resamp: rows = proposal x weighting
     headers = ['cell', 'W1', 'ESS', 'resamp']
@@ -754,19 +806,19 @@ def run_t2(N, K, gamma2=1.0):
                          _f4pm(r['w1'], r['w1_std']), _f0pm(r['ess'], r['ess_std']),
                          _f0pm(r['resamples'], r['resamples_std'])])
     write_latex_table(os.path.join(TABLES_DIR, 'toy_t2.tex'),
-                      'T2 base grid: proposal $\\times$ weighting at the canonical plug-in '
-                      f'twist ($N={N}$, $K={K}$, $\\gamma^2={gamma2}$, '
-                      f'{N_SEEDS} seeds, mean$\\pm$std). The EM-vs-Heun row gap is the '
-                      'integrator-order effect; the Pot-vs-Pot-tr column gap is the '
-                      'quadrature-order effect.',
+                      'T2 base grid: proposal $\\times$ weighting at the canonical plug-in corr '
+                      f'twist ($r^2(\\sigma)=\\gamma^2+\\bar c(\\sigma)$, $N={N}$, $K={K}$, '
+                      f'$\\gamma^2={gamma2}$, {N_SEEDS} seeds, mean$\\pm$std). The EM-vs-Heun '
+                      'row gap is the integrator-order effect; the Pot-vs-Pot-tr column gap is '
+                      'the quadrature-order effect.',
                       'tab:toy_t2', headers, rows)
     return allres
 
 
 # ----------------------------------------------------------------- T3: convergence (K- and N-sweeps)
 def run_t3(N, K, gamma2=1.0):
-    ov = plug_in_twist(gamma2)
-    print(f'\n=== T3: Convergence  (K- and N-sweeps over the base grid, plug-in twist, '
+    ov = plug_in_corrected_twist(gamma2)
+    print(f'\n=== T3: Convergence  (K- and N-sweeps over the base grid, plug-in corr twist, '
           f'gamma2={gamma2}, seeds={N_SEEDS}) ===')
 
     # K-sweep (discretisation error)
@@ -789,14 +841,15 @@ def run_t3(N, K, gamma2=1.0):
             [_f4pm(v, s) for v, s in zip(series_k[prop][w], std_k[prop][w])]
             for prop in PROPOSALS for w in WEIGHTS]
     write_latex_table(os.path.join(TABLES_DIR, 'toy_t3_k.tex'),
-                      f'T3 K-sweep (plug-in twist $r^2=\\gamma^2$, $N={N}$, '
+                      f'T3 K-sweep (plug-in corr twist '
+                      f'$r^2(\\sigma)=\\gamma^2+\\bar c(\\sigma)$, $N={N}$, '
                       f'$\\gamma^2={gamma2}$, {N_SEEDS} seeds, mean$\\pm$std): corrected W1 is '
                       'elevated at coarse $K$ (discretisation error) and drops to the '
                       'ESS/Monte-Carlo floor as $K$ grows (eq.~33); PBS retains a structural '
                       'bias (eq.~34) independent of $K$.',
                       'tab:toy_t3_k', ['cell'] + [f'$K={Kk}$' for Kk in K_SWEEP], rows)
     plot_sweep(K_SWEEP, series_k, os.path.join(FIGS_DIR, 'toy_t3_k.pdf'),
-               f'T3: step-count sweep  (N={N}, plug-in twist)', 'K')
+               f'T3: step-count sweep  (N={N}, plug-in corr twist)', 'K')
 
     # N-sweep (Monte-Carlo error)
     print(f'\n-- N sweep  (K={K})')
@@ -818,20 +871,21 @@ def run_t3(N, K, gamma2=1.0):
             [_f4pm(v, s) for v, s in zip(series_n[prop][w], std_n[prop][w])]
             for prop in PROPOSALS for w in WEIGHTS]
     write_latex_table(os.path.join(TABLES_DIR, 'toy_t3_n.tex'),
-                      f'T3 N-sweep (plug-in twist $r^2=\\gamma^2$, $K={K}$, '
+                      f'T3 N-sweep (plug-in corr twist '
+                      f'$r^2(\\sigma)=\\gamma^2+\\bar c(\\sigma)$, $K={K}$, '
                       f'$\\gamma^2={gamma2}$, {N_SEEDS} seeds, mean$\\pm$std): corrected W1 '
                       f'follows $1/\\sqrt{{N}}\\to 0$ as $N$ grows (no unremovable bias); PBS is '
                       'flat (structural bias, eq.~34), independent of $N$.',
                       'tab:toy_t3_n', ['cell'] + [f'$N={Nn}$' for Nn in N_SWEEP], rows)
     plot_sweep(N_SWEEP, series_n, os.path.join(FIGS_DIR, 'toy_t3_n.pdf'),
-               f'T3: particle-count sweep  (K={K}, plug-in twist)', 'N')
+               f'T3: particle-count sweep  (K={K}, plug-in corr twist)', 'N')
     return series_k, series_n
 
 
 # ----------------------------------------------------------------- T4: regime (gamma2-sweep)
 def run_t4(N, K):
-    print(f'\n=== T4: Regime  (gamma2-sweep over the base grid, plug-in twist, N={N}, K={K}, '
-          f'seeds={N_SEEDS}) ===')
+    print(f'\n=== T4: Regime  (gamma2-sweep over the base grid, plug-in corr twist, N={N}, '
+          f'K={K}, seeds={N_SEEDS}) ===')
     series = {prop: {w: [] for w in WEIGHTS} for prop in PROPOSALS}
     std = {prop: {w: [] for w in WEIGHTS} for prop in PROPOSALS}
     ess = {prop: {w: [] for w in WEIGHTS} for prop in PROPOSALS}
@@ -841,7 +895,7 @@ def run_t4(N, K):
     print(f'  {"cell":>16}  ' + ''.join(f'{g2:>14}' for g2 in GAMMA2_SWEEP))
     print('  ' + '-' * (17 + 14 * len(GAMMA2_SWEEP)))
     for g2 in GAMMA2_SWEEP:
-        ov = plug_in_twist(g2)
+        ov = plug_in_corrected_twist(g2)
         for prop in PROPOSALS:
             res = run_cell(N, K, SEEDS, ov, prop, g2)
             for w in WEIGHTS:
@@ -864,15 +918,17 @@ def run_t4(N, K):
             [_f4pm(v, s) for v, s in zip(series[prop][w], std[prop][w])]
             for prop in PROPOSALS for w in WEIGHTS]
     write_latex_table(os.path.join(TABLES_DIR, 'toy_t4.tex'),
-                      f'T4 regime: exact observation variance sweep with the plug-in twist '
-                      f'($N={N}$, $K={K}$, {N_SEEDS} seeds, mean$\\pm$std).  As $\\gamma^2$ '
-                      'shrinks the plug-in surrogate becomes relatively more overconfident '
-                      '(ignores the residual uncertainty $c_k(\\sigma)$; factor '
-                      f'$1+\\sigma^2/r^2$ grows) and the posterior sharpens; '
-                      'this locates the observational regime in which guided SMC works vs fails.',
+                      f'T4 regime: exact observation variance sweep with the plug-in corr twist '
+                      f'($r^2(\\sigma)=\\gamma^2+\\bar c(\\sigma)$, $N={N}$, $K={K}$, '
+                      f'{N_SEEDS} seeds, mean$\\pm$std).  As $\\gamma^2$ shrinks the posterior '
+                      'sharpens relative to the prior and the corrected weightings degenerate '
+                      '(observation-informativeness limit, not surrogate misspecification -- '
+                      'the residual-corrected width removes the naive plug-in\'s '
+                      'overconfidence); this locates the observational regime in which guided '
+                      'SMC works vs fails.',
                       'tab:toy_t4', ['cell'] + [f'$\\gamma^2={g2}$' for g2 in GAMMA2_SWEEP], rows)
     plot_sweep(GAMMA2_SWEEP, series, os.path.join(FIGS_DIR, 'toy_t4.pdf'),
-               f'T4: observation-variance sweep  (N={N}, K={K}, plug-in twist)',
+               f'T4: observation-variance sweep  (N={N}, K={K}, plug-in corr twist)',
                r'$\gamma^2$', xscale='log', yscale='log')
 
     # ESS across the sweep: where does degeneracy set in?
@@ -881,7 +937,7 @@ def run_t4(N, K):
                 for prop in PROPOSALS for w in WEIGHTS]
     write_latex_table(os.path.join(TABLES_DIR, 'toy_t4_ess.tex'),
                       f'T4 final effective sample size by cell '
-                      f'($N={N}$, $K={K}$, plug-in twist, {N_SEEDS} seeds, mean$\\pm$std).',
+                      f'($N={N}$, $K={K}$, plug-in corr twist, {N_SEEDS} seeds, mean$\\pm$std).',
                       'tab:toy_t4_ess', ['cell'] + [f'$\\gamma^2={g2}$' for g2 in GAMMA2_SWEEP],
                       ess_rows)
 
@@ -891,11 +947,12 @@ def run_t4(N, K):
                    for prop in PROPOSALS for w in WEIGHTS]
     write_latex_table(os.path.join(TABLES_DIR, 'toy_t4_resamp.tex'),
                       f'T4 resampling events by cell '
-                      f'($N={N}$, $K={K}$, plug-in twist, {N_SEEDS} seeds, mean$\\pm$std).  '
-                      'With the realistic plug-in surrogate the corrected weightings '
-                      'degenerate as $\\gamma^2$ shrinks (its overconfidence, which ignores '
-                      'the residual uncertainty $c_k(\\sigma)$, grows with $1+\\sigma^2/r^2$): '
-                      'the resampling count rises 0 $\\to$ 1 $\\to$ 13 $\\to$ ~65.',
+                      f'($N={N}$, $K={K}$, plug-in corr twist, {N_SEEDS} seeds, mean$\\pm$std).  '
+                      'With the residual-corrected plug-in surrogate the corrected weightings '
+                      'degenerate as $\\gamma^2$ shrinks purely from posterior sharpness '
+                      '(observation-informativeness limit): the resampling count rises with '
+                      'shrinking $\\gamma^2$, without the surrogate-induced overconfidence of '
+                      'the naive plug-in.',
                       'tab:toy_t4_resamp',
                       ['cell'] + [f'$\\gamma^2={g2}$' for g2 in GAMMA2_SWEEP], resamp_rows)
     return series, ess

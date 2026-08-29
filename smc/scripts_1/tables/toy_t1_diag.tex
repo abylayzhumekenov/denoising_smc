@@ -1,6 +1,6 @@
 \begin{table}[ht]
 \centering
-\caption{T1 diagnostics ($N=2048$, $K=500$, $\kappa=0.5$, 4 seeds): under the exact twist the corrected increments vanish (eq.~33) and the pseudo-bootstrap weight telescopes to $f_T$ (eq.~34); the Girs-vs-Pot bridge gap (eq.~16) is the Pot quadrature error, smaller for the trapezoidal Pot-tr.  Terminally-consistent surrogates (consistent and plug-in, both with $r^2 = \gamma^2$) zero the terminal correction (eq.~23) and remove the last-step ESS collapse; the surrogate twist does not.}
+\caption{T1 diagnostics ($N=2048$, $K=500$, $\kappa=0.5$, 4 seeds): under the exact twist the corrected increments vanish (eq.~33) and the pseudo-bootstrap weight telescopes to $f_T$ (eq.~34); the Girs-vs-Pot bridge gap (eq.~16) is the Pot quadrature error, smaller for the trapezoidal Pot-tr.  Terminally-consistent surrogates (consistent, and both plug-in widths) zero the terminal correction (eq.~23) and remove the last-step ESS collapse; the surrogate twist does not.  Plug-in corr ($r^2(\sigma)=\gamma^2+\bar c(\sigma)$) additionally removes the naive plug-in's intermediate-$\sigma$ overconfidence.}
 \label{tab:toy_t1_diag}
 \begin{tabular}{lcc}
 \toprule
@@ -16,7 +16,8 @@ mean $|G_{\mathrm{PBS}}|$ (eq.~34) & 2.221e-02 & >$0$ \\
 mean $|$terminal corr. (23)$|$, surrogate twist & 5.398e-01 & >$0$ \\
 mean $|$terminal corr. (23)$|$, consistent twist & 0.000e+00 & $\approx 0$ \\
 mean $|$terminal corr. (23)$|$, plug-in twist & 1.443e-16 & $\approx 0$ \\
-final ESS (Girs), sur. / cons. / plug-in & 177 / 2005 / 1643 & -- \\
+mean $|$terminal corr. (23)$|$, plug-in corr twist & 5.038e-07 & $\approx 0$ \\
+final ESS (Girs), sur. / cons. / plug-in / plug-in corr & 177 / 2005 / 1643 / 1974 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
