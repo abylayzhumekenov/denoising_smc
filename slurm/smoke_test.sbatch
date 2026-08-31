@@ -4,10 +4,12 @@
 # Submit BEFORE any full-scale job:
 #   sbatch slurm/smoke_test.sbatch
 #
-# TODO (Ibex-specific -- run `sinfo -o "%P %G %l"` and fill these in):
+# Partition/GRES confirmed from real `sinfo -o "%P %G %l"` output (Aug 2026): `debug` is the
+# fast-turnaround GPU partition (gpu:p6000:2 or gpu:v100:2 per node, 2h wall-time limit) -- ideal
+# for a quick check like this one. `batch` has NO gpu (was the original placeholder -- wrong).
 #SBATCH --job-name=smc_smoke
-#SBATCH --partition=batch            # TODO: verify the GPU-capable partition name
-#SBATCH --gres=gpu:1                 # TODO: may need a generation, e.g. gpu:v100:1 / gpu:a100:1
+#SBATCH --partition=debug
+#SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
 #SBATCH --time=00:30:00

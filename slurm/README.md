@@ -51,14 +51,15 @@ Yes -- GPU is the right call here, not a nice-to-have. Concretely:
      currently live (`~/denoising_smc_external_data/` too, most likely) before assuming they're
      ready to copy.
 
-3. **Set up the Python environment on Ibex.** See `slurm/setup_env.sh` -- loads a CUDA module,
-   creates a venv, installs the pinned `torch==1.12.1` (matching AGENTS.md's stated compatibility
-   requirement) with CUDA support. Ibex's available CUDA module versions and GPU generations
-   change over time and I can't see them from here -- run `module avail cuda` and `sinfo` yourself
-   and adjust the placeholders marked `# TODO` in that script and in the `.sbatch` files below.
-   If the pinned `torch==1.12.1` build doesn't have a wheel matching Ibex's current CUDA module,
-   that's the one place worth deviating from the pin -- test the pinned version first since it's
-   what this codebase was validated against, only move to a newer torch if forced to.
+3. **Set up the Python environment on Ibex.** See `slurm/setup_env.sh`. Update, based on your
+   `module avail cuda` / `module avail python` output: Ibex only offers `python/3.11.0` and
+   `python/3.12.1` -- no 3.8-3.10 at all -- so AGENTS.md's stated `torch==1.12.1` compatibility
+   pin cannot be satisfied on Ibex, not even by picking a different CUDA module; there is no
+   Python version available that pin supports. `setup_env.sh` now installs `torch==2.7.1+cu118`
+   (confirmed via PyPI classifiers to support Python 3.9-3.13) against `python/3.11.0` and
+   `cuda/11.8` instead, with the reasoning and risk assessment in that script's comments. Run
+   `python -m smc.check_gem_tds_real_model --config configs/burgers.yaml` right after setup
+   finishes to confirm the newer torch didn't change anything numerically before trusting it.
 
 4. **Smoke-test on an actual GPU before submitting a real job.** `slurm/smoke_test.sbatch` runs
    `smc/check_gem_tds_real_model.py` (the closed-form correctness check) plus a tiny
