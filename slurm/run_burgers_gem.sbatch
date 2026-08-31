@@ -16,6 +16,8 @@
 #SBATCH --time=20:00:00              # TODO: retune from the smoke test's 100-step timing
 #SBATCH --output=slurm/logs/%x_%j.out
 #SBATCH --error=slurm/logs/%x_%j.err
+#SBATCH --mail-type=ALL                        # TODO: BEGIN/END/FAIL/ALL, whichever you want
+#SBATCH --mail-user=miguelangel.alvarezballesteros@kaust.edu.sa
 
 set -euo pipefail
 mkdir -p slurm/logs
