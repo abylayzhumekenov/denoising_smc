@@ -6,18 +6,25 @@
 # Partition/GRES/time retuned from the actual smoke-test timing (Aug 2026): 100 steps at N=4
 # particles took ~33s on a V100 (vs ~20m46s for the same 100 steps on CPU -- ~38x speedup).
 # Extrapolating roughly linearly in step count to the full K=2000 puts this at ~11 minutes for
-# N=4, plausibly under an hour even allowing generously for N=8's extra per-step cost -- nowhere
-# near the previous 20h guess. `gpu4` (4h cap) comfortably covers that with margin and should
-# queue faster than the longer-cap partitions (gpu24/gpu) since fewer people reserve short slots.
-# If a real run ever needs longer (e.g. a much larger N/K sweep), bump both --partition and
-# --time together rather than raising --time past whatever partition's cap you're on.
+# N=4, plausibly under an hour even allowing generously for N=8's extra per-step cost.
+#
+# `gpu4` was tried first but rejected with "not permitted" -- account pi-temponrf isn't on that
+# partition's allow-list (Ibex partitions can have separate per-account/QOS access controls).
+# `debug` is the one partition confirmed to actually work for this account (the smoke test ran
+# there), and the estimated runtime fits comfortably inside its 2h cap, so using it here too as
+# the reliable default. debug is nominally meant for quick interactive checks rather than
+# production runs, but at this run's short expected duration it's a reasonable stopgap -- if you
+# start running longer N/K sweeps later, run
+#   sacctmgr show assoc user=alvarem format=Account,Partition,QOS%20 -p
+# to see which of gpu/gpu24/gpu72/gpu_wide your account is actually authorized for, rather than
+# guessing partition names again.
 #SBATCH --job-name=burgers_gem
 #SBATCH --chdir=/home/alvarem/denoising_smc     # see smoke_test.sbatch's comment on this line
-#SBATCH --partition=gpu4
+#SBATCH --partition=debug
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
-#SBATCH --time=01:00:00              # ~3-5x the extrapolated worst case, still well under gpu4's 4h cap
+#SBATCH --time=01:30:00              # under debug's 2h cap, ~5-8x the extrapolated worst case
 #SBATCH --output=slurm/logs/%x_%j.out
 #SBATCH --error=slurm/logs/%x_%j.err
 #SBATCH --mail-type=ALL                        # TODO: BEGIN/END/FAIL/ALL, whichever you want
