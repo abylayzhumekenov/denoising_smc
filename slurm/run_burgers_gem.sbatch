@@ -21,6 +21,12 @@
 
 set -euo pipefail
 mkdir -p slurm/logs
+
+# Must match setup_env.sh exactly -- see smoke_test.sbatch's comment on this same line for why
+# this is required (Slurm jobs don't inherit login-node modules).
+module load cuda/11.8
+module load python/3.11.0
+
 source .venv/bin/activate
 
 # Defaults match configs/burgers.yaml (batch_size=1, iterations=2000) -- override via

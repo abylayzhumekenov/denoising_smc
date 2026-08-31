@@ -20,6 +20,14 @@
 
 set -euo pipefail
 mkdir -p slurm/logs
+
+# Must match setup_env.sh exactly: the venv's python3 is dynamically linked against this module's
+# libpython3.11.so.1.0. Each Slurm job starts from a clean environment (it does NOT inherit
+# modules loaded interactively on the login node), so without this line `python3` fails with
+# "error while loading shared libraries: libpython3.11.so.1.0: cannot open shared object file".
+module load cuda/11.8
+module load python/3.11.0
+
 source .venv/bin/activate
 
 echo "=== device check ==="
