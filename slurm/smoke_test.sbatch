@@ -8,6 +8,10 @@
 # fast-turnaround GPU partition (gpu:p6000:2 or gpu:v100:2 per node, 2h wall-time limit) -- ideal
 # for a quick check like this one. `batch` has NO gpu (was the original placeholder -- wrong).
 #SBATCH --job-name=smc_smoke
+#SBATCH --chdir=/home/alvarem/denoising_smc     # pins WorkDir to the repo root regardless of
+                                                  # which directory `sbatch` is invoked from --
+                                                  # every relative path below (.venv/, slurm/logs/,
+                                                  # the smc./scripts. modules) assumes this
 #SBATCH --partition=debug
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=4
