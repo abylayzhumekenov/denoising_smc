@@ -1,19 +1,19 @@
 \begin{table}[ht]
 \centering
-\caption{T4 resampling events by cell ($N=2048$, $K=500$, plug-in corr twist, 4 seeds, mean$\pm$std).  With the residual-corrected plug-in surrogate the corrected weightings degenerate as $\gamma^2$ shrinks purely from posterior sharpness (observation-informativeness limit): the resampling count rises with shrinking $\gamma^2$, without the surrogate-induced overconfidence of the naive plug-in.}
+\caption{T4 resampling events by cell ($N=2048$, $K=500$, plug-in annealed twist, 4 seeds, mean$\pm$std).  With the annealed plug-in surrogate the corrected weightings behave regularly as $\gamma^2$ shrinks; the annealed width removes the surrogate-induced overconfidence of the naive plug-in.}
 \label{tab:toy_t4_resamp}
 \begin{tabular}{lcccc}
 \toprule
 cell & $\gamma^2=4.0$ & $\gamma^2=1.0$ & $\gamma^2=0.25$ & $\gamma^2=0.0625$ \\
 \midrule
 EM PBS & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
-EM Girs & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
-EM Pot & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
-EM Pot-tr & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
+EM Girs & 0$\pm$0 & 0$\pm$0 & 6$\pm$1 & 42$\pm$2 \\
+EM Pot & 0$\pm$0 & 0$\pm$0 & 6$\pm$1 & 44$\pm$3 \\
+EM Pot-tr & 0$\pm$0 & 0$\pm$0 & 6$\pm$1 & 50$\pm$3 \\
 Heun PBS & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
-Heun Girs & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
-Heun Pot & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
-Heun Pot-tr & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 & 0$\pm$0 \\
+Heun Girs & 0$\pm$0 & 0$\pm$0 & 6$\pm$1 & 38$\pm$2 \\
+Heun Pot & 0$\pm$0 & 0$\pm$0 & 6$\pm$0 & 36$\pm$3 \\
+Heun Pot-tr & 0$\pm$0 & 0$\pm$0 & 7$\pm$2 & 37$\pm$2 \\
 \bottomrule
 \end{tabular}
 \end{table}

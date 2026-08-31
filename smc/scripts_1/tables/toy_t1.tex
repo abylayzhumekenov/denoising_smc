@@ -1,15 +1,14 @@
 \begin{table}[ht]
 \centering
-\caption{T1 validity: Wasserstein-1 (eq.~35) by twist and weighting ($N=2048$, $K=500$, $\kappa=0.5$, 4 seeds, mean$\pm$std).  The corrected weightings (Girs, Pot, Pot-tr) sit at the posterior for every twist; PBS is biased away from the exact twist and increasingly so as the surrogate is misspecified.  The plug-in twists are the realistic surrogates ($N(y; D(x,\sigma), r^2)$, terminally consistent): the naive width $r^2=\gamma^2$ ignores the residual uncertainty and is overconfident, while plug-in corr uses the residual-corrected width $r^2(\sigma)=\gamma^2+\bar c(\sigma)$.}
+\caption{T1 validity: Wasserstein-1 (eq.~35) by twist and weighting ($N=2048$, $K=500$, 4 seeds, mean$\pm$std).  The corrected weightings (Girs, Pot, Pot-tr) target the posterior for every terminally-consistent twist; PBS is biased because it drops the path-measure correction.  The plug-in family uses the realistic surrogate $N(y; D(x,\sigma), r^2(\sigma))$: the naive width $r^2=\gamma^2$ is overconfident and produces heavy-tailed errors; the annealed width $r^2(\sigma)=\gamma^2(1+2\sigma/\sigma_{\max})$ is a heuristic compromise; and plug-in corr uses the oracle residual-corrected width $r^2(\sigma)=\gamma^2+\bar c(\sigma)$.}
 \label{tab:toy_t1}
 \begin{tabular}{lcccc}
 \toprule
 twist & PBS & Girs & Pot & Pot-tr \\
 \midrule
 Exact & 0.2645$\pm$0.0080 & 0.0374$\pm$0.0117 & 0.0377$\pm$0.0115 & 0.0377$\pm$0.0116 \\
-Surrogate & 0.5335$\pm$0.0089 & 0.2358$\pm$0.1248 & 0.2334$\pm$0.1272 & 0.2410$\pm$0.1360 \\
-Consistent & 0.2865$\pm$0.0077 & 0.0385$\pm$0.0103 & 0.0390$\pm$0.0104 & 0.0394$\pm$0.0107 \\
 Plug-in & 0.3884$\pm$0.0102 & 0.1600$\pm$0.1827 & 0.1607$\pm$0.1627 & 0.1772$\pm$0.2058 \\
+Plug-in ann. & 0.3295$\pm$0.0082 & 0.0352$\pm$0.0100 & 0.0376$\pm$0.0117 & 0.0385$\pm$0.0118 \\
 Plug-in corr & 0.2863$\pm$0.0101 & 0.0354$\pm$0.0126 & 0.0362$\pm$0.0126 & 0.0363$\pm$0.0129 \\
 \bottomrule
 \end{tabular}

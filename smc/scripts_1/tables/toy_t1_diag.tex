@@ -1,6 +1,6 @@
 \begin{table}[ht]
 \centering
-\caption{T1 diagnostics ($N=2048$, $K=500$, $\kappa=0.5$, 4 seeds): under the exact twist the corrected increments vanish (eq.~33) and the pseudo-bootstrap weight telescopes to $f_T$ (eq.~34); the Girs-vs-Pot bridge gap (eq.~16) is the Pot quadrature error, smaller for the trapezoidal Pot-tr.  Terminally-consistent surrogates (consistent, and both plug-in widths) zero the terminal correction (eq.~23) and remove the last-step ESS collapse; the surrogate twist does not.  Plug-in corr ($r^2(\sigma)=\gamma^2+\bar c(\sigma)$) additionally removes the naive plug-in's intermediate-$\sigma$ overconfidence.}
+\caption{T1 diagnostics ($N=2048$, $K=500$, 4 seeds): under the exact twist the corrected increments vanish (eq.~33) and the pseudo-bootstrap weight telescopes to $f_T$ (eq.~34); the Girs-vs-Pot bridge gap (eq.~16) is the Pot quadrature error, smaller for the trapezoidal Pot-tr.  All realistic plug-in variants are terminally consistent, so the terminal correction (eq.~23) vanishes.  The annealed width is a heuristic compromise between the naive plug-in and the oracle residual-corrected plug-in.}
 \label{tab:toy_t1_diag}
 \begin{tabular}{lcc}
 \toprule
@@ -13,11 +13,10 @@ mean $|G_{\mathrm{Girs}}|$ (eq.~33) & 1.316e-03 & $\approx 0$ \\
 mean $|G_{\mathrm{Pot}}|$ (eq.~33) & 2.512e-05 & $\approx 0$ \\
 mean $|G_{\mathrm{Pot\text{-}tr}}|$ (eq.~33) & 1.520e-07 & $\approx 0$ \\
 mean $|G_{\mathrm{PBS}}|$ (eq.~34) & 2.221e-02 & >$0$ \\
-mean $|$terminal corr. (23)$|$, surrogate twist & 5.398e-01 & >$0$ \\
-mean $|$terminal corr. (23)$|$, consistent twist & 0.000e+00 & $\approx 0$ \\
 mean $|$terminal corr. (23)$|$, plug-in twist & 1.443e-16 & $\approx 0$ \\
+mean $|$terminal corr. (23)$|$, plug-in annealed twist & 1.465e-16 & $\approx 0$ \\
 mean $|$terminal corr. (23)$|$, plug-in corr twist & 5.038e-07 & $\approx 0$ \\
-final ESS (Girs), sur. / cons. / plug-in / plug-in corr & 177 / 2005 / 1643 / 1974 & -- \\
+final ESS (Girs), plug-in / ann. / corr & 1643 / 1689 / 1974 & -- \\
 \bottomrule
 \end{tabular}
 \end{table}
