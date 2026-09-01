@@ -55,7 +55,7 @@ def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None)
     Returns (x_next, z, delta):
       x_next  -- detached, ready to be the next step's x_cur
       z       -- the *realized* Brownian increment sqrt(delta)*eps actually used (needed by the
-                 Girsanov weight -- see smc/scripts_2/weights.py girsanov_increment)
+                 Girsanov weight -- see smc/scripts_2/weightings/girsanov.py girsanov_increment)
       delta   -- the scalar accumulated diffusion Sigma_k for this step (needed by the weight too)
 
     x_cur, score, and guidance_grad must NOT carry gradient history into this call (detach them

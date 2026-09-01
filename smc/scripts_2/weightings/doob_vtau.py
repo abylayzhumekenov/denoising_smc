@@ -26,7 +26,7 @@ from typing import Optional
 import torch
 from torch import Tensor
 
-from smc.scripts_2.hutchinson import hutchinson_hvp_probes
+from smc.scripts_2.weightings.hutchinson import hutchinson_hvp_probes
 
 
 def compute_v_tau_terms(ell_fn, x: Tensor, sigma_t: Tensor, num_probes: int,
@@ -36,7 +36,7 @@ def compute_v_tau_terms(ell_fn, x: Tensor, sigma_t: Tensor, num_probes: int,
 
     `ell_fn(x, sigma_t)` must return (ell, s_theta) where `ell` is the scalar log-likelihood
     surrogate and `s_theta` is the score s_theta(x, sigma_t) = (x - D_theta(x,sigma_t))/sigma_t^2,
-    both built from the same denoiser call -- see `burgers_ell_fn` below for the Burgers instance.
+    both built from the same denoiser call -- see smc/scripts_2/models/burgers.py's burgers_ell_fn for the Burgers instance.
     """
     x = x.detach().requires_grad_(True)
     sigma_t = sigma_t.detach().requires_grad_(True)
@@ -76,21 +76,3 @@ def compute_v_tau_terms(ell_fn, x: Tensor, sigma_t: Tensor, num_probes: int,
         "V_tau": V_tau.item(),
         "samples": samples.detach().tolist(),
     }
-
-
-def burgers_ell_fn(net, ground_truth: Tensor, mask: Tensor, zeta_obs: float, device=None):
-    """Build the ell_fn(x, sigma_t) -> (ell, s_theta) closure for the Burgers model, matching
-    the observation term used in scripts/generate_burgers.py's guidance step.
-    """
-    from scripts.generate_burgers import get_burger_loss
-
-    def ell_fn(x, sigma_t):
-        x_N_raw = net(x, sigma_t, class_labels=None).to(torch.float64)
-        s_theta = (x - x_N_raw) / sigma_t ** 2
-        x_N = x_N_raw * 1.415
-        _, observation_loss = get_burger_loss(x_N, ground_truth, mask, device)
-        L_obs = torch.norm(observation_loss, 2) / (128 * 5)
-        ell = -zeta_obs * L_obs
-        return ell, s_theta
-
-    return ell_fn

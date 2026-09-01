@@ -1,43 +1,21 @@
+"""Baseline (unmodified) Burgers sampler: deterministic 2nd-order Heun ODE + flat post-hoc
+guidance-gradient subtraction, batch_size=1, no SMC weights or resampling.
+
+random_sensor and the PDE-residual/observation loss now live in smc/scripts_2/models/burgers.py
+(the canonical, shared implementation -- see that module's docstring for why) and are re-imported
+here under their old names for backward compatibility with this file's own driver code below.
+"""
 import tqdm
 import pickle
 import numpy as np
 import torch
 import PIL.Image
 import dnnlib
-import torch.nn.functional as F
 from torch_utils import distributed as dist
 from torch_utils.misc import auto_device
 import scipy.io
 
-def random_sensor(k, grid_size, seed=0, device=None):
-    """Return a index list with k sensors randomly placed in a grid of size [grid_size, grid_size]."""
-    if device is None:
-        device = auto_device()
-    torch.manual_seed(seed)
-    index = torch.zeros(grid_size, grid_size, dtype=torch.float64, device=device)
-    known_index = torch.randperm(grid_size, device=device)[:k]
-    for i in known_index:
-        index[:, i]=1
-    return index
-
-def get_burger_loss(u, u_GT, mask, device=None):
-    """Return the loss of the Burgers' equation and the observation loss."""
-    if device is None:
-        device = auto_device()
-    u = u.view(1, 1, 128, 128)
-    u_GT = u_GT.view(1, 1, 128, 128)
-    deriv_t = torch.tensor([[-1], [0], [1]], dtype=torch.float64, device=device).view(1, 1, 3, 1) / 2 
-    deriv_x = torch.tensor([[-1, 0, 1]], dtype=torch.float64, device=device).view(1, 1, 1, 3) / 2 
-    u_t = F.conv2d(u, deriv_t, padding=(1, 0)) 
-    u_x = F.conv2d(u, deriv_x, padding=(0, 1)) 
-    u_xx = F.conv2d(u_x, deriv_x, padding=(0, 1))
-
-    pde_loss = u_t + u * u_x - 0.01 * u_xx
-    pde_loss = pde_loss.squeeze()
-    observation_loss = u - u_GT
-    observation_loss = observation_loss.squeeze()
-    observation_loss = observation_loss * mask
-    return pde_loss, observation_loss
+from smc.scripts_2.models.burgers import random_sensor, burger_loss as get_burger_loss
 
 def generate_burgers(config):
     """Generate Burgers' equation."""

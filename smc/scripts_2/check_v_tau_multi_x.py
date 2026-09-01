@@ -5,15 +5,13 @@ Usage: venv/bin/python -m smc.scripts_2.check_v_tau_multi_x [num_probes] [num_po
 
 import sys
 import json
-import pickle
 import time
 
 import torch
-import scipy.io
 
 from torch_utils.misc import auto_device
-from scripts.generate_burgers import random_sensor
-from smc.scripts_2.v_tau import compute_v_tau_terms, burgers_ell_fn
+from smc.scripts_2.models.burgers import random_sensor, load_ground_truth, load_network, burgers_ell_fn
+from smc.scripts_2.weightings.doob_vtau import compute_v_tau_terms
 
 
 def main():
@@ -21,12 +19,9 @@ def main():
     num_points = int(sys.argv[2]) if len(sys.argv) > 2 else 4
     device = auto_device()
 
-    data = scipy.io.loadmat('data/testing/burgers.mat')
-    ground_truth = torch.tensor(data['output'][0, :, :], dtype=torch.float64, device=device)
+    ground_truth = load_ground_truth('data/testing/burgers.mat', 0, device)
     mask = random_sensor(5, 128, seed=0, device=device)
-
-    with open('pretrained-models/pretrained-burgers.pkl', 'rb') as f:
-        net = pickle.load(f)['ema'].to(device)
+    net = load_network('pretrained-models/pretrained-burgers.pkl', device)
 
     ell_fn = burgers_ell_fn(net, ground_truth, mask, zeta_obs=320, device=device)
     sigma_t_value = 5.0

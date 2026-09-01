@@ -1,11 +1,11 @@
 """1D Gaussian-mixture toy model for validating the Doob-transform / Girsanov SMC weight
-(V_tau, H_tau -- see smc/scripts_2/v_tau.py) against a closed-form ground truth. Everything here is
+(V_tau, H_tau -- see smc/scripts_2/weightings/doob_vtau.py) against a closed-form ground truth. Everything here is
 analytic: no trained network. This lets us isolate whether the SMC/Girsanov machinery itself
 is correct, separate from any neural-network approximation error.
 
 Convention matches the real pipeline exactly: forward noising is x_sigma = x0 + sigma*eps
 (sigma(t)=t, VE/EDM-style), and the "denoiser" D(x,sigma) below is the exact Bayes-optimal
-E[x0 | x_sigma=x] for this prior -- i.e. the same role D_theta plays in smc/scripts_2/v_tau.py, just
+E[x0 | x_sigma=x] for this prior -- i.e. the same role D_theta plays in smc/scripts_2/weightings/doob_vtau.py, just
 closed-form instead of a network call.
 
 Why a mixture and not a single Gaussian: with a single-Gaussian prior, D(x,sigma) is affine in
@@ -119,7 +119,7 @@ def approx_guidance_grad(mixture, x, sigma, y, r):
 
 def batched_h_tau(mixture, x, sigma, y, r):
     """H_tau(x) = a_bar * [s_theta.grad_ell + (1/2)*grad_ell^2 + (1/2)*d2(ell)/dx^2], batched
-    over independent 1D particles sharing the same sigma. Same formula as smc/scripts_2/v_tau.py's
+    over independent 1D particles sharing the same sigma. Same formula as smc/scripts_2/weightings/doob_vtau.py's
     H_tau, but the "Laplacian" here is an EXACT second derivative (not Hutchinson-MC): with
     one scalar dimension per particle, a Rademacher probe v in {-1,+1} always has v^2=1, so
     Hutchinson's estimator is exact/zero-variance in this special case anyway -- computing

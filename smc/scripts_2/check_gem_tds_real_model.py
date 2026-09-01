@@ -1,4 +1,4 @@
-"""Correctness self-check for smc/scripts_2/weights.girsanov_increment, on the REAL Burgers network.
+"""Correctness self-check for smc/scripts_2/weightings/girsanov.girsanov_increment, on the REAL Burgers network.
 
 Two checks, cheapest first:
 
@@ -21,16 +21,13 @@ Run: .venv/bin/python -m smc.scripts_2.check_gem_tds_real_model --config configs
 """
 
 import argparse
-import pickle
 
-import numpy as np
-import scipy.io
 import torch
 
 from torch_utils.misc import auto_device
-from scripts.generate_burgers import get_burger_loss, random_sensor
-from smc.scripts_2.proposals import denoise, gem_step
-from smc.scripts_2.weights import girsanov_increment
+from smc.scripts_2.models.burgers import burger_loss as get_burger_loss, random_sensor, load_ground_truth, load_network
+from smc.scripts_2.proposals.gem import denoise, gem_step
+from smc.scripts_2.weightings.girsanov import girsanov_increment
 
 
 def test_batch_reduction():
@@ -63,12 +60,9 @@ def test_real_network_identity(config_path, sigma_target=5.0):
     device = auto_device()
     torch.manual_seed(config['generate']['seed'])
 
-    data = scipy.io.loadmat(config['data']['datapath'])
-    ground_truth = torch.tensor(data['output'][config['data']['offset'], :, :],
-                                 dtype=torch.float64, device=device)
+    ground_truth = load_ground_truth(config['data']['datapath'], config['data']['offset'], device)
 
-    with open(config['test']['pre-trained'], 'rb') as f:
-        net = pickle.load(f)['ema'].to(device)
+    net = load_network(config['test']['pre-trained'], device)
 
     # Recompute the actual configured sigma schedule and pick the step closest to sigma_target,
     # so this check exercises a realistic (delta, sigma) pair rather than an arbitrary one.

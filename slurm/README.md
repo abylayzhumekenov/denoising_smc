@@ -19,7 +19,7 @@ Yes -- GPU is the right call here, not a nice-to-have. Concretely:
   docstring for why this repo avoids MPS by default). So moving to GPU does not force a precision
   compromise the way it would on a Mac.
 - `auto_device()` already checks `torch.cuda.is_available()` first, and every one of our new
-  files (`smc/scripts_2/proposals.py`, `smc/scripts_2/weights.py`, `scripts/generate_burgers_gem.py`) creates tensors
+  files (`smc/scripts_2/proposals/gem.py`, `smc/scripts_2/weightings/girsanov.py`, `scripts/generate_burgers_gem.py`) creates tensors
   via `device=...` consistently -- so no code changes should be needed to run on CUDA. The thing to
   actually verify is environment setup, not the algorithm.
 
@@ -30,7 +30,7 @@ Yes -- GPU is the right call here, not a nice-to-have. Concretely:
    ```bash
    git clone https://github.com/abylayzhumekenov/denoising_smc.git
    cd denoising_smc
-   git pull   # make sure smc/scripts_2/proposals.py, smc/scripts_2/weights.py, scripts/generate_burgers_gem.py,
+   git pull   # make sure smc/scripts_2/proposals/gem.py, smc/scripts_2/weightings/girsanov.py, scripts/generate_burgers_gem.py,
               # smc/scripts_2/check_gem_tds_real_model.py are present -- push from the Mac first if not
    ```
 

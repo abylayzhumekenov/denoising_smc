@@ -29,47 +29,16 @@ relative error in a plausible range).
 """
 
 import argparse
-import pickle
 
 import numpy as np
-import scipy.io
 import torch
-import torch.nn.functional as F
 import tqdm
 import yaml
 
 from torch_utils.misc import auto_device
-from scripts.generate_burgers import random_sensor
-from smc.scripts_2.proposals import denoise, gem_step
-from smc.scripts_2.weights import girsanov_increment, effective_sample_size, systematic_resample_indices
-
-
-def get_burger_loss_batched(u, u_GT, mask, device=None):
-    """Batched generalization of scripts.generate_burgers.get_burger_loss.
-
-    The original hard-codes `.view(1, 1, 128, 128)`, silently discarding any batch dimension
-    beyond 1 -- fine for the baseline's batch_size=1 default, but wrong for N>1 particles. This
-    version keeps the leading particle dimension through the same finite-difference convolutions
-    (conv2d already batches correctly; only the original's forced reshape was the problem).
-
-    u, u_GT: [N, 128, 128] or [N, 1, 128, 128]. Returns (pde_loss, observation_loss), each
-    [N, 128, 128], observation_loss already masked -- same convention as the original per-sample.
-    """
-    if device is None:
-        device = auto_device()
-    N = u.shape[0]
-    u = u.reshape(N, 1, 128, 128)
-    u_GT = u_GT.reshape(1, 1, 128, 128) if u_GT.dim() == 2 else u_GT.reshape(-1, 1, 128, 128)
-    deriv_t = torch.tensor([[-1], [0], [1]], dtype=torch.float64, device=device).view(1, 1, 3, 1) / 2
-    deriv_x = torch.tensor([[-1, 0, 1]], dtype=torch.float64, device=device).view(1, 1, 1, 3) / 2
-    u_t = F.conv2d(u, deriv_t, padding=(1, 0))
-    u_x = F.conv2d(u, deriv_x, padding=(0, 1))
-    u_xx = F.conv2d(u_x, deriv_x, padding=(0, 1))
-
-    pde_loss = (u_t + u * u_x - 0.01 * u_xx).squeeze(1)          # [N, 128, 128]
-    observation_loss = (u - u_GT).squeeze(1)                      # [N, 128, 128], broadcasts u_GT
-    observation_loss = observation_loss * mask
-    return pde_loss, observation_loss
+from smc.scripts_2.models.burgers import random_sensor, load_ground_truth, load_network, burger_loss
+from smc.scripts_2.proposals.gem import denoise, gem_step
+from smc.scripts_2.weightings.girsanov import girsanov_increment, effective_sample_size, systematic_resample_indices
 
 
 def guidance_grad(x_cur, D, ground_truth, mask, zeta_obs, zeta_pde, use_pde, device):
@@ -78,11 +47,11 @@ def guidance_grad(x_cur, D, ground_truth, mask, zeta_obs, zeta_pde, use_pde, dev
     baseline's own two-phase cost)."""
     N = x_cur.shape[0]
     x_N = (D * 1.415).to(torch.float64)
-    pde_loss, observation_loss = get_burger_loss_batched(x_N, ground_truth, mask, device)
+    pde_loss, observation_loss = burger_loss(x_N, ground_truth, mask, device)
     dims = (1, 2)
     L_obs = torch.sqrt((observation_loss ** 2).sum(dim=dims)) / (128 * 5)     # [N], per-particle norm
     # Sum-then-grad: L_obs[i] depends only on x_cur[i] (no cross-particle coupling anywhere in
-    # get_burger_loss_batched), so d(sum_j L_obs[j])/d(x_cur[i]) = d(L_obs[i])/d(x_cur[i]) exactly.
+    # burger_loss), so d(sum_j L_obs[j])/d(x_cur[i]) = d(L_obs[i])/d(x_cur[i]) exactly.
     # This gets the whole batch's per-particle gradients from ONE backward call instead of N.
     f_val = -zeta_obs * L_obs.sum()
     grad_obs = torch.autograd.grad(outputs=f_val, inputs=x_cur, retain_graph=use_pde)[0]
@@ -102,9 +71,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
     device_cfg = config['generate']['device']
     device = auto_device() if device_cfg in (None, 'auto') else torch.device(device_cfg)
 
-    data = scipy.io.loadmat(config['data']['datapath'])
-    ground_truth = torch.tensor(data['output'][config['data']['offset'], :, :],
-                                 dtype=torch.float64, device=device)
+    ground_truth = load_ground_truth(config['data']['datapath'], config['data']['offset'], device)
 
     N = n_particles if n_particles is not None else config['generate']['batch_size']
     K = num_steps if num_steps is not None else config['test']['iterations']
@@ -112,8 +79,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
     torch.manual_seed(seed)
     generator = torch.Generator(device=device).manual_seed(seed)
 
-    with open(config['test']['pre-trained'], 'rb') as f:
-        net = pickle.load(f)['ema'].to(device)
+    net = load_network(config['test']['pre-trained'], device)
 
     sigma_min = max(config['generate']['sigma_min'], net.sigma_min)
     sigma_max = min(config['generate']['sigma_max'], net.sigma_max)
