@@ -1,8 +1,8 @@
 """Sanity check: compute V_tau(x) at a single representative point (sigma_t=5.0, real Burgers
-model + data), matching the setup in smc/hutchinson_findings.md, using the fused/corrected
-implementation in smc/v_tau.py.
+model + data), matching the setup in smc/scripts_2/hutchinson_findings.md, using the fused/corrected
+implementation in smc/scripts_2/v_tau.py.
 
-Usage: venv/bin/python -m smc.check_v_tau_single_point [num_probes]
+Usage: venv/bin/python -m smc.scripts_2.check_v_tau_single_point [num_probes]
 """
 
 import sys
@@ -13,7 +13,7 @@ import scipy.io
 
 from torch_utils.misc import auto_device
 from scripts.generate_burgers import random_sensor
-from smc.v_tau import compute_v_tau_terms, burgers_ell_fn
+from smc.scripts_2.v_tau import compute_v_tau_terms, burgers_ell_fn
 
 
 def main():

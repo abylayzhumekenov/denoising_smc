@@ -20,8 +20,8 @@ correction entirely, keeping only the tempered telescoping-likelihood term ("pBS
 
 import torch
 
-from smc.toy_mixture import GaussianMixture, sigma_schedule, approx_guidance_grad
-from smc.check_toy_mixture import systematic_resample
+from smc.scripts_1.toy_mixture import GaussianMixture, sigma_schedule, approx_guidance_grad
+from smc.scripts_1.check_toy_mixture import systematic_resample
 
 
 def simulate_millard(mixture, n_particles, sigmas, y, r, generator, lam=1.0, rho=1.0,

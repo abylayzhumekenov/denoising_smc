@@ -18,7 +18,7 @@ Differences from the existing scripts/generate_burgers.py baseline, deliberately
     vs the baseline's 2 (Heun predictor + corrector) -- so this should be *cheaper* per step at
     matched N=1, before any SMC benefit from multiple particles is even considered.
 
-Run the correctness self-check (smc/check_gem_tds_real_model.py) before trusting any output here.
+Run the correctness self-check (smc/scripts_2/check_gem_tds_real_model.py) before trusting any output here.
 
 Recommended first run (fast smoke test, minutes not hours on CPU):
     .venv/bin/python -m scripts.generate_burgers_gem --config configs/burgers.yaml \\
@@ -40,8 +40,8 @@ import yaml
 
 from torch_utils.misc import auto_device
 from scripts.generate_burgers import random_sensor
-from smc.proposals import denoise, gem_step
-from smc.weights import girsanov_increment, effective_sample_size, systematic_resample_indices
+from smc.scripts_2.proposals import denoise, gem_step
+from smc.scripts_2.weights import girsanov_increment, effective_sample_size, systematic_resample_indices
 
 
 def get_burger_loss_batched(u, u_GT, mask, device=None):

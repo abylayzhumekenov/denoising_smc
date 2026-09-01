@@ -4,7 +4,7 @@
 
 Yes -- GPU is the right call here, not a nice-to-have. Concretely:
 
-- `smc/hutchinson_findings.md` measured this exact codebase's real cost on an Apple M1 CPU:
+- `smc/scripts_2/hutchinson_findings.md` measured this exact codebase's real cost on an Apple M1 CPU:
   ~17-20s per forward pass, ~23-45s per forward+backward, all in float64 (this repo's convention
   throughout -- see AGENTS.md). At the baseline's default `iterations: 2000`, one lone trajectory
   (N=1) is already ~2000 x ~30s ~ 16-17 hours *sequentially*. A real SMC run (N particles, several
@@ -19,7 +19,7 @@ Yes -- GPU is the right call here, not a nice-to-have. Concretely:
   docstring for why this repo avoids MPS by default). So moving to GPU does not force a precision
   compromise the way it would on a Mac.
 - `auto_device()` already checks `torch.cuda.is_available()` first, and every one of our new
-  files (`smc/proposals.py`, `smc/weights.py`, `scripts/generate_burgers_gem.py`) creates tensors
+  files (`smc/scripts_2/proposals.py`, `smc/scripts_2/weights.py`, `scripts/generate_burgers_gem.py`) creates tensors
   via `device=...` consistently -- so no code changes should be needed to run on CUDA. The thing to
   actually verify is environment setup, not the algorithm.
 
@@ -30,8 +30,8 @@ Yes -- GPU is the right call here, not a nice-to-have. Concretely:
    ```bash
    git clone https://github.com/abylayzhumekenov/denoising_smc.git
    cd denoising_smc
-   git pull   # make sure smc/proposals.py, smc/weights.py, scripts/generate_burgers_gem.py,
-              # smc/check_gem_tds_real_model.py are present -- push from the Mac first if not
+   git pull   # make sure smc/scripts_2/proposals.py, smc/scripts_2/weights.py, scripts/generate_burgers_gem.py,
+              # smc/scripts_2/check_gem_tds_real_model.py are present -- push from the Mac first if not
    ```
 
 2. **Get the large files onto Ibex.** Pretrained checkpoints and test data are git-ignored
@@ -58,11 +58,11 @@ Yes -- GPU is the right call here, not a nice-to-have. Concretely:
    Python version available that pin supports. `setup_env.sh` now installs `torch==2.7.1+cu118`
    (confirmed via PyPI classifiers to support Python 3.9-3.13) against `python/3.11.0` and
    `cuda/11.8` instead, with the reasoning and risk assessment in that script's comments. Run
-   `python -m smc.check_gem_tds_real_model --config configs/burgers.yaml` right after setup
+   `python -m smc.scripts_2.check_gem_tds_real_model --config configs/burgers.yaml` right after setup
    finishes to confirm the newer torch didn't change anything numerically before trusting it.
 
 4. **Smoke-test on an actual GPU before submitting a real job.** `slurm/smoke_test.sbatch` runs
-   `smc/check_gem_tds_real_model.py` (the closed-form correctness check) plus a tiny
+   `smc/scripts_2/check_gem_tds_real_model.py` (the closed-form correctness check) plus a tiny
    4-particle/100-step `generate_burgers_gem` run, and prints `torch.cuda.is_available()` /
    the detected device up front. Submit it first:
    ```bash

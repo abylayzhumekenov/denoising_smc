@@ -1,7 +1,11 @@
+"""Step-count replication study v2: larger N/rep sweep, V_tau vs. Millard weighting.
+
+Usage (from repo root): .venv/bin/python -m smc.scripts_1.scratch_step_count_study2
+"""
 import torch, json
-from smc.check_toy_mixture import simulate as simulate_vtau
-from smc.check_toy_mixture_millard import simulate_millard
-from smc.toy_mixture import GaussianMixture, sigma_schedule
+from smc.scripts_1.check_toy_mixture import simulate as simulate_vtau
+from smc.scripts_1.check_toy_mixture_millard import simulate_millard
+from smc.scripts_1.toy_mixture import GaussianMixture, sigma_schedule
 
 mixture = GaussianMixture(w=[0.5, 0.5], mu=[-3.0, 3.0], var=[1.0, 1.0])
 y, r = 0.5, 1.0
@@ -12,7 +16,7 @@ true_posterior = mixture.posterior(y, r)
 true_mean = (true_posterior.w * true_posterior.mu).sum().item()
 print(f'true mean: {true_mean:.4f}', flush=True)
 
-RESULTS_PATH = 'scratch_step_count_results2.json'
+RESULTS_PATH = 'results/scratch_step_count_results2.json'
 results = {'true_mean': true_mean, 'n_particles': n_particles, 'n_reps': n_reps, 'vtau': {}, 'millard': {}}
 
 

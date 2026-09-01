@@ -1,4 +1,4 @@
-"""Correctness self-check for smc/weights.girsanov_increment, on the REAL Burgers network.
+"""Correctness self-check for smc/scripts_2/weights.girsanov_increment, on the REAL Burgers network.
 
 Two checks, cheapest first:
 
@@ -6,7 +6,7 @@ Two checks, cheapest first:
    per-particle pixel-dim reduction in girsanov_increment matches an explicit per-particle loop.
 
 2. test_real_network_identity() -- ONE real network forward+backward pass (~seconds on CPU/M1,
-   per smc/hutchinson_findings.md's own timing). Confirms that for the GEM proposal, the closed-
+   per smc/scripts_2/hutchinson_findings.md's own timing). Confirms that for the GEM proposal, the closed-
    form weight C_hat = girsanov_increment(b_k, z, delta) exactly equals the literal Gaussian
    kernel-log-ratio log[p(x_next|x_cur) / q(x_next|x_cur)] computed directly from the two
    (mean, delta*I)-Gaussian densities -- i.e. docs/note_1.pdf Appendix B eq. (38), verified
@@ -17,7 +17,7 @@ it is the "GEM-Girsanov must equal GEM-TDS" sanity check from docs/idea.md Sec. 
 single-step numerical identity instead of a full trajectory comparison, so it costs one network
 call instead of a K-step run.
 
-Run: .venv/bin/python -m smc.check_gem_tds_real_model --config configs/burgers.yaml
+Run: .venv/bin/python -m smc.scripts_2.check_gem_tds_real_model --config configs/burgers.yaml
 """
 
 import argparse
@@ -29,8 +29,8 @@ import torch
 
 from torch_utils.misc import auto_device
 from scripts.generate_burgers import get_burger_loss, random_sensor
-from smc.proposals import denoise, gem_step
-from smc.weights import girsanov_increment
+from smc.scripts_2.proposals import denoise, gem_step
+from smc.scripts_2.weights import girsanov_increment
 
 
 def test_batch_reduction():

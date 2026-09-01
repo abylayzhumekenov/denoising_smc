@@ -5,7 +5,7 @@ V_tau(x) = d(ell)/d(tau) + H_tau(x)
 H_tau(x) = b_ap(x,tau) . grad_ell(x) + (1/2)*a_bar(tau)*Laplacian(ell)(x) - (1/2)*a_bar(tau)*||grad_ell(x)||^2
 
 Two simplifications used here, adapting the manuscript's math to this EDM-based codebase
-(see conversation notes / smc/hutchinson_findings.md for the derivation):
+(see conversation notes / smc/scripts_2/hutchinson_findings.md for the derivation):
 
 1. b_ap(x,tau) = a_bar(tau) * [s_theta(x,tau) + grad_ell(x)] (manuscript eq., page 4), so
    H_tau collapses to a_bar(tau) * [s_theta . grad_ell + (1/2)||grad_ell||^2 + (1/2)*Laplacian(ell)] --
@@ -26,7 +26,7 @@ from typing import Optional
 import torch
 from torch import Tensor
 
-from smc.hutchinson import hutchinson_hvp_probes
+from smc.scripts_2.hutchinson import hutchinson_hvp_probes
 
 
 def compute_v_tau_terms(ell_fn, x: Tensor, sigma_t: Tensor, num_probes: int,

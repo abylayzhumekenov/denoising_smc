@@ -8,7 +8,7 @@ log-likelihood, which is infeasible to compute exactly at PDE-field dimensionali
 estimates it stochastically via Hutchinson's estimator, using Rademacher probe vectors and
 reverse-over-reverse double-backward (torch.autograd.grad with create_graph=True).
 
-See smc/hutchinson_findings.md for measured cost/variance on the real pretrained Burgers model.
+See smc/scripts_2/hutchinson_findings.md for measured cost/variance on the real pretrained Burgers model.
 """
 
 from typing import Optional
@@ -42,7 +42,7 @@ def estimate_laplacian(fn, x: Tensor, num_probes: int,
     num_probes == 1), and `samples` (raw per-probe draws, for diagnostics).
 
     Cost/variance are strongly problem- and noise-level-dependent -- see
-    smc/hutchinson_findings.md before choosing num_probes for a real run.
+    smc/scripts_2/hutchinson_findings.md before choosing num_probes for a real run.
     """
     x = x.detach().requires_grad_(True)
     value = fn(x)

@@ -14,8 +14,8 @@ Success criteria (idea.md Sec 5.5), tested here on ground truth we actually have
 
 import torch
 
-from smc.toy_mixture import approx_guidance_grad
-from smc.check_toy_mixture import systematic_resample
+from smc.scripts_1.toy_mixture import approx_guidance_grad
+from smc.scripts_1.check_toy_mixture import systematic_resample
 
 
 def simulate_heun_sde(mixture, n_particles, sigmas, y, r, generator, lam=1.0, rho=1.0,

@@ -1,6 +1,6 @@
 """Multi-x V_tau(x) sweep: same sigma_t, several independent x draws, real Burgers model+data.
 
-Usage: venv/bin/python -m smc.check_v_tau_multi_x [num_probes] [num_points]
+Usage: venv/bin/python -m smc.scripts_2.check_v_tau_multi_x [num_probes] [num_points]
 """
 
 import sys
@@ -13,7 +13,7 @@ import scipy.io
 
 from torch_utils.misc import auto_device
 from scripts.generate_burgers import random_sensor
-from smc.v_tau import compute_v_tau_terms, burgers_ell_fn
+from smc.scripts_2.v_tau import compute_v_tau_terms, burgers_ell_fn
 
 
 def main():
@@ -30,7 +30,7 @@ def main():
 
     ell_fn = burgers_ell_fn(net, ground_truth, mask, zeta_obs=320, device=device)
     sigma_t_value = 5.0
-    out_path = f'smc/v_tau_multi_x_results_M{num_probes}_N{num_points}.json'
+    out_path = f'smc/scripts_2/v_tau_multi_x_results_M{num_probes}_N{num_points}.json'
 
     results = []
     for seed in range(num_points):

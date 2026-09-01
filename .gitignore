@@ -1,6 +1,6 @@
 # Large data / model files
-data/testing/
-pretrained-models/
+data/testing
+pretrained-models
 *.pkl
 *.mat
 *.npy

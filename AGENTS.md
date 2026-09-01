@@ -12,7 +12,7 @@
 ## Architecture
 
 - **`training/`** — EDM-derived training loop, networks (SongUNet/DhariwalUNet), losses, dataset loader, augmentation
-- **`smc/`** — SMC module. Four weightings (pseudo-bootstrap, Girsanov, potential, trapezoidal potential; `docs/note_1.pdf` §3) validated in `smc/scripts_1/toy_smc.py` (NumPy) as a uniform twist (exact/surrogate/consistent/plug-in) × proposal × weighting grid (tables T1–T4, 4-seed mean±std; T2–T4 use the realistic plug-in twist `N(y;D(x,σ),γ²)` as baseline). V_tau / Doob-transform (`docs/note_2.pdf`) implemented in `smc/toy_mixture.py`, `smc/v_tau.py`, `smc/hutchinson.py`, and `smc/check_*.py`.
+- **`smc/`** — SMC module. Four weightings (pseudo-bootstrap, Girsanov, potential, trapezoidal potential; `docs/note_1.pdf` §3) validated in `smc/scripts_1/toy_smc.py` (NumPy) as a uniform twist (exact/surrogate/consistent/plug-in) × proposal × weighting grid (tables T1–T4, 4-seed mean±std; T2–T4 use the realistic plug-in twist `N(y;D(x,σ),γ²)` as baseline). V_tau / Doob-transform (`docs/note_2.pdf`): toy (closed-form) validation in `smc/scripts_1/toy_mixture.py` and `smc/scripts_1/check_toy_mixture*.py`; real-model implementation and checks in `smc/scripts_2/v_tau.py`, `smc/scripts_2/hutchinson.py`, and `smc/scripts_2/check_v_tau_*.py`.
 - **`scripts/generate_*.py`** — PDE-specific guided sampling (finite-difference convs, sensor mask, EDM reverse ODE)
 - **`configs/*.yaml`** — Parameters: data path, model path, ODE solver, guidance weights
 - **`dnnlib/`**, **`torch_utils/`** — EDM utilities (EasyDict, persistence, device auto-detect)
@@ -50,5 +50,5 @@ See `README.md` §Setup. Python 3.8–3.10 (PyTorch 1.12.1 compat). No tests, fo
 
 - `docs/note_1.pdf` — Girsanov‑corrected SMC: three weightings, toy experiments, appendices
 - `docs/note_2.pdf` — V_tau / Doob‑transform discretisation
-- `smc/hutchinson_findings.md` — Hutchinson trace estimator benchmark
+- `smc/scripts_2/hutchinson_findings.md` — Hutchinson trace estimator benchmark
 - `literature/README.md` — literature survey

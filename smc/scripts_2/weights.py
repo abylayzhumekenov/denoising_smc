@@ -10,7 +10,7 @@ Euler-Maruyama kernel-ratio log-weight is
 
 with the inner products taken over *all* pixel dimensions of one particle (not just a scalar).
 This is proven (not merely observed) to equal the exact closed-form Gaussian kernel ratio for the
-GEM proposal at every step size -- see smc/check_gem_tds_real_model.py for a direct numerical
+GEM proposal at every step size -- see smc/scripts_2/check_gem_tds_real_model.py for a direct numerical
 check of that identity on the real network, which costs one forward+backward pass and should be
 run before trusting any full multi-step result.
 """

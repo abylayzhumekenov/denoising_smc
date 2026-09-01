@@ -13,8 +13,8 @@
 # 2.x build instead of the pin. Risk assessment: this repo's one private-API dependency
 # (training/networks.py's AttentionOp using torch._softmax_backward_data) was already validated
 # to work under ordinary single backward() calls (which is all GEM/generate_burgers_gem.py uses --
-# see smc/hutchinson_findings.md); the double-backward route that originally motivated checking
-# this is a separate, deprioritized track. Verify with `python -m smc.check_gem_tds_real_model`
+# see smc/scripts_2/hutchinson_findings.md); the double-backward route that originally motivated checking
+# this is a separate, deprioritized track. Verify with `python -m smc.scripts_2.check_gem_tds_real_model`
 # immediately after this script finishes, before trusting any full run.
 #
 # torch==2.7.1 confirmed (via PyPI classifiers) to support Python 3.9-3.13, so both available

@@ -1,7 +1,11 @@
+"""Step-count replication study: V_tau vs. Millard weighting on the toy mixture.
+
+Usage (from repo root): .venv/bin/python -m smc.scripts_1.scratch_step_count_study
+"""
 import torch, json
-from smc.check_toy_mixture import simulate as simulate_vtau
-from smc.check_toy_mixture_millard import simulate_millard
-from smc.toy_mixture import GaussianMixture, sigma_schedule
+from smc.scripts_1.check_toy_mixture import simulate as simulate_vtau
+from smc.scripts_1.check_toy_mixture_millard import simulate_millard
+from smc.scripts_1.toy_mixture import GaussianMixture, sigma_schedule
 
 mixture = GaussianMixture(w=[0.5, 0.5], mu=[-3.0, 3.0], var=[1.0, 1.0])
 y, r = 0.5, 1.0
@@ -49,6 +53,6 @@ for num_steps in step_counts:
     results['millard'][num_steps] = {'means': means_millard, 'rmse': rmse_millard, 'std': std_millard, 'bias': bias_millard}
     print(f'[Millard]  steps={num_steps:5d}  bias={bias_millard:+.4f}  std={std_millard:.4f}  rmse={rmse_millard:.4f}  means={[round(m,3) for m in means_millard]}', flush=True)
 
-with open('/private/tmp/claude-449869890/-Users-alvarem-Library-CloudStorage-GoogleDrive-miguelangel-alvarezballesteros-kaust-edu-sa-Other-computers-My-MacBook-Pro-MEGA-0KAUST-0Denoising/fe747770-e6ee-493d-aa96-caaf722c2b47/scratchpad/step_count_replication_results.json', 'w') as f:
+with open('results/step_count_replication_results.json', 'w') as f:
     json.dump(results, f, indent=2)
 print('DONE')

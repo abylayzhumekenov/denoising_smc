@@ -1,5 +1,5 @@
 """Validate the V_tau / Girsanov-SMC correction against a closed-form 1D Gaussian-mixture
-ground truth (smc/toy_mixture.py). Compares four sample sets:
+ground truth (smc/scripts_1/toy_mixture.py). Compares four sample sets:
 
   (a) exact posterior samples       -- direct ancestral draw, our ground truth
   (b) exact-guided diffusion        -- SDE simulated with the TRUE p(y|x_sigma) drift
@@ -24,7 +24,7 @@ quadrature-integrating d(ell)/d(tau) via autodiff.
 
 import torch
 
-from smc.toy_mixture import (
+from smc.scripts_1.toy_mixture import (
     GaussianMixture, sigma_schedule, exact_guidance_grad, approx_guidance_grad, batched_h_tau,
 )
 
