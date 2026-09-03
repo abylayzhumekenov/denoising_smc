@@ -63,6 +63,14 @@ def generate_burgers(config):
     x_next = latents.to(torch.float64) * sigma_t_steps[0]
     selected_index = random_sensor(5, 128)
     
+    # integrator: 'heun' (default, unmodified 2nd-order predictor-corrector, 2 net calls/step)
+    # or 'euler' (1st-order only, 1 net call/step -- to test whether the 2nd-order correction
+    # itself is responsible for the ODE-vs-SDE(GEM) error gap).
+    integrator = config['generate'].get('integrator', 'heun')
+    if integrator not in ('heun', 'euler'):
+        raise ValueError(f"unknown generate.integrator: {integrator!r} (expected 'heun' or 'euler')")
+    print(f'integrator: {integrator}')
+    
     ############################ Sample the data ############################
     for i, (sigma_t_cur, sigma_t_next) in tqdm.tqdm(list(enumerate(zip(sigma_t_steps[:-1], sigma_t_steps[1:]))), unit='step'): # 0, ..., N-1
         x_cur = x_next.detach().clone()
@@ -74,8 +82,8 @@ def generate_burgers(config):
         d_cur = (x_cur - x_N) / sigma_t
         x_next = x_cur + (sigma_t_next - sigma_t) * d_cur
         
-        # 2nd order correction
-        if i < num_steps - 1:
+        # 2nd order correction (Heun) -- skipped entirely when integrator == 'euler'
+        if integrator == 'heun' and i < num_steps - 1:
             x_N = net(x_next, sigma_t_next, class_labels=class_labels).to(torch.float64)
             d_prime = (x_next - x_N) / sigma_t_next
             x_next = x_cur + (sigma_t_next - sigma_t) * (0.5 * d_cur + 0.5 * d_prime)
@@ -101,5 +109,16 @@ def generate_burgers(config):
     relative_error = torch.norm(x_final - ground_truth, 2)/torch.norm(ground_truth, 2)
     print(f'Relative error: {relative_error}')
     x_final = x_final.to('cpu').detach().numpy()
-    np.save(f'burger-results.npy', x_final)
+    out_path = config['generate'].get('out_path', 'burger-results.npy')
+    np.save(out_path, x_final)
+    diag_path = out_path.rsplit('.', 1)[0] + '_diagnostics.npz'
+    np.savez(diag_path,
+              x_final=x_final,
+              relative_error=relative_error.item(),
+              num_steps=num_steps,
+              integrator=integrator,
+              seed=seed,
+              zeta_obs=config['generate']['zeta_obs'],
+              zeta_pde=config['generate']['zeta_pde'])
+    print(f'saved diagnostics to {diag_path}')
     print('Done.')

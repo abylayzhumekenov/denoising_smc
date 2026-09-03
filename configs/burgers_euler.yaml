@@ -1,0 +1,25 @@
+# Same as burgers.yaml (K=2000, same zeta_obs/zeta_pde, same seed) except integrator: euler --
+# drops the 2nd-order Heun correction so the ODE baseline takes exactly 1 network call/step,
+# matching GEM's 1-call-per-step SDE update. Used to test whether the 2nd-order correction
+# itself (rather than the presence/absence of injected noise) explains the Heun-vs-GEM gap.
+# Run with: python3 generate_pde.py --config configs/burgers_euler.yaml
+data:
+  name: 'Burgers'
+  datapath: 'data/testing/burgers.mat'
+  offset: 0
+
+test:
+  pre-trained: 'pretrained-models/pretrained-burgers.pkl'
+  iterations: 2000
+
+generate:
+  seed: 0
+  device: 'auto'
+  batch_size: 1
+  sigma_min: 0.002
+  sigma_max: 80
+  rho: 7
+  zeta_obs: 320
+  zeta_pde: 100
+  integrator: 'euler'
+  out_path: 'burger-results-euler-k2000.npy'
