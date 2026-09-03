@@ -11,12 +11,26 @@ Differences from the existing scripts/generate_burgers.py baseline, deliberately
     delta_k-SCALED drift term, delta_k*b_k, not an unscaled correction -- this is the actual
     algorithmic change under test, not a detail. It means the existing zeta_obs/zeta_pde values
     (tuned for the old unscaled correction) are only a starting guess here, not a given.
-  * Weighting: incremental particles carry a Girsanov/TDS log-weight (docs/note_1.pdf eq. 18/38),
-    with systematic resampling at ESS < 0.5*N. The baseline has no weights or resampling at all
-    (batch_size=1, particles -- if any -- are independent, not an SMC population).
-  * Cost: ONE network forward+backward per step (matching GEM's Table 3.4 entry: 1 denoiser call)
-    vs the baseline's 2 (Heun predictor + corrector) -- so this should be *cheaper* per step at
-    matched N=1, before any SMC benefit from multiple particles is even considered.
+  * Weighting: incremental particles carry the full corrected Girsanov/TDS log-weight
+    (denoising_smc_manuscript/notes/reconcile.md Sec. 3-6):
+        G_k = Delta_ell_k + C_k^phi
+    where Delta_ell_k = ell_{k-1}(x_{k-1}) - ell_k(x_k) is the telescoping twist-ratio increment
+    (ell_k = log of the guidance potential phi_k = -zeta_obs*L_obs - zeta_pde*L_pde, the SAME
+    surrogate that b_k = grad ell_k is built from) and C_k^phi is the stochastic Girsanov
+    correction (girsanov_increment). Earlier versions of this script only ever accumulated
+    C_k^phi -- Delta_ell_k was silently never computed, which is neither the full corrected
+    weight nor the PBS/Millard baseline (Delta_ell_k alone); it was an incomplete hybrid with no
+    mechanism to reflect how well a particle currently fits the observations. See reconcile.md
+    Sec. 6 and Sec. 8 for the lambda-ablation this generalizes to:
+        G_k^lambda = Delta_ell_k + lambda * C_k^phi   (lambda=0 -> PBS/Millard, lambda=1 -> full)
+    Systematic resampling still fires at ESS < resample_threshold*N. The baseline has no weights
+    or resampling at all (batch_size=1, particles -- if any -- are independent, not an SMC
+    population).
+  * Cost: computing Delta_ell_k needs a second (no-grad, forward-only) network call per step, to
+    evaluate the twist at the post-step state x_next/sigma_next -- so this is no longer strictly
+    "one network call per step" the way the original design intended, though it's still cheaper
+    than the baseline's 2 calls each requiring a full backward pass (this second call needs no
+    backward at all).
 
 Run the correctness self-check (smc/scripts_2/check_gem_tds_real_model.py) before trusting any output here.
 
@@ -27,17 +41,17 @@ Recommended first run (fast smoke test, minutes not hours on CPU):
 Then scale n-particles/num-steps up once the smoke test looks sane (nonzero ESS, no NaNs,
 relative error in a plausible range).
 
-Diagnostic controls (all default to the original GEM behavior when omitted):
-  --no-noise       zero out the injected Brownian increment in gem_step (inject_noise=False).
-  --flat-guidance  add guidance flat/unscaled by delta instead of folding it into the
-                   delta-scaled score drift (scale_guidance=False) -- mirrors
-                   scripts/generate_burgers.py's baseline convention.
-  --no-guidance    zero out the guidance term entirely (apply_guidance=False) -- pure
-                   unconditional guided-Euler-Maruyama, i.e. plain reverse-SDE sampling from
-                   the network's prior with no observation/PDE conditioning at all. Used as a
-                   reference floor: how bad (or not) is an unguided sample on its own, and does
-                   the unconditional SDE machinery itself (score, schedule, noise) behave
-                   sanely with zero guidance in the mix.
+Diagnostic controls (all default to the corrected GEM behavior when omitted):
+  --no-noise          zero out the injected Brownian increment in gem_step (inject_noise=False).
+  --flat-guidance     add guidance flat/unscaled by delta instead of folding it into the
+                      delta-scaled score drift (scale_guidance=False) -- mirrors
+                      scripts/generate_burgers.py's baseline convention.
+  --no-guidance       zero out the guidance term entirely (apply_guidance=False) -- pure
+                      unconditional guided-Euler-Maruyama with no observation/PDE conditioning.
+  --lambda-girsanov   weight on the Girsanov correction C_k^phi in G_k = Delta_ell_k +
+                      lambda*C_k^phi (default 1.0, the full corrected weight). Set to 0.0 to
+                      reproduce the Millard-style pseudo-bootstrap (PBS) weight, Delta_ell_k
+                      alone, on this real Burgers problem.
 """
 
 import argparse
@@ -78,9 +92,31 @@ def guidance_grad(x_cur, D, ground_truth, mask, zeta_obs, zeta_pde, use_pde, dev
     return grad_obs.detach(), L_obs.detach(), torch.zeros(N, dtype=torch.float64, device=device)
 
 
+def twist_log_likelihood(D, ground_truth, mask, obs_weight, pde_weight, device):
+    """ell(x,sigma) = -obs_weight*L_obs(x,sigma) - pde_weight*L_pde(x,sigma): the per-particle
+    log-twist value (log of the guidance potential phi_k), computed from an ALREADY-EVALUATED
+    denoised estimate D = D_theta(x,sigma). This is the ell_k(x_k) of
+    denoising_smc_manuscript/notes/reconcile.md Sec. 2-3 -- b_k = grad_x ell_k(x_cur) is exactly
+    this function's gradient (see guidance_grad's f_val), so the two must stay consistent: same
+    zeta_obs/zeta_pde, same use_pde phase, for the SAME step index.
+
+    No autograd needed here -- this is used only for the Delta_ell_k = ell_next - ell_cur
+    telescoping term in the SMC weight, never for a gradient.
+    """
+    x_N = (D * 1.415).to(torch.float64)
+    pde_loss, observation_loss = burger_loss(x_N, ground_truth, mask, device)
+    dims = (1, 2)
+    L_obs = torch.sqrt((observation_loss ** 2).sum(dim=dims)) / (128 * 5)
+    ell = -obs_weight * L_obs
+    if pde_weight != 0.0:
+        L_pde = torch.sqrt((pde_loss ** 2).sum(dim=dims)) / (128 * 128)
+        ell = ell - pde_weight * L_pde
+    return ell
+
+
 def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_threshold=0.5,
                           out_path='burger-gem-results.npz', inject_noise=True, scale_guidance=True,
-                          apply_guidance=True):
+                          apply_guidance=True, lambda_girsanov=1.0):
     device_cfg = config['generate']['device']
     device = auto_device() if device_cfg in (None, 'auto') else torch.device(device_cfg)
 
@@ -111,13 +147,15 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
 
     x = torch.randn(N, net.img_channels, net.img_resolution, net.img_resolution,
                      dtype=torch.float64, device=device, generator=generator) * sched[0]
-    log_w = torch.zeros(N, dtype=torch.float64, device=device)   # f0(xi_0): flat prior at pure noise
-    # No separate terminal correction (note_1.pdf eq. 23) is applied: that term corrects the
-    # surrogate twist back to a *separately specified* exact final-time likelihood log p(y|xi_T).
-    # Here there is no such separate likelihood -- the PDE-residual + sparse-observation loss IS
-    # the only notion of "fit to y" this problem has, at every step including the last. So the
-    # surrogate is being treated as exact by construction, not approximated; if a genuinely
-    # different terminal criterion is introduced later this omission should be revisited.
+    log_w = torch.zeros(N, dtype=torch.float64, device=device)   # ell_K(x_K) := 0: flat prior at
+    # pure noise, a shared additive constant across particles (irrelevant after normalization).
+    # No separate terminal correction (note_1.pdf eq. 23 / reconcile.md Sec. 9) is applied: that
+    # term corrects the surrogate twist back to a *separately specified* exact final-time
+    # likelihood log p(y|xi_T). Here there is no such separate likelihood -- the PDE-residual +
+    # sparse-observation loss IS the only notion of "fit to y" this problem has, at every step
+    # including the last. So the surrogate is being treated as terminally consistent
+    # (phi_0(x_0) = L(x_0)) by construction, not approximated; if a genuinely different terminal
+    # criterion is introduced later this omission should be revisited.
 
     ess_history = []
     n_resample = 0
@@ -133,8 +171,9 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
         use_pde = i > 0.8 * K
         if apply_guidance:
             obs_weight = (zeta_obs / 10) if use_pde else zeta_obs
+            pde_weight_cur = zeta_pde if use_pde else 0.0
             b_k, L_obs, L_pde = guidance_grad(x_cur, D, ground_truth, selected_index,
-                                               obs_weight, zeta_pde if use_pde else 0.0, use_pde, device)
+                                               obs_weight, pde_weight_cur, use_pde, device)
         else:
             # Skip the guidance backward passes entirely -- pure unconditional GEM, no
             # observation/PDE conditioning at all. b_k=0 makes scale_guidance irrelevant (both
@@ -148,7 +187,27 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
         x_next, z, delta = gem_step(x_cur, score, b_k, sigma_cur, sigma_next, generator=generator,
                                      inject_noise=inject_noise, scale_guidance=scale_guidance)
 
-        inc = girsanov_increment(b_k, z, delta)
+        # Delta_ell_k = ell_{k-1}(x_{k-1}) - ell_k(x_k) (reconcile.md Sec. 2-3): the telescoping
+        # twist-ratio increment that was previously missing from this script's weight entirely.
+        # ell_cur reuses L_obs/L_pde already computed above (no extra cost); ell_next needs one
+        # extra no-grad (forward-only, no backward) network call at the post-step state, using
+        # the guidance schedule appropriate to the NEXT step index (i+1) -- b_k was built from
+        # ell at index i, so ell_next must use ell at index i+1 for Delta_ell_k to be the correct
+        # single-step telescoping difference.
+        if apply_guidance:
+            use_pde_next = (i + 1) > 0.8 * K
+            obs_weight_next = (zeta_obs / 10) if use_pde_next else zeta_obs
+            pde_weight_next = zeta_pde if use_pde_next else 0.0
+            with torch.no_grad():
+                D_next, _ = denoise(net, x_next, sigma_next)
+            ell_next = twist_log_likelihood(D_next, ground_truth, selected_index,
+                                             obs_weight_next, pde_weight_next, device)
+            ell_cur = -obs_weight * L_obs - pde_weight_cur * L_pde
+            delta_ell = ell_next - ell_cur
+        else:
+            delta_ell = torch.zeros(N, dtype=torch.float64, device=device)
+
+        inc = delta_ell + lambda_girsanov * girsanov_increment(b_k, z, delta)
         log_w = log_w + inc
         log_w = log_w - torch.logsumexp(log_w, dim=0)
 
@@ -171,7 +230,8 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
     weighted_rel_err = torch.norm((weighted_mean - ground_truth).reshape(-1)) / torch.norm(ground_truth)
 
     print(f"N={N} particles, K={K} steps, {n_resample} resample events, "
-          f"inject_noise={inject_noise}, scale_guidance={scale_guidance}, apply_guidance={apply_guidance}")
+          f"inject_noise={inject_noise}, scale_guidance={scale_guidance}, "
+          f"apply_guidance={apply_guidance}, lambda_girsanov={lambda_girsanov}")
     print(f"weighted-mean relative error: {float(weighted_rel_err):.5f}")
     print(f"per-particle relative error: min={float(per_particle_rel_err.min()):.5f} "
           f"max={float(per_particle_rel_err.max()):.5f} mean={float(per_particle_rel_err.mean()):.5f}")
@@ -188,6 +248,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
              inject_noise=inject_noise,
              scale_guidance=scale_guidance,
              apply_guidance=apply_guidance,
+             lambda_girsanov=lambda_girsanov,
              ground_truth=ground_truth.detach().cpu().numpy())
     print(f"saved diagnostics to {out_path}")
 
@@ -215,6 +276,12 @@ if __name__ == '__main__':
                                'unconditional guided-Euler-Maruyama with no observation/PDE '
                                'conditioning. Reference floor for how the unconditional SDE alone '
                                '(score + noise, no guidance) behaves.'))
+    parser.add_argument('--lambda-girsanov', type=float, default=1.0,
+                         help=('weight on the Girsanov correction C_k^phi in the SMC increment '
+                               'G_k = Delta_ell_k + lambda*C_k^phi (denoising_smc_manuscript/'
+                               'notes/reconcile.md Sec. 8). Default 1.0 is the full corrected '
+                               'weight; 0.0 reproduces the Millard-style pseudo-bootstrap (PBS) '
+                               'weight, Delta_ell_k alone.'))
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:
@@ -223,4 +290,4 @@ if __name__ == '__main__':
     generate_burgers_gem(cfg, n_particles=args.n_particles, num_steps=args.num_steps,
                           resample_threshold=args.resample_threshold, out_path=args.out,
                           inject_noise=not args.no_noise, scale_guidance=not args.flat_guidance,
-                          apply_guidance=not args.no_guidance)
+                          apply_guidance=not args.no_guidance, lambda_girsanov=args.lambda_girsanov)
