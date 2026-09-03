@@ -27,11 +27,17 @@ Recommended first run (fast smoke test, minutes not hours on CPU):
 Then scale n-particles/num-steps up once the smoke test looks sane (nonzero ESS, no NaNs,
 relative error in a plausible range).
 
-Diagnostic controls (both default to the original GEM behavior when omitted):
+Diagnostic controls (all default to the original GEM behavior when omitted):
   --no-noise       zero out the injected Brownian increment in gem_step (inject_noise=False).
   --flat-guidance  add guidance flat/unscaled by delta instead of folding it into the
                    delta-scaled score drift (scale_guidance=False) -- mirrors
                    scripts/generate_burgers.py's baseline convention.
+  --no-guidance    zero out the guidance term entirely (apply_guidance=False) -- pure
+                   unconditional guided-Euler-Maruyama, i.e. plain reverse-SDE sampling from
+                   the network's prior with no observation/PDE conditioning at all. Used as a
+                   reference floor: how bad (or not) is an unguided sample on its own, and does
+                   the unconditional SDE machinery itself (score, schedule, noise) behave
+                   sanely with zero guidance in the mix.
 """
 
 import argparse
@@ -73,7 +79,8 @@ def guidance_grad(x_cur, D, ground_truth, mask, zeta_obs, zeta_pde, use_pde, dev
 
 
 def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_threshold=0.5,
-                          out_path='burger-gem-results.npz', inject_noise=True, scale_guidance=True):
+                          out_path='burger-gem-results.npz', inject_noise=True, scale_guidance=True,
+                          apply_guidance=True):
     device_cfg = config['generate']['device']
     device = auto_device() if device_cfg in (None, 'auto') else torch.device(device_cfg)
 
@@ -124,9 +131,17 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
         # (see AGENTS.md "Guidance two-phase"): obs-only at full weight for the first 80% of
         # steps; final 20% add PDE-residual gradients and cut the obs weight to zeta_obs/10.
         use_pde = i > 0.8 * K
-        obs_weight = (zeta_obs / 10) if use_pde else zeta_obs
-        b_k, L_obs, L_pde = guidance_grad(x_cur, D, ground_truth, selected_index,
-                                           obs_weight, zeta_pde if use_pde else 0.0, use_pde, device)
+        if apply_guidance:
+            obs_weight = (zeta_obs / 10) if use_pde else zeta_obs
+            b_k, L_obs, L_pde = guidance_grad(x_cur, D, ground_truth, selected_index,
+                                               obs_weight, zeta_pde if use_pde else 0.0, use_pde, device)
+        else:
+            # Skip the guidance backward passes entirely -- pure unconditional GEM, no
+            # observation/PDE conditioning at all. b_k=0 makes scale_guidance irrelevant (both
+            # conventions reduce to the same drift when there is no guidance to scale).
+            b_k = torch.zeros_like(D)
+            L_obs = torch.zeros(N, dtype=torch.float64, device=device)
+            L_pde = torch.zeros(N, dtype=torch.float64, device=device)
         score = score.detach()
         x_cur = x_cur.detach()
 
@@ -156,7 +171,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
     weighted_rel_err = torch.norm((weighted_mean - ground_truth).reshape(-1)) / torch.norm(ground_truth)
 
     print(f"N={N} particles, K={K} steps, {n_resample} resample events, "
-          f"inject_noise={inject_noise}, scale_guidance={scale_guidance}")
+          f"inject_noise={inject_noise}, scale_guidance={scale_guidance}, apply_guidance={apply_guidance}")
     print(f"weighted-mean relative error: {float(weighted_rel_err):.5f}")
     print(f"per-particle relative error: min={float(per_particle_rel_err.min()):.5f} "
           f"max={float(per_particle_rel_err.max()):.5f} mean={float(per_particle_rel_err.mean()):.5f}")
@@ -172,6 +187,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
              n_resample=n_resample,
              inject_noise=inject_noise,
              scale_guidance=scale_guidance,
+             apply_guidance=apply_guidance,
              ground_truth=ground_truth.detach().cpu().numpy())
     print(f"saved diagnostics to {out_path}")
 
@@ -194,6 +210,11 @@ if __name__ == '__main__':
                          help=('diagnostic control: add guidance FLAT (unscaled by delta) instead of '
                                'folding it into the delta-scaled score drift -- mirrors the baseline '
                                'generate_burgers.py convention. See gem_step scale_guidance.'))
+    parser.add_argument('--no-guidance', action='store_true',
+                         help=('diagnostic control: zero out the guidance term entirely -- pure '
+                               'unconditional guided-Euler-Maruyama with no observation/PDE '
+                               'conditioning. Reference floor for how the unconditional SDE alone '
+                               '(score + noise, no guidance) behaves.'))
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:
@@ -201,4 +222,5 @@ if __name__ == '__main__':
 
     generate_burgers_gem(cfg, n_particles=args.n_particles, num_steps=args.num_steps,
                           resample_threshold=args.resample_threshold, out_path=args.out,
-                          inject_noise=not args.no_noise, scale_guidance=not args.flat_guidance)
+                          inject_noise=not args.no_noise, scale_guidance=not args.flat_guidance,
+                          apply_guidance=not args.no_guidance)
