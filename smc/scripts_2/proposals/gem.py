@@ -46,16 +46,25 @@ def denoise(net, x_cur, sigma_cur, class_labels=None):
     return D, score
 
 
-def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None):
+def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None, inject_noise=True):
     """Advance one guided Euler-Maruyama step (docs/idea.md eq. in Sec. 3.1; note_1.pdf eq. 12).
 
     x_cur, score, guidance_grad: tensors of identical shape [N, ...], particle dim = 0.
     sigma_cur, sigma_next: python floats or 0-dim tensors (same schedule for every particle).
 
+    inject_noise: if False, skips adding the Brownian increment (z is returned as all-zeros
+    instead of sqrt(delta)*eps). This turns the update into the deterministic mean-drift
+    recursion x_next = x_cur + delta*(score + guidance_grad) -- same sigma**2-based score and
+    same delta-SCALED guidance as the real GEM step, just with the SDE's noise term switched
+    off. Used as a diagnostic control to separate "does the injected noise cause the GEM-vs-Heun
+    error gap" from "does the delta-scaled guidance convention itself cause it" -- see
+    scripts/generate_burgers_gem.py's --no-noise flag.
+
     Returns (x_next, z, delta):
       x_next  -- detached, ready to be the next step's x_cur
       z       -- the *realized* Brownian increment sqrt(delta)*eps actually used (needed by the
-                 Girsanov weight -- see smc/scripts_2/weightings/girsanov.py girsanov_increment)
+                 Girsanov weight -- see smc/scripts_2/weightings/girsanov.py girsanov_increment),
+                 or all-zeros when inject_noise=False
       delta   -- the scalar accumulated diffusion Sigma_k for this step (needed by the weight too)
 
     x_cur, score, and guidance_grad must NOT carry gradient history into this call (detach them
@@ -65,8 +74,11 @@ def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None)
     if delta <= 0:
         raise ValueError(f"non-decreasing sigma schedule: sigma_cur={sigma_cur}, sigma_next={sigma_next}")
 
-    eps = torch.randn(x_cur.shape, generator=generator, dtype=x_cur.dtype, device=x_cur.device)
-    z = (delta ** 0.5) * eps
+    if inject_noise:
+        eps = torch.randn(x_cur.shape, generator=generator, dtype=x_cur.dtype, device=x_cur.device)
+        z = (delta ** 0.5) * eps
+    else:
+        z = torch.zeros_like(x_cur)
 
     x_next = x_cur + delta * (score + guidance_grad) + z
     return x_next.detach(), z.detach(), delta

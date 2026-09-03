@@ -67,7 +67,7 @@ def guidance_grad(x_cur, D, ground_truth, mask, zeta_obs, zeta_pde, use_pde, dev
 
 
 def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_threshold=0.5,
-                          out_path='burger-gem-results.npz'):
+                          out_path='burger-gem-results.npz', inject_noise=True):
     device_cfg = config['generate']['device']
     device = auto_device() if device_cfg in (None, 'auto') else torch.device(device_cfg)
 
@@ -124,7 +124,8 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
         score = score.detach()
         x_cur = x_cur.detach()
 
-        x_next, z, delta = gem_step(x_cur, score, b_k, sigma_cur, sigma_next, generator=generator)
+        x_next, z, delta = gem_step(x_cur, score, b_k, sigma_cur, sigma_next, generator=generator,
+                                     inject_noise=inject_noise)
 
         inc = girsanov_increment(b_k, z, delta)
         log_w = log_w + inc
@@ -148,7 +149,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
                              torch.norm(ground_truth))
     weighted_rel_err = torch.norm((weighted_mean - ground_truth).reshape(-1)) / torch.norm(ground_truth)
 
-    print(f"N={N} particles, K={K} steps, {n_resample} resample events")
+    print(f"N={N} particles, K={K} steps, {n_resample} resample events, inject_noise={inject_noise}")
     print(f"weighted-mean relative error: {float(weighted_rel_err):.5f}")
     print(f"per-particle relative error: min={float(per_particle_rel_err.min()):.5f} "
           f"max={float(per_particle_rel_err.max()):.5f} mean={float(per_particle_rel_err.mean()):.5f}")
@@ -162,6 +163,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
              weighted_rel_err=float(weighted_rel_err),
              ess_history=np.array(ess_history),
              n_resample=n_resample,
+             inject_noise=inject_noise,
              ground_truth=ground_truth.detach().cpu().numpy())
     print(f"saved diagnostics to {out_path}")
 
@@ -175,10 +177,16 @@ if __name__ == '__main__':
                          help='overrides test.iterations in the config; start small (e.g. 100) for a smoke test')
     parser.add_argument('--resample-threshold', type=float, default=0.5)
     parser.add_argument('--out', type=str, default='burger-gem-results.npz')
+    parser.add_argument('--no-noise', action='store_true',
+                         help=('diagnostic control: zero out the injected Brownian increment in '
+                               'gem_step, leaving the delta-scaled score+guidance drift as the '
+                               'only update (see smc/scripts_2/proposals/gem.py inject_noise). '
+                               'Combine with --resample-threshold 0 for a fully deterministic run.'))
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:
         cfg = yaml.load(f, Loader=yaml.FullLoader)
 
     generate_burgers_gem(cfg, n_particles=args.n_particles, num_steps=args.num_steps,
-                          resample_threshold=args.resample_threshold, out_path=args.out)
+                          resample_threshold=args.resample_threshold, out_path=args.out,
+                          inject_noise=not args.no_noise)
