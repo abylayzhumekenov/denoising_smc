@@ -26,6 +26,12 @@ Recommended first run (fast smoke test, minutes not hours on CPU):
 
 Then scale n-particles/num-steps up once the smoke test looks sane (nonzero ESS, no NaNs,
 relative error in a plausible range).
+
+Diagnostic controls (both default to the original GEM behavior when omitted):
+  --no-noise       zero out the injected Brownian increment in gem_step (inject_noise=False).
+  --flat-guidance  add guidance flat/unscaled by delta instead of folding it into the
+                   delta-scaled score drift (scale_guidance=False) -- mirrors
+                   scripts/generate_burgers.py's baseline convention.
 """
 
 import argparse
@@ -67,7 +73,7 @@ def guidance_grad(x_cur, D, ground_truth, mask, zeta_obs, zeta_pde, use_pde, dev
 
 
 def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_threshold=0.5,
-                          out_path='burger-gem-results.npz', inject_noise=True):
+                          out_path='burger-gem-results.npz', inject_noise=True, scale_guidance=True):
     device_cfg = config['generate']['device']
     device = auto_device() if device_cfg in (None, 'auto') else torch.device(device_cfg)
 
@@ -125,7 +131,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
         x_cur = x_cur.detach()
 
         x_next, z, delta = gem_step(x_cur, score, b_k, sigma_cur, sigma_next, generator=generator,
-                                     inject_noise=inject_noise)
+                                     inject_noise=inject_noise, scale_guidance=scale_guidance)
 
         inc = girsanov_increment(b_k, z, delta)
         log_w = log_w + inc
@@ -149,7 +155,8 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
                              torch.norm(ground_truth))
     weighted_rel_err = torch.norm((weighted_mean - ground_truth).reshape(-1)) / torch.norm(ground_truth)
 
-    print(f"N={N} particles, K={K} steps, {n_resample} resample events, inject_noise={inject_noise}")
+    print(f"N={N} particles, K={K} steps, {n_resample} resample events, "
+          f"inject_noise={inject_noise}, scale_guidance={scale_guidance}")
     print(f"weighted-mean relative error: {float(weighted_rel_err):.5f}")
     print(f"per-particle relative error: min={float(per_particle_rel_err.min()):.5f} "
           f"max={float(per_particle_rel_err.max()):.5f} mean={float(per_particle_rel_err.mean()):.5f}")
@@ -164,6 +171,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
              ess_history=np.array(ess_history),
              n_resample=n_resample,
              inject_noise=inject_noise,
+             scale_guidance=scale_guidance,
              ground_truth=ground_truth.detach().cpu().numpy())
     print(f"saved diagnostics to {out_path}")
 
@@ -182,6 +190,10 @@ if __name__ == '__main__':
                                'gem_step, leaving the delta-scaled score+guidance drift as the '
                                'only update (see smc/scripts_2/proposals/gem.py inject_noise). '
                                'Combine with --resample-threshold 0 for a fully deterministic run.'))
+    parser.add_argument('--flat-guidance', action='store_true',
+                         help=('diagnostic control: add guidance FLAT (unscaled by delta) instead of '
+                               'folding it into the delta-scaled score drift -- mirrors the baseline '
+                               'generate_burgers.py convention. See gem_step scale_guidance.'))
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:
@@ -189,4 +201,4 @@ if __name__ == '__main__':
 
     generate_burgers_gem(cfg, n_particles=args.n_particles, num_steps=args.num_steps,
                           resample_threshold=args.resample_threshold, out_path=args.out,
-                          inject_noise=not args.no_noise)
+                          inject_noise=not args.no_noise, scale_guidance=not args.flat_guidance)

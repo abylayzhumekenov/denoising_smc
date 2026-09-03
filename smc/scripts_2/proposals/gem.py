@@ -46,7 +46,8 @@ def denoise(net, x_cur, sigma_cur, class_labels=None):
     return D, score
 
 
-def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None, inject_noise=True):
+def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None,
+             inject_noise=True, scale_guidance=True):
     """Advance one guided Euler-Maruyama step (docs/idea.md eq. in Sec. 3.1; note_1.pdf eq. 12).
 
     x_cur, score, guidance_grad: tensors of identical shape [N, ...], particle dim = 0.
@@ -59,6 +60,16 @@ def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None,
     off. Used as a diagnostic control to separate "does the injected noise cause the GEM-vs-Heun
     error gap" from "does the delta-scaled guidance convention itself cause it" -- see
     scripts/generate_burgers_gem.py's --no-noise flag.
+
+    scale_guidance: if True (default), guidance_grad is folded into the score before scaling by
+    delta -- x_next = x_cur + delta*(score + guidance_grad) + z -- the Bayesian score-composition
+    convention (guidance is treated as part of the total score, so it inherits the SDE's
+    step-size weighting same as the prior score). If False, guidance is instead added FLAT,
+    unscaled by delta -- x_next = x_cur + delta*score + guidance_grad + z -- mirroring
+    scripts/generate_burgers.py's baseline convention (a fixed-size post-hoc nudge, same
+    magnitude every step regardless of how much sigma-time the step covers). Tests whether
+    reusing the baseline's flat-guidance convention, with the same zeta_obs/zeta_pde it was
+    tuned for, recovers Heun-level accuracy inside the noisy SDE.
 
     Returns (x_next, z, delta):
       x_next  -- detached, ready to be the next step's x_cur
@@ -80,5 +91,8 @@ def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None,
     else:
         z = torch.zeros_like(x_cur)
 
-    x_next = x_cur + delta * (score + guidance_grad) + z
+    if scale_guidance:
+        x_next = x_cur + delta * (score + guidance_grad) + z
+    else:
+        x_next = x_cur + delta * score + guidance_grad + z
     return x_next.detach(), z.detach(), delta
