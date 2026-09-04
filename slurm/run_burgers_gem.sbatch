@@ -40,6 +40,16 @@ module load python/3.11.0
 
 source .venv/bin/activate
 
+# Larger N_PARTICLES batches (e.g. N=16) push the per-step denoiser forward+backward close to
+# the V100's 32G capacity; PyTorch's caching allocator can then fail a small allocation even
+# though it's holding several times that much in fragmented, reserved-but-unallocated blocks
+# (seen directly: a 51275999-style OOM reporting ~2GB "reserved but unallocated" right next to a
+# failed 256MB request). expandable_segments lets the allocator grow an existing segment instead
+# of demanding a fresh contiguous block, which resolves exactly this fragmentation pattern --
+# see https://pytorch.org/docs/stable/notes/cuda.html#environment-variables. Harmless/no-op at
+# the N=8 sizes that were already fitting comfortably.
+export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
+
 # Defaults match configs/burgers.yaml (batch_size=1, iterations=2000) -- override via
 # `sbatch --export=N_PARTICLES=8,NUM_STEPS=1000 slurm/run_burgers_gem.sbatch` for an
 # intermediate-scale run without editing this file.
