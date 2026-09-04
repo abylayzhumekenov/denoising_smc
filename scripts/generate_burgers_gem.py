@@ -26,11 +26,14 @@ Differences from the existing scripts/generate_burgers.py baseline, deliberately
     Systematic resampling still fires at ESS < resample_threshold*N. The baseline has no weights
     or resampling at all (batch_size=1, particles -- if any -- are independent, not an SMC
     population).
-  * Cost: computing Delta_ell_k needs a second (no-grad, forward-only) network call per step, to
-    evaluate the twist at the post-step state x_next/sigma_next -- so this is no longer strictly
-    "one network call per step" the way the original design intended, though it's still cheaper
-    than the baseline's 2 calls each requiring a full backward pass (this second call needs no
-    backward at all).
+  * Cost: Delta_ell_k needs ell evaluated at the post-step state (x_next, sigma_next). Rather
+    than a second, redundant network call, this reuses the observation that x_next/sigma_next of
+    step i IS x_cur/sigma_cur of step i+1 -- the denoiser is evaluated there WITH grad enabled
+    once, immediately after gem_step, and that same (graph-attached) result is carried forward
+    as the next iteration's D/score instead of being recomputed from scratch. So this is back to
+    one denoiser forward pass per step on every step except the (rare) ones where resampling
+    fires -- there, the carried-forward result no longer matches the reindexed particles and a
+    fresh call is unavoidable for that one step.
 
 Run the correctness self-check (smc/scripts_2/check_gem_tds_real_model.py) before trusting any output here.
 
@@ -101,7 +104,8 @@ def twist_log_likelihood(D, ground_truth, mask, obs_weight, pde_weight, device):
     zeta_obs/zeta_pde, same use_pde phase, for the SAME step index.
 
     No autograd needed here -- this is used only for the Delta_ell_k = ell_next - ell_cur
-    telescoping term in the SMC weight, never for a gradient.
+    telescoping term in the SMC weight, never for a gradient. Pass D.detach() if D still carries
+    a graph you want to keep alive for other purposes (e.g. next step's guidance gradient).
     """
     x_N = (D * 1.415).to(torch.float64)
     pde_loss, observation_loss = burger_loss(x_N, ground_truth, mask, device)
@@ -160,11 +164,23 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
     ess_history = []
     n_resample = 0
 
+    # (x_leaf, D, score) always hold the CURRENT step index's denoiser output, with grad enabled
+    # on x_leaf, ready for guidance_grad. need_fresh_D=True means these must be (re)computed from
+    # `x` at the top of the loop -- true initially, and true again right after any resample event
+    # (see below), false on every other step, where the previous iteration already computed them
+    # as a side effect of evaluating Delta_ell_k.
+    x_leaf, D, score = None, None, None
+    need_fresh_D = True
+
     for i in tqdm.tqdm(range(K - 1), unit='step'):
         sigma_cur, sigma_next = float(sched[i]), float(sched[i + 1])
-        x_cur = x.detach().clone().requires_grad_(True)
 
-        D, score = denoise(net, x_cur, sigma_cur)
+        if need_fresh_D:
+            x_leaf = x.detach().clone().requires_grad_(True)
+            D, score = denoise(net, x_leaf, sigma_cur)
+            need_fresh_D = False
+        x_cur = x_leaf
+
         # Two-phase guidance schedule, matching scripts/generate_burgers.py's baseline exactly
         # (see AGENTS.md "Guidance two-phase"): obs-only at full weight for the first 80% of
         # steps; final 20% add PDE-residual gradients and cut the obs weight to zeta_obs/10.
@@ -174,35 +190,32 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
             pde_weight_cur = zeta_pde if use_pde else 0.0
             b_k, L_obs, L_pde = guidance_grad(x_cur, D, ground_truth, selected_index,
                                                obs_weight, pde_weight_cur, use_pde, device)
+            ell_cur = -obs_weight * L_obs - pde_weight_cur * L_pde
         else:
             # Skip the guidance backward passes entirely -- pure unconditional GEM, no
             # observation/PDE conditioning at all. b_k=0 makes scale_guidance irrelevant (both
             # conventions reduce to the same drift when there is no guidance to scale).
             b_k = torch.zeros_like(D)
-            L_obs = torch.zeros(N, dtype=torch.float64, device=device)
-            L_pde = torch.zeros(N, dtype=torch.float64, device=device)
-        score = score.detach()
-        x_cur = x_cur.detach()
+            ell_cur = torch.zeros(N, dtype=torch.float64, device=device)
+        score_d = score.detach()
+        x_cur_d = x_cur.detach()
 
-        x_next, z, delta = gem_step(x_cur, score, b_k, sigma_cur, sigma_next, generator=generator,
+        x_next, z, delta = gem_step(x_cur_d, score_d, b_k, sigma_cur, sigma_next, generator=generator,
                                      inject_noise=inject_noise, scale_guidance=scale_guidance)
 
-        # Delta_ell_k = ell_{k-1}(x_{k-1}) - ell_k(x_k) (reconcile.md Sec. 2-3): the telescoping
-        # twist-ratio increment that was previously missing from this script's weight entirely.
-        # ell_cur reuses L_obs/L_pde already computed above (no extra cost); ell_next needs one
-        # extra no-grad (forward-only, no backward) network call at the post-step state, using
-        # the guidance schedule appropriate to the NEXT step index (i+1) -- b_k was built from
-        # ell at index i, so ell_next must use ell at index i+1 for Delta_ell_k to be the correct
-        # single-step telescoping difference.
+        # Evaluate the denoiser ONCE at the post-step state, with grad enabled -- this is exactly
+        # the computation iteration i+1 would otherwise redo from scratch (x_next/sigma_next here
+        # IS x_cur/sigma_cur there), so it's carried forward below instead of discarded. Its
+        # (detached) value also gives ell_next for Delta_ell_k right now.
+        x_leaf_next = x_next.detach().clone().requires_grad_(True)
+        D_next, score_next = denoise(net, x_leaf_next, sigma_next)
+
         if apply_guidance:
             use_pde_next = (i + 1) > 0.8 * K
             obs_weight_next = (zeta_obs / 10) if use_pde_next else zeta_obs
             pde_weight_next = zeta_pde if use_pde_next else 0.0
-            with torch.no_grad():
-                D_next, _ = denoise(net, x_next, sigma_next)
-            ell_next = twist_log_likelihood(D_next, ground_truth, selected_index,
+            ell_next = twist_log_likelihood(D_next.detach(), ground_truth, selected_index,
                                              obs_weight_next, pde_weight_next, device)
-            ell_cur = -obs_weight * L_obs - pde_weight_cur * L_pde
             delta_ell = ell_next - ell_cur
         else:
             delta_ell = torch.zeros(N, dtype=torch.float64, device=device)
@@ -218,6 +231,12 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
             x_next = x_next[ridx]
             log_w = torch.zeros(N, dtype=torch.float64, device=device)
             n_resample += 1
+            # The carried-forward D_next/score_next were computed on the PRE-resample particle
+            # ordering, so they no longer line up with the reindexed particles -- discard them
+            # and pay for one fresh denoise() call at the top of the next iteration instead.
+            need_fresh_D = True
+        else:
+            x_leaf, D, score = x_leaf_next, D_next, score_next
 
         x = x_next
 
