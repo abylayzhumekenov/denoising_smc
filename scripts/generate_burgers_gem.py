@@ -55,6 +55,15 @@ Diagnostic controls (all default to the corrected GEM behavior when omitted):
                       lambda*C_k^phi (default 1.0, the full corrected weight). Set to 0.0 to
                       reproduce the Millard-style pseudo-bootstrap (PBS) weight, Delta_ell_k
                       alone, on this real Burgers problem.
+  --rho               tempering/scaling of the whole per-step weight increment
+                      (default 1.0). Set to 0.0 for unweighted runs (e.g. deterministic ODE
+                      mode via --no-noise --rho 0.0).
+  --rho-0             tempering/scaling of the initial boundary weight
+                      log w0 = rho_0 * ell(x0, sigma_max) (default 0.0, matching the old
+                      flat-prior initialization; set to 1.0 to match note_1.pdf eq. (21)).
+  --no-noise --rho 0.0 together give a deterministic guided ODE that is the natural
+  zero-weight limit of the SMC path. The output .npz keeps the SMC format: with uniform
+  weights, weighted_mean equals the unweighted particle mean.
 """
 
 import argparse
@@ -120,7 +129,8 @@ def twist_log_likelihood(D, ground_truth, mask, obs_weight, pde_weight, device):
 
 def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_threshold=0.5,
                           out_path='burger-gem-results.npz', inject_noise=True, scale_guidance=True,
-                          apply_guidance=True, lambda_girsanov=1.0):
+                          apply_guidance=True, lambda_girsanov=1.0, rho=1.0, rho_0=0.0,
+                          zeta_obs=None, zeta_pde=None):
     device_cfg = config['generate']['device']
     device = auto_device() if device_cfg in (None, 'auto') else torch.device(device_cfg)
 
@@ -136,23 +146,29 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
 
     sigma_min = max(config['generate']['sigma_min'], net.sigma_min)
     sigma_max = min(config['generate']['sigma_max'], net.sigma_max)
-    rho = config['generate']['rho']
+    rho_sched = config['generate']['rho']
     idx = torch.arange(K, dtype=torch.float64, device=device)
-    sched = (sigma_max ** (1 / rho) + idx / (K - 1) * (sigma_min ** (1 / rho) - sigma_max ** (1 / rho))) ** rho
+    sched = (sigma_max ** (1 / rho_sched) + idx / (K - 1) *
+             (sigma_min ** (1 / rho_sched) - sigma_max ** (1 / rho_sched))) ** rho_sched
     sched = net.round_sigma(sched)
     # Terminal point uses sigma_min itself rather than 0 (GEM's delta = sigma_cur^2 - sigma_next^2
     # needs sigma_next > 0 to stay well-defined and matches the toy_smc.py schedule convention,
     # which found appending a hard 0.0 produces a disproportionate final-step variance spike --
     # see smc/scripts_1/toy_smc.py build_sigma() docstring).
 
-    zeta_obs = config['generate']['zeta_obs']
-    zeta_pde = config['generate']['zeta_pde']
+    zeta_obs = zeta_obs if zeta_obs is not None else config['generate']['zeta_obs']
+    zeta_pde = zeta_pde if zeta_pde is not None else config['generate']['zeta_pde']
     selected_index = random_sensor(5, 128, seed=0, device=device)
 
     x = torch.randn(N, net.img_channels, net.img_resolution, net.img_resolution,
                      dtype=torch.float64, device=device, generator=generator) * sched[0]
-    log_w = torch.zeros(N, dtype=torch.float64, device=device)   # ell_K(x_K) := 0: flat prior at
-    # pure noise, a shared additive constant across particles (irrelevant after normalization).
+    # Initial boundary weight (note_1.pdf eq. (21)). With rho_0=0 this reduces to the old flat-prior
+    # initialization. At the initial state (sigma_max) we are always in the obs-only phase of the
+    # two-stage guidance schedule, so pde_weight=0 here.
+    with torch.no_grad():
+        D0, _ = denoise(net, x, sched[0])
+    ell_0 = twist_log_likelihood(D0, ground_truth, selected_index, zeta_obs, 0.0, device)
+    log_w = rho_0 * ell_0
     # No separate terminal correction (note_1.pdf eq. 23 / reconcile.md Sec. 9) is applied: that
     # term corrects the surrogate twist back to a *separately specified* exact final-time
     # likelihood log p(y|xi_T). Here there is no such separate likelihood -- the PDE-residual +
@@ -220,7 +236,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
         else:
             delta_ell = torch.zeros(N, dtype=torch.float64, device=device)
 
-        inc = delta_ell + lambda_girsanov * girsanov_increment(b_k, z, delta)
+        inc = rho * (delta_ell + lambda_girsanov * girsanov_increment(b_k, z, delta))
         log_w = log_w + inc
         log_w = log_w - torch.logsumexp(log_w, dim=0)
 
@@ -250,7 +266,8 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
 
     print(f"N={N} particles, K={K} steps, {n_resample} resample events, "
           f"inject_noise={inject_noise}, scale_guidance={scale_guidance}, "
-          f"apply_guidance={apply_guidance}, lambda_girsanov={lambda_girsanov}")
+          f"apply_guidance={apply_guidance}, lambda_girsanov={lambda_girsanov}, "
+          f"rho={rho}, rho_0={rho_0}")
     print(f"weighted-mean relative error: {float(weighted_rel_err):.5f}")
     print(f"per-particle relative error: min={float(per_particle_rel_err.min()):.5f} "
           f"max={float(per_particle_rel_err.max()):.5f} mean={float(per_particle_rel_err.mean()):.5f}")
@@ -268,6 +285,8 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
              scale_guidance=scale_guidance,
              apply_guidance=apply_guidance,
              lambda_girsanov=lambda_girsanov,
+             rho=rho,
+             rho_0=rho_0,
              ground_truth=ground_truth.detach().cpu().numpy())
     print(f"saved diagnostics to {out_path}")
 
@@ -301,6 +320,18 @@ if __name__ == '__main__':
                                'notes/reconcile.md Sec. 8). Default 1.0 is the full corrected '
                                'weight; 0.0 reproduces the Millard-style pseudo-bootstrap (PBS) '
                                'weight, Delta_ell_k alone.'))
+    parser.add_argument('--rho', type=float, default=1.0,
+                        help=('tempering/scaling of the whole per-step weight increment '
+                              '(default 1.0). Use 0.0 for unweighted runs, e.g. deterministic '
+                              'ODE mode via --no-noise --rho 0.0.'))
+    parser.add_argument('--rho-0', type=float, default=0.0,
+                        help=('scaling of the initial boundary weight log w0 = rho_0 * '
+                              'ell(x0, sigma_max) (default 0.0, preserving old flat-prior '
+                              'initialization; set to 1.0 to match note_1.pdf eq. (21)).'))
+    parser.add_argument('--zeta-obs', type=float, default=None,
+                        help='override generate.zeta_obs in the config')
+    parser.add_argument('--zeta-pde', type=float, default=None,
+                        help='override generate.zeta_pde in the config')
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:
@@ -309,4 +340,6 @@ if __name__ == '__main__':
     generate_burgers_gem(cfg, n_particles=args.n_particles, num_steps=args.num_steps,
                           resample_threshold=args.resample_threshold, out_path=args.out,
                           inject_noise=not args.no_noise, scale_guidance=not args.flat_guidance,
-                          apply_guidance=not args.no_guidance, lambda_girsanov=args.lambda_girsanov)
+                          apply_guidance=not args.no_guidance, lambda_girsanov=args.lambda_girsanov,
+                          rho=args.rho, rho_0=args.rho_0,
+                          zeta_obs=args.zeta_obs, zeta_pde=args.zeta_pde)
