@@ -1,6 +1,8 @@
 # Large data / model files
-data/testing
-pretrained-models
+data/*
+!data/.gitkeep
+pretrained-models/*
+!pretrained-models/.gitkeep
 *.pkl
 *.mat
 *.npy
