@@ -57,3 +57,12 @@ wandb/
 # Tracked PDFs
 !docs/*.pdf
 !smc/scripts_1/figures/*.pdf
+
+# Shared SLURM text logs (collaborating with Abylay via git push/pull). Only the lightweight
+# stdout/stderr text logs go here -- *.npz result files must stay untracked (too large), so this
+# is a targeted exception to the *.out rule above, NOT a blanket un-ignore of the directory: an
+# .npz that ever lands in slurm/logs1/ by mistake stays ignored by the *.npz rule near the top of
+# this file. slurm/logs1/ itself was never matched by the `logs/` rule (that only matches a
+# directory literally named "logs", not "logs1"), so no directory-level negation is needed for it
+# to be visible to git -- only the extension-based *.out rule needs an explicit override here.
+!slurm/logs1/*.out
