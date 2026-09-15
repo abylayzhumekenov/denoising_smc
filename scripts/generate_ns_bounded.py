@@ -7,6 +7,7 @@ import dnnlib
 import torch.nn.functional as F
 from torch_utils import distributed as dist
 from torch_utils.misc import auto_device
+from common.results import make_run_dir, write_config, write_metrics
 import scipy.io
 
 def random_index_and_cylinder(center, radius, k, grid_size, seed=0, device=None):
@@ -172,5 +173,17 @@ def generate_ns_bounded(config):
     print(f'Relative error of u: {relative_error_u}')
     a_final = a_final.detach().cpu().numpy()
     u_final = u_final.detach().cpu().numpy()
-    scipy.io.savemat('ns_bounded_results.mat', {'a': a_final, 'u': u_final})
+    run_dir, run_id = make_run_dir(config, 'ns_bounded')
+    scipy.io.savemat(run_dir / 'result.mat', {'a': a_final, 'u': u_final})
+    write_config(run_dir, config, run_id)
+    write_metrics(run_dir, {
+        'pde': 'ns_bounded',
+        'run_id': run_id,
+        'seed': seed,
+        'num_steps': num_steps,
+        'device': str(device),
+        'relative_error_a': float(relative_error_a),
+        'relative_error_u': float(relative_error_u),
+    })
+    print(f'saved run to {run_dir}')
     print('Done.')

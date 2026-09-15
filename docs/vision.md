@@ -75,7 +75,7 @@ These principles generate the specific decisions in §5.
 | `dnnlib/`, `torch_utils/`, `training/`, `train.py` | **Vendored EDM training stack — do not restructure.** Device auto-detection added to `torch_utils.misc`; otherwise upstream. |
 | `generate_pde.py`, `scripts/generate_*.py`, `configs/*.yaml` | **Upstream ODE baseline only.** May use `common` (shared infra) but must not import from `smc/`. |
 | `scripts/generate_*.py` | Six PDE monoliths (Burgers, Darcy, Poisson, Helmholtz, NS bounded/non-bounded). |
-| `common/` | **(to be created)** Shared project-owned infrastructure (results I/O, config, seeding, logging). Imported by both baseline and SMC. |
+| `common/` | Shared project-owned infrastructure (results I/O; config, seeding, logging later). Imported by both baseline and SMC. |
 | `smc/` | **New SMC implementation** (currently empty; reserved with `.gitkeep`). |
 | `smc_archive/scripts_1` | Frozen: toy (closed-form) SMC validation code. |
 | `smc_archive/scripts_2` | Frozen: real-model SMC (Burgers), GEM proposal, weightings, checks, old runner. |
@@ -181,7 +181,7 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   plus ~43 import sites and upstream diffability. *Consequence:* no `vendor/`-style reorg; vendored
   modules may be annotated as vendored but not moved.
 
-- **D13 (2026-09-15) — Baseline output directory (decided; implementation pending).** The ODE
+- **D13 (2026-09-15) — Baseline output directory.** The ODE
   baseline writes to `results/ode/<pde>/<run_id>/{result.npy|result.mat, config.yaml, metrics.json}`
   (metric keys per PDE: Burgers `relative_error`; Darcy `error_rate_a` + `relative_error_u`; others
   `relative_error_a` + `relative_error_u`). Output root and `run_id` are read from the config with
@@ -217,9 +217,8 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
 
 Ordered roughly:
 
-1. **Create `common/`** with the shared results writer (run-id, run dir, `config.yaml`/`metrics.json`).
-2. **Baseline output directory (D13)** — route the six ODE scripts' outputs into
-   `results/ode/<pde>/<run_id>/` via `common/`.
+1. ~~Create `common/` with the shared results writer.~~ **(done)**
+2. ~~Route the six ODE scripts' outputs into `results/ode/<pde>/<run_id>/`.~~ **(done, D13)**
 3. **Implement the new Burgers SMC in `smc/`** — monolith + small helpers, wired to
    `generate_pde_smc.py` and `configs/smc/burgers.yaml`, writing to `results/smc/`.
    **Milestone:** runs on CPU at a small K and writes a structured run directory.

@@ -7,6 +7,7 @@ import dnnlib
 import torch.nn.functional as F
 from torch_utils import distributed as dist
 from torch_utils.misc import auto_device
+from common.results import make_run_dir, write_config, write_metrics
 import scipy.io
 
 def random_sensor(k, grid_size, seed=0, device=None):
@@ -123,5 +124,16 @@ def generate_burgers(config):
     relative_error = torch.norm(x_final - ground_truth, 2)/torch.norm(ground_truth, 2)
     print(f'Relative error: {relative_error}')
     x_final = x_final.to('cpu').detach().numpy()
-    np.save(f'burger-results.npy', x_final)
+    run_dir, run_id = make_run_dir(config, 'burgers')
+    np.save(run_dir / 'result.npy', x_final)
+    write_config(run_dir, config, run_id)
+    write_metrics(run_dir, {
+        'pde': 'burgers',
+        'run_id': run_id,
+        'seed': seed,
+        'num_steps': num_steps,
+        'device': str(device),
+        'relative_error': float(relative_error),
+    })
+    print(f'saved run to {run_dir}')
     print('Done.')
