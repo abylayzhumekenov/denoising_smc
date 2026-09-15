@@ -56,7 +56,7 @@ The chain rule d/dtau = -d/dsigma fixes the sign of the potential term.
 Outputs: figures in `figures/` and LaTeX tables in `tables/`, named `toy_t1*`, `toy_t2*`,
 `toy_t3*`, `toy_t4*` (figures and tables share base names).
 
-Run: .venv/bin/python smc/scripts_1/toy_smc.py
+Run: .venv/bin/python smc_archive/scripts_1/toy_smc.py
 """
 
 import os

@@ -35,10 +35,10 @@ Differences from the existing scripts/generate_burgers.py baseline, deliberately
     fires -- there, the carried-forward result no longer matches the reindexed particles and a
     fresh call is unavoidable for that one step.
 
-Run the correctness self-check (smc/scripts_2/check_gem_tds_real_model.py) before trusting any output here.
+Run the correctness self-check (smc_archive/scripts_2/check_gem_tds_real_model.py) before trusting any output here.
 
 Recommended first run (fast smoke test, minutes not hours on CPU):
-    .venv/bin/python -m scripts.generate_burgers_gem --config configs/burgers.yaml \\
+    .venv/bin/python -m smc_archive.scripts_2.generate_burgers_gem --config configs/burgers.yaml \\
         --n-particles 4 --num-steps 100
 
 Then scale n-particles/num-steps up once the smoke test looks sane (nonzero ESS, no NaNs,
@@ -74,9 +74,9 @@ import tqdm
 import yaml
 
 from torch_utils.misc import auto_device
-from smc.scripts_2.models.burgers import random_sensor, load_ground_truth, load_network, burger_loss
-from smc.scripts_2.proposals.gem import denoise, gem_step
-from smc.scripts_2.weightings.girsanov import girsanov_increment, effective_sample_size, systematic_resample_indices
+from smc_archive.scripts_2.models.burgers import random_sensor, load_ground_truth, load_network, burger_loss
+from smc_archive.scripts_2.proposals.gem import denoise, gem_step
+from smc_archive.scripts_2.weightings.girsanov import girsanov_increment, effective_sample_size, systematic_resample_indices
 
 
 def guidance_grad(x_cur, D, ground_truth, mask, zeta_obs, zeta_pde, use_pde, device):
@@ -154,7 +154,7 @@ def generate_burgers_gem(config, n_particles=None, num_steps=None, resample_thre
     # Terminal point uses sigma_min itself rather than 0 (GEM's delta = sigma_cur^2 - sigma_next^2
     # needs sigma_next > 0 to stay well-defined and matches the toy_smc.py schedule convention,
     # which found appending a hard 0.0 produces a disproportionate final-step variance spike --
-    # see smc/scripts_1/toy_smc.py build_sigma() docstring).
+    # see smc_archive/scripts_1/toy_smc.py build_sigma() docstring).
 
     zeta_obs = zeta_obs if zeta_obs is not None else config['generate']['zeta_obs']
     zeta_pde = zeta_pde if zeta_pde is not None else config['generate']['zeta_pde']
@@ -303,7 +303,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-noise', action='store_true',
                          help=('diagnostic control: zero out the injected Brownian increment in '
                                'gem_step, leaving the delta-scaled score+guidance drift as the '
-                               'only update (see smc/scripts_2/proposals/gem.py inject_noise). '
+                               'only update (see smc_archive/scripts_2/proposals/gem.py inject_noise). '
                                'Combine with --resample-threshold 0 for a fully deterministic run.'))
     parser.add_argument('--flat-guidance', action='store_true',
                          help=('diagnostic control: add guidance FLAT (unscaled by delta) instead of '

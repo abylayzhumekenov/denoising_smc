@@ -5,7 +5,7 @@ V_tau(x) = d(ell)/d(tau) + H_tau(x)
 H_tau(x) = b_ap(x,tau) . grad_ell(x) + (1/2)*a_bar(tau)*Laplacian(ell)(x) - (1/2)*a_bar(tau)*||grad_ell(x)||^2
 
 Two simplifications used here, adapting the manuscript's math to this EDM-based codebase
-(see conversation notes / smc/scripts_2/hutchinson_findings.md for the derivation):
+(see conversation notes / smc_archive/scripts_2/hutchinson_findings.md for the derivation):
 
 1. b_ap(x,tau) = a_bar(tau) * [s_theta(x,tau) + grad_ell(x)] (manuscript eq., page 4), so
    H_tau collapses to a_bar(tau) * [s_theta . grad_ell + (1/2)||grad_ell||^2 + (1/2)*Laplacian(ell)] --
@@ -26,7 +26,7 @@ from typing import Optional
 import torch
 from torch import Tensor
 
-from smc.scripts_2.weightings.hutchinson import hutchinson_hvp_probes
+from smc_archive.scripts_2.weightings.hutchinson import hutchinson_hvp_probes
 
 
 def compute_v_tau_terms(ell_fn, x: Tensor, sigma_t: Tensor, num_probes: int,
@@ -36,7 +36,7 @@ def compute_v_tau_terms(ell_fn, x: Tensor, sigma_t: Tensor, num_probes: int,
 
     `ell_fn(x, sigma_t)` must return (ell, s_theta) where `ell` is the scalar log-likelihood
     surrogate and `s_theta` is the score s_theta(x, sigma_t) = (x - D_theta(x,sigma_t))/sigma_t^2,
-    both built from the same denoiser call -- see smc/scripts_2/models/burgers.py's burgers_ell_fn for the Burgers instance.
+    both built from the same denoiser call -- see smc_archive/scripts_2/models/burgers.py's burgers_ell_fn for the Burgers instance.
     """
     x = x.detach().requires_grad_(True)
     sigma_t = sigma_t.detach().requires_grad_(True)

@@ -5,7 +5,7 @@ This is deliberately the *simplest* proposal in the idea.md progression (GEM bef
 one network forward + one backward per step, exact closed-form Girsanov/TDS weight (no Hessian,
 no Hutchinson estimator -- see smc/hutchinson_findings.md for why that route is deprioritized).
 
-Ported 1:1 from the validated toy-model recursion in smc/scripts_1/toy_smc.py
+Ported 1:1 from the validated toy-model recursion in smc_archive/scripts_1/toy_smc.py
 (`run_smc(..., proposal='em')`, lines ~248-264): same recurrence structure,
 same variable roles (score, guidance grad, delta, z), just tensor-valued instead of scalar.
 
@@ -59,7 +59,7 @@ def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None,
     same delta-SCALED guidance as the real GEM step, just with the SDE's noise term switched
     off. Used as a diagnostic control to separate "does the injected noise cause the GEM-vs-Heun
     error gap" from "does the delta-scaled guidance convention itself cause it" -- see
-    scripts/generate_burgers_gem.py's --no-noise flag.
+    smc_archive/scripts_2/generate_burgers_gem.py's --no-noise flag.
 
     scale_guidance: if True (default), guidance_grad is folded into the score before scaling by
     delta -- x_next = x_cur + delta*(score + guidance_grad) + z -- the Bayesian score-composition
@@ -74,7 +74,7 @@ def gem_step(x_cur, score, guidance_grad, sigma_cur, sigma_next, generator=None,
     Returns (x_next, z, delta):
       x_next  -- detached, ready to be the next step's x_cur
       z       -- the *realized* Brownian increment sqrt(delta)*eps actually used (needed by the
-                 Girsanov weight -- see smc/scripts_2/weightings/girsanov.py girsanov_increment),
+                 Girsanov weight -- see smc_archive/scripts_2/weightings/girsanov.py girsanov_increment),
                  or all-zeros when inject_noise=False
       delta   -- the scalar accumulated diffusion Sigma_k for this step (needed by the weight too)
 

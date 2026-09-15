@@ -1,11 +1,11 @@
 """Step-count replication study v2: larger N/rep sweep, V_tau vs. Millard weighting.
 
-Usage (from repo root): .venv/bin/python -m smc.scripts_1.scratch_step_count_study2
+Usage (from repo root): .venv/bin/python -m smc_archive.scripts_1.scratch_step_count_study2
 """
 import torch, json
-from smc.scripts_1.check_toy_mixture import simulate as simulate_vtau
-from smc.scripts_1.check_toy_mixture_millard import simulate_millard
-from smc.scripts_1.toy_mixture import GaussianMixture, sigma_schedule
+from smc_archive.scripts_1.check_toy_mixture import simulate as simulate_vtau
+from smc_archive.scripts_1.check_toy_mixture_millard import simulate_millard
+from smc_archive.scripts_1.toy_mixture import GaussianMixture, sigma_schedule
 
 mixture = GaussianMixture(w=[0.5, 0.5], mu=[-3.0, 3.0], var=[1.0, 1.0])
 y, r = 0.5, 1.0

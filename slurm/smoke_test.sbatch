@@ -1,6 +1,6 @@
 #!/bin/bash
 # Smoke test: confirms CUDA + the environment work, then runs the closed-form correctness check
-# (smc/scripts_2/check_gem_tds_real_model.py) and a tiny 4-particle/100-step generate_burgers_gem run.
+# (smc_archive/scripts_2/check_gem_tds_real_model.py) and a tiny 4-particle/100-step generate_burgers_gem run.
 # Submit BEFORE any full-scale job:
 #   sbatch slurm/smoke_test.sbatch
 #
@@ -41,11 +41,11 @@ print('cuda available:', torch.cuda.is_available())
 print('device:', torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'CPU (unexpected on a GPU node)')
 "
 
-echo "=== correctness self-check (smc/scripts_2/check_gem_tds_real_model.py) ==="
-python -m smc.scripts_2.check_gem_tds_real_model --config configs/burgers.yaml
+echo "=== correctness self-check (smc_archive/scripts_2/check_gem_tds_real_model.py) ==="
+python -m smc_archive.scripts_2.check_gem_tds_real_model --config configs/burgers.yaml
 
 echo "=== tiny smoke run (4 particles, 100 steps) ==="
-python -m scripts.generate_burgers_gem --config configs/burgers.yaml \
+python -m smc_archive.scripts_2.generate_burgers_gem --config configs/burgers.yaml \
   --n-particles 4 --num-steps 100 --out slurm/logs/smoke_burgers_gem.npz
 
 echo "=== done -- check timing above to size --time for the full run ==="

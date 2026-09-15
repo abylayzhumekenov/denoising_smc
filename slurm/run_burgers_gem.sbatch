@@ -56,6 +56,6 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 N_PARTICLES="${N_PARTICLES:-8}"
 NUM_STEPS="${NUM_STEPS:-2000}"
 
-python -m scripts.generate_burgers_gem --config configs/burgers.yaml \
+python -m smc_archive.scripts_2.generate_burgers_gem --config configs/burgers.yaml \
   --n-particles "$N_PARTICLES" --num-steps "$NUM_STEPS" \
   --out "slurm/logs/burgers_gem_N${N_PARTICLES}_K${NUM_STEPS}_${SLURM_JOB_ID}.npz"

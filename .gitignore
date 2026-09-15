@@ -1,68 +1,32 @@
-# Large data / model files
-data/*
-!data/.gitkeep
-pretrained-models/*
-!pretrained-models/.gitkeep
-*.pkl
-*.mat
-*.npy
-*.npz
-
-# Images / figures (globally ignored, with exceptions below)
-*.jpg
-*.jpeg
-*.png
-*.gif
-*.bmp
-*.pdf
-*.eps
-
-# Python bytecode
-__pycache__/
-*.pyc
-*.pyo
-
-# macOS
+# Tooling / OS junk (match anywhere)
 .DS_Store
-
-# IDE / editor
+._*
+Thumbs.db
+Desktop.ini
+__pycache__/
+*.py[cod]
+*.egg-info/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
 .vscode/
 .idea/
 *.swp
-
-# OpenCode workspace config
+*.swo
+*~
+.env
+.env.*
+.venv/
+venv/
 .opencode/
 
-# Virtual environment
-.venv/
-
-# Runtime artifacts
+# Generated binaries / large data (never source; match anywhere)
+*.pkl
+*.pt
+*.pth
+*.ckpt
+*.safetensors
+*.mat
+*.npy
+*.npz
 *.log
-*.out
-outputs/
-results/
-logs/
-checkpoints/
-runs/
-wandb/
-
-# LaTeX build artifacts
-*.aux
-*.bbl
-*.blg
-*.fdb_latexmk
-*.fls
-*.toc
-
-# Tracked PDFs
-!docs/*.pdf
-!smc/scripts_1/figures/*.pdf
-
-# Shared SLURM text logs (collaborating with Abylay via git push/pull). Only the lightweight
-# stdout/stderr text logs go here -- *.npz result files must stay untracked (too large), so this
-# is a targeted exception to the *.out rule above, NOT a blanket un-ignore of the directory: an
-# .npz that ever lands in slurm/logs1/ by mistake stays ignored by the *.npz rule near the top of
-# this file. slurm/logs1/ itself was never matched by the `logs/` rule (that only matches a
-# directory literally named "logs", not "logs1"), so no directory-level negation is needed for it
-# to be visible to git -- only the extension-based *.out rule needs an explicit override here.
-!slurm/logs1/*.out

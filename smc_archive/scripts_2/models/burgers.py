@@ -2,18 +2,17 @@
 PDE-residual + observation loss, shared by every proposal x weighting combination that targets
 this PDE.
 
-Canonical, single source of truth. Previously this same loss was duplicated (and drifting)
-across three places: scripts/generate_burgers.py's get_burger_loss (unbatched, hardcoded
-`.view(1,1,128,128)`), scripts/generate_burgers_gem.py's get_burger_loss_batched (a batched
-rewrite for N>1 particles), and smc/scripts_2/v_tau.py's burgers_ell_fn (which reached back into
-generate_burgers.py to reuse the unbatched one). All call sites now import burger_loss from here
-instead. N=1 reduces to exactly the old unbatched behavior -- every existing caller computes
-torch.norm(...) over the whole tensor regardless of the extra leading batch dim, so the numeric
-result is unaffected by the consolidation.
+Canonical implementation for the smc_archive/scripts_2 stack (generate_burgers_gem.py, check_gem_tds,
+check_v_tau_*). It was consolidated here from generate_burgers_gem.py's get_burger_loss_batched
+and the earlier v_tau adapter. Note that scripts/generate_burgers.py deliberately keeps its own
+upstream-faithful unbatched get_burger_loss instead of importing this one, so the Burgers baseline
+stays byte-compatible with the DiffusionPDE release; the two coexist by design. N=1 here reduces
+to exactly that unbatched behavior -- every caller computes torch.norm(...) over the whole tensor
+regardless of the extra leading batch dim, so the numeric result is identical at N=1.
 
 Adding a new PDE model means writing a sibling module (models/darcy.py, etc.) exposing the same
 shape of interface -- load_ground_truth / load_network / a batched (pde_loss, observation_loss)
-function -- without touching smc/scripts_2/proposals/ or smc/scripts_2/weightings/ at all.
+function -- without touching smc_archive/scripts_2/proposals/ or smc_archive/scripts_2/weightings/ at all.
 """
 
 import pickle
@@ -79,7 +78,7 @@ def burger_loss(u, u_GT, mask, device=None):
 
 def burgers_ell_fn(net, ground_truth, mask, zeta_obs, device=None):
     """Build the ell_fn(x, sigma_t) -> (ell, s_theta) closure the Doob/V_tau weighting scheme
-    (smc/scripts_2/weightings/doob_vtau.py) needs, matching the observation term used in
+    (smc_archive/scripts_2/weightings/doob_vtau.py) needs, matching the observation term used in
     scripts/generate_burgers.py's guidance step.
     """
     def ell_fn(x, sigma_t):

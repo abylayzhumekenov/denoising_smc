@@ -34,7 +34,7 @@ source .venv/bin/activate
 N_PARTICLES="${N_PARTICLES:-8}"
 NUM_STEPS="${NUM_STEPS:-2000}"
 
-python -m scripts.generate_burgers_gem --config configs/burgers.yaml \
+python -m smc_archive.scripts_2.generate_burgers_gem --config configs/burgers.yaml \
   --n-particles "$N_PARTICLES" --num-steps "$NUM_STEPS" \
   --no-guidance --resample-threshold 0 \
   --out "slurm/logs/burgers_gem_noguidance_noSMC_N${N_PARTICLES}_K${NUM_STEPS}_${SLURM_JOB_ID}.npz"
