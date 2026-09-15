@@ -154,8 +154,8 @@ def generate_darcy(config):
         'seed': seed,
         'num_steps': num_steps,
         'device': str(device),
-        'error_rate_a': float(error_rate_a),
-        'relative_error_u': float(relative_error_u),
+        'error_rate_a': float(error_rate_a.detach()),
+        'relative_error_u': float(relative_error_u.detach()),
     })
     print(f'saved run to {run_dir}')
     print('Done.')

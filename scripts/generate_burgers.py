@@ -133,7 +133,7 @@ def generate_burgers(config):
         'seed': seed,
         'num_steps': num_steps,
         'device': str(device),
-        'relative_error': float(relative_error),
+        'relative_error': float(relative_error.detach()),
     })
     print(f'saved run to {run_dir}')
     print('Done.')

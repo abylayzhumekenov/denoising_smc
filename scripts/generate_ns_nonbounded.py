@@ -155,8 +155,8 @@ def generate_ns_nonbounded(config):
         'seed': seed,
         'num_steps': num_steps,
         'device': str(device),
-        'relative_error_a': float(relative_error_a),
-        'relative_error_u': float(relative_error_u),
+        'relative_error_a': float(relative_error_a.detach()),
+        'relative_error_u': float(relative_error_u.detach()),
     })
     print(f'saved run to {run_dir}')
     print('Done.')
