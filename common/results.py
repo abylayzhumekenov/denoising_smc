@@ -26,36 +26,40 @@ from pathlib import Path
 import yaml
 
 
-def _config_digest(config):
+def _config_digest(config, section='generate'):
     payload = copy.deepcopy(config)
-    section = payload.get('generate', {})
-    if isinstance(section, dict):
-        section.pop('run_id', None)
-        section.pop('out_dir', None)
+    block = payload.get(section, {})
+    if isinstance(block, dict):
+        block.pop('run_id', None)
+        block.pop('out_dir', None)
     blob = json.dumps(payload, sort_keys=True, default=str).encode()
     return hashlib.sha1(blob).hexdigest()[:6]
 
 
-def new_run_id(config):
+def new_run_id(config, section='generate'):
     """Timestamped run id with a short content hash of the resolved config."""
-    return f"{time.strftime('%Y%m%d-%H%M%S')}_{_config_digest(config)}"
+    return f"{time.strftime('%Y%m%d-%H%M%S')}_{_config_digest(config, section)}"
 
 
-def make_run_dir(config, pde, default_root='results/ode'):
-    """Create and return ``(run_dir, run_id)`` for a run of ``pde`` (a lowercase slug)."""
-    section = config.get('generate', {}) or {}
-    root = Path(section.get('out_dir', default_root))
-    run_id = section.get('run_id') or new_run_id(config)
+def make_run_dir(config, pde, default_root='results/ode', section='generate'):
+    """Create and return ``(run_dir, run_id)`` for a run of ``pde`` (a lowercase slug).
+
+    ``out_dir`` and ``run_id`` are read from ``config[section]`` and default to
+    ``default_root`` and a timestamped config hash respectively.
+    """
+    block = config.get(section, {}) or {}
+    root = Path(block.get('out_dir', default_root))
+    run_id = block.get('run_id') or new_run_id(config, section)
     run_dir = root / pde / run_id
     run_dir.mkdir(parents=True, exist_ok=True)
     return run_dir, run_id
 
 
-def write_config(run_dir, config, run_id):
-    """Write the resolved config (with ``run_id`` filled in) next to the results."""
+def write_config(run_dir, config, run_id, section='generate'):
+    """Write the resolved config (with ``run_id`` filled into ``section``) next to the results."""
     resolved = copy.deepcopy(config)
-    resolved.setdefault('generate', {})
-    resolved['generate']['run_id'] = run_id
+    resolved.setdefault(section, {})
+    resolved[section]['run_id'] = run_id
     with open(Path(run_dir) / 'config.yaml', 'w') as f:
         yaml.safe_dump(resolved, f, sort_keys=False)
 
