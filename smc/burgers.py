@@ -187,6 +187,10 @@ def run(config):
             x_next = x_next[ridx]
             log_w = torch.zeros(n_particles, dtype=torch.float64, device=device)
             need_fresh_D = True
+            # The carried-forward D_next/score_next were computed on the pre-resample particle
+            # ordering; release them so the discarded graph is freed before the fresh forward
+            # at the top of the next iteration (otherwise two graphs are alive at once).
+            x_leaf_next = D_next = score_next = None
         else:
             x_leaf, D, score = x_leaf_next, D_next, score_next
         x = x_next
