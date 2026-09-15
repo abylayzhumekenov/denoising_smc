@@ -1,0 +1,27 @@
+data:
+  name: 'Burgers'
+  datapath: 'data/testing/burgers.mat'
+  offset: 0
+  sensors: 5
+  sensor_seed: 0
+
+test:
+  pre-trained: 'pretrained-models/pretrained-burgers.pkl'
+
+generate:
+  seed: 0
+  device: 'auto'
+  sigma_min: 0.002
+  sigma_max: 80
+  rho: 7
+
+smc:
+  n_particles: 4
+  num_steps: 2000
+  rho_temp: 1.0
+  rho_temp_init: 1.0
+  lambda_girs: 1.0
+  resample_threshold: 0.5
+  likelihood:
+    obs_weight: 1.0
+    pde_weight: 1.0
