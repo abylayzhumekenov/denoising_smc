@@ -52,13 +52,30 @@ as two discretizations of the same target.**
 
 ---
 
-## 3. Repository map
+## 3. Structural principles
+
+These principles generate the specific decisions in §5.
+
+- **P1 — One shared project package.** All cross-cutting *project-owned* code lives in `common/`
+  (results I/O now; config loading, seeding, logging later). The ODE baseline and the SMC
+  implementation both import `common`; neither imports the other.
+- **P2 — Vendored code stays vendored.** `dnnlib/`, `torch_utils/`, `training/`, and `train.py`
+  remain at their upstream EDM paths. They are never merged, renamed, or relocated.
+- **P3 — Baseline independent of SMC.** `scripts/` must not import from `smc/`.
+- **P4 — `smc_archive/` is frozen.** A historical record; do not edit, extend, or import from it.
+- **P5 — Location-first ignore + one output convention.** `.gitignore` is location-first with a fixed
+  tooling/binary pattern set; all runs write to `results/{ode,smc}/<pde>/<run_id>/`.
+
+---
+
+## 4. Repository map
 
 | Path | Role |
 |---|---|
-| `train.py`, `training/`, `dnnlib/`, `torch_utils/` | Upstream EDM-derived training stack. Device auto-detection added; otherwise upstream. |
-| `generate_pde.py`, `scripts/generate_*.py`, `configs/*.yaml` | **Upstream ODE baseline only.** `scripts/` must not import the SMC code. |
+| `dnnlib/`, `torch_utils/`, `training/`, `train.py` | **Vendored EDM training stack — do not restructure.** Device auto-detection added to `torch_utils.misc`; otherwise upstream. |
+| `generate_pde.py`, `scripts/generate_*.py`, `configs/*.yaml` | **Upstream ODE baseline only.** May use `common` (shared infra) but must not import from `smc/`. |
 | `scripts/generate_*.py` | Six PDE monoliths (Burgers, Darcy, Poisson, Helmholtz, NS bounded/non-bounded). |
+| `common/` | **(to be created)** Shared project-owned infrastructure (results I/O, config, seeding, logging). Imported by both baseline and SMC. |
 | `smc/` | **New SMC implementation** (currently empty; reserved with `.gitkeep`). |
 | `smc_archive/scripts_1` | Frozen: toy (closed-form) SMC validation code. |
 | `smc_archive/scripts_2` | Frozen: real-model SMC (Burgers), GEM proposal, weightings, checks, old runner. |
@@ -69,16 +86,25 @@ as two discretizations of the same target.**
 | `docs/note_1.pdf`, `docs/note_2.pdf`, `docs/note_4/` | Theory and comparison notes. |
 | `literature/` | Third-party papers and survey. |
 
+**Vendored-code constraint.** The pretrained `.pkl` checkpoints reference `torch_utils.persistence`
+(the `_reconstruct_persistent_obj` unpickle anchor) and `training.dataset.ImageFolderDataset` by
+exact module path. Relocating or renaming those modules breaks `pickle.load(...)['ema']`, i.e.
+loading the pretrained models. This is why P2 forbids moving the vendored stack (and why any
+`vendor/`-style reorg would require shims — not worth it).
+
 **Hard rules**
 
-- The ODE baseline stays independent of SMC (no imports from `smc/`), and its code stays
-  upstream-faithful except for the intentional device auto-detection.
+- Shared cross-cutting code goes in `common/`; the baseline and SMC implementations do not import
+  each other.
+- The ODE baseline stays upstream-faithful except for the intentional device auto-detection and the
+  sanctioned output-directory change (D13).
+- Vendored EDM modules (`dnnlib/`, `torch_utils/`, `training/`, `train.py`) are never moved/renamed.
 - `smc_archive/` is frozen: do not edit, extend, or import from it. It is a historical record.
 - New SMC code goes in `smc/`; new SMC configs in `configs/smc/`; runs write to `results/`.
 
 ---
 
-## 4. Decision log
+## 5. Decision log
 
 Each entry: decision — rationale — consequences. (Dated as adopted.)
 
@@ -120,9 +146,8 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
 - **D7 (2026-09-15) — Structured results.** One run → one directory
   `results/{ode,smc}/<pde>/<run_id>/{result.*, config.yaml, metrics.json, run.log}`, with
   `run_id = YYYYMMDD-HHMMSS_<short config hash>` (overridable). *Rationale:* reproducibility and
-  sweep aggregation; ODE and SMC should be consistent. *Consequence:* baseline `out_dir` support
-  (needed for ODE to write there natively) is deferred; until then the baseline keeps its hardcoded
-  output names.
+  sweep aggregation; ODE and SMC should be consistent. *Consequence:* implemented through the shared
+  `common/` writer (D11); the baseline side is D13.
 
 - **D8 (2026-09-15) — Validation is a separate tier.** Toy validations and correctness checks
   (e.g. GEM↔TDS kernel-ratio identity) are not reachable from the run dispatcher. *Rationale:* keep
@@ -142,9 +167,32 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   and may be deleted rather than updated. *Rationale:* avoid maintaining drifting docs. *Consequence:*
   this file carries all project context.
 
+- **D11 (2026-09-15) — Single shared project package `common/`.** All cross-cutting project-owned
+  code lives in `common/` (run-id/run-dir creation, `config.yaml`/`metrics.json` writing; later
+  config loading, seeding, logging). *Rationale:* avoids duplicating run/results plumbing across the
+  baseline and SMC and gives shared code one home without coupling the two to each other.
+  *Consequence:* both baseline and SMC depend on `common`; neither imports the other. Shared project
+  code must not be placed in the vendored `dnnlib/`/`torch_utils/`.
+
+- **D12 (2026-09-15) — Vendored EDM stack stays at upstream paths.** `dnnlib/`, `torch_utils/`,
+  `training/`, and `train.py` are never merged, renamed, or relocated. *Rationale:* the pretrained
+  `.pkl` checkpoints reference `torch_utils.persistence` (`_reconstruct_persistent_obj`) and
+  `training.dataset.ImageFolderDataset` by exact module path, so moving them breaks model loading;
+  plus ~43 import sites and upstream diffability. *Consequence:* no `vendor/`-style reorg; vendored
+  modules may be annotated as vendored but not moved.
+
+- **D13 (2026-09-15) — Baseline output directory (decided; implementation pending).** The ODE
+  baseline writes to `results/ode/<pde>/<run_id>/{result.npy|result.mat, config.yaml, metrics.json}`
+  (metric keys per PDE: Burgers `relative_error`; Darcy `error_rate_a` + `relative_error_u`; others
+  `relative_error_a` + `relative_error_u`). Output root and `run_id` are read from the config with
+  `.get` defaults (`generate.out_dir` → `results/ode`; `generate.run_id` → auto), so no config edits
+  are required, and the old hardcoded CWD filenames are dropped. *Rationale:* consistency with D7.
+  *Consequence:* a deliberate, sanctioned deviation from upstream in the six baseline scripts
+  (alongside device auto-detection), implemented through the `common/` writer (D11).
+
 ---
 
-## 5. Findings that inform the design
+## 6. Findings that inform the design
 
 - **Target mismatch (note_4).** The ODE baseline's effective target is a schedule-dependent cold
   reconstruction, not the posterior; its guidance omits the PF-ODE coefficient and (in the flat
@@ -165,28 +213,31 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
 
 ---
 
-## 6. Roadmap and open items (not yet decided)
+## 7. Roadmap and open items
 
 Ordered roughly:
 
-1. **Implement the new Burgers SMC in `smc/`** — monolith + small helpers, wired to
-   `generate_pde_smc.py` and `configs/smc/burgers.yaml`, writing to `results/smc/`
-   **Milestone:** runs on CPU at K=100, N=4 and writes a structured run directory.
-2. **Finalize the `smc:` config fields** (likelihood parameter names, tempering key, run-id/out
+1. **Create `common/`** with the shared results writer (run-id, run dir, `config.yaml`/`metrics.json`).
+2. **Baseline output directory (D13)** — route the six ODE scripts' outputs into
+   `results/ode/<pde>/<run_id>/` via `common/`.
+3. **Implement the new Burgers SMC in `smc/`** — monolith + small helpers, wired to
+   `generate_pde_smc.py` and `configs/smc/burgers.yaml`, writing to `results/smc/`.
+   **Milestone:** runs on CPU at a small K and writes a structured run directory.
+4. **Finalize the `smc:` config fields** (likelihood parameter names, tempering key, run-id/out
    options) — author to set after a working SMC.
-3. **Decide and add new checks** under the validation tier (start with the GEM↔TDS identity).
-4. **Baseline `out_dir`** so ODE runs write into `results/ode/` consistently (deferred).
-5. **Sweep design** (one spec expanded at runtime) — deferred.
-6. **Modeling/algorithm follow-ups:** proper likelihood (e.g. squared-residual Gaussian form),
+5. **Decide and add new checks** under the validation tier (start with the GEM↔TDS identity).
+6. **Sweep design** (one spec expanded at runtime) — deferred.
+7. **Modeling/algorithm follow-ups:** proper likelihood (e.g. squared-residual Gaussian form),
    flat-guidance kernel ratio or removal, terminal correction, SOSaG proposal, tempering sweeps.
-7. **New SMC slurm script** (`slurm/run_smc*.sbatch`) parameterized by config.
-8. **Stale docs:** delete/replace `slurm/README.md`; keep `README.md` upstream-oriented.
+8. **New SMC slurm script** (`slurm/run_smc*.sbatch`) parameterized by config.
+9. **Stale docs:** delete/replace `slurm/README.md`; keep `README.md` upstream-oriented.
 
-Status snapshot (git): `00ee0e1` archive restructure · `d3a00bc` note_4 · `b29ca3e` note_4 `.bbl`.
+Status snapshot (git): `00ee0e1` archive restructure · `d3a00bc` note_4 · `b29ca3e` note_4 `.bbl` ·
+`1ab2d8e` vision doc.
 
 ---
 
-## 7. Conventions and entry points
+## 8. Conventions and entry points
 
 **Entry points**
 
