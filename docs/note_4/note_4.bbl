@@ -1,0 +1,48 @@
+\begin{thebibliography}{6}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Chopin and Papaspiliopoulos(2020)]{chopin2020smc}
+Nicolas Chopin and Omiros Papaspiliopoulos.
+\newblock \emph{{An Introduction to Sequential Monte Carlo}}, volume~4.
+\newblock Springer, 2020.
+
+\bibitem[Chung et~al.(2023)Chung, Kim, McCann, Klasky, and Ye]{chung2023dps}
+Hyungjin Chung, Jeongsol Kim, Michael~T. McCann, Marc~L. Klasky, and Jong~Chul
+  Ye.
+\newblock {Diffusion Posterior Sampling for General Noisy Inverse Problems},
+  2023.
+\newblock arXiv:2209.14687.
+
+\bibitem[{Denoising-SMC notes}(2026{\natexlab{a}})]{note1}
+{Denoising-SMC notes}.
+\newblock {Girsanov-Corrected Sequential Monte Carlo for Guided Diffusion
+  Models}, 2026{\natexlab{a}}.
+\newblock Internal note accompanying this repository,
+  \texttt{docs/note\_1.pdf}.
+
+\bibitem[{Denoising-SMC notes}(2026{\natexlab{b}})]{note2}
+{Denoising-SMC notes}.
+\newblock {A Closed-Form Gaussian-Mixture Toy Model for Validating the
+  Girsanov-Corrected SMC Weight}, 2026{\natexlab{b}}.
+\newblock Internal note accompanying this repository,
+  \texttt{docs/note\_2.pdf}.
+
+\bibitem[{Denoising-SMC notes}(2026{\natexlab{c}})]{note3}
+{Denoising-SMC notes}.
+\newblock {Jitter+ODE: Exact Transport and a Feynman--Kac Representation for
+  Proxy-Guided Diffusion SMC}, 2026{\natexlab{c}}.
+\newblock Companion note in the manuscript repository
+  (\texttt{notes/note\_3.tex}).
+
+\bibitem[Huang et~al.(2024)Huang, Yang, Wang, and Park]{huang2024diffusionpde}
+Jiahe Huang, Guandao Yang, Zichen Wang, and Jeong~Joon Park.
+\newblock {DiffusionPDE}: Generative {PDE}-solving under partial observation,
+  2024.
+\newblock URL \url{https://openreview.net/forum?id=z0I2SbjN0R}.
+\newblock arXiv:2406.17763.
+
+\end{thebibliography}
