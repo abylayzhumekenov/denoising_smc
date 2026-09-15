@@ -1,0 +1,624 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{mathtools}
+\usepackage[round,authoryear]{natbib}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{xurl}
+\usepackage{hyperref}
+\usepackage[margin=1in]{geometry}
+\setlength{\emergencystretch}{2em}
+
+\newtheorem{proposition}{Proposition}
+\newtheorem{remark}{Remark}
+\newtheorem{definition}{Definition}
+
+\newcommand{\bbP}{\mathbb{P}}
+\newcommand{\bbQ}{\mathbb{Q}}
+\newcommand{\bbE}{\mathbb{E}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\var}{\operatorname{Var}}
+\newcommand{\tr}{\operatorname{tr}}
+\newcommand{\sigcur}{\sigma_{i}}
+\newcommand{\signext}{\sigma_{i+1}}
+
+\title{Two Different Objects:\\
+The DiffusionPDE Guided-ODE Baseline is Not the Girsanov-Corrected SMC Target}
+\author{}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+This repository contains two sampling procedures that are often compared as if they estimated the
+same quantity. The first is the guided probability-flow ODE (PF-ODE) of
+\citet{huang2024diffusionpde} --- a deterministic denoising trajectory with a post-hoc
+loss-gradient correction --- which is the baseline in \texttt{scripts/generate\_*.py}. The second is
+the Girsanov-corrected sequential Monte Carlo (SMC) construction of the companion note
+\citep{note1}, implemented on Burgers in \texttt{scripts/generate\_burgers\_gem.py}. This note makes
+the relationship between the two precise and shows that they are not different discretizations of a
+common target: the SMC framework targets the posterior $p(x_0\mid y)\propto p(y\mid x_0)p(x_0)$,
+whereas the baseline is a deterministic map whose implicit target, when read as a guided PF-ODE, is
+a schedule-dependent cold reconstruction rather than the posterior, obtained by adding a
+constant multiple of the loss gradient to the state after each ODE step. We give (i) the principled
+guided PF-ODE that a twist induces, and show the schedule-dependent coefficient the baseline omits;
+(ii) an exact side-by-side of the update equations; (iii) a three-way disambiguation of the
+baseline, the deterministic limit of the guided SDE, and the full SMC sampler; and (iv) two
+implementation-level caveats that matter if the baseline convention is imported into the SMC weight:
+flat guidance invalidates the closed-form Gaussian kernel ratio, and the PDE-residual term used as
+the twist is not a likelihood. The note reports the modeling issues; it makes no code changes and
+takes no position on which method is preferable for the baseline's own reconstruction goal.
+\end{abstract}
+
+\section{Introduction and scope}\label{sec:intro}
+
+The upstream code of \citet{huang2024diffusionpde}, retained here, solves forward and inverse PDE
+problems under partial observation by denoising a Gaussian field with a probability-flow ODE and, at
+each step, subtracting gradients of a sparse-observation loss and a PDE-residual loss
+\citep[Algorithm~1]{huang2024diffusionpde}. The paper describes this as guided diffusion and, via a
+diffusion-posterior-sampling (DPS) approximation \citep{chung2023dps}, writes the guiding term as a
+correction to the score \citep[Eq.~(8)]{huang2024diffusionpde}. The SMC extension in this repository
+\citep{note1,note2} instead treats guided diffusion as \emph{importance sampling on path space},
+with a Girsanov/twisted correction that makes the sampler consistent for the posterior, and a
+Hessian-free potential representation \citep{note2,note3}. The two are routinely placed on the same
+axis and scored with the same metric (relative $L^2$ error to the ground-truth field), which
+suggests they approximate the same object. They do not.
+
+The purpose of this note is to state precisely what each construction computes and where the
+frameworks genuinely diverge. We restrict attention to what is actually written in the released
+code; where the paper and the code differ, we say so, since that difference is itself one of the
+mechanisms by which the baseline departs from any posterior interpretation. We emphasize at the
+outset that the baseline is a \emph{reconstruction} procedure and the paper frames it as such
+(``fill in the missing information and solve a PDE by modeling the joint distribution''
+\citealp{huang2024diffusionpde}); the observation that it is not a posterior sampler is not a
+criticism of its stated goal, only a statement that it cannot be used to validate an SMC
+construction of that posterior.
+
+\paragraph{Notation and sources.} We use $\sigma$ for the variance-exploding noise level, $D_\theta$
+for the pretrained denoiser, $L$ for a terminal likelihood, and $\ell$ for a log-twist. File
+references are to paths in this repository.
+
+\section{The Girsanov-corrected SMC framework}\label{sec:framework}
+
+We recall the construction of \citet{note1}, which is the target the SMC code is built to estimate.
+
+\subsection{Target and reverse processes}
+
+Let $x_0\in\R^d$ be the quantity of interest and $y$ the observation, with likelihood $p(y\mid x_0)$
+and a diffusion-model prior $p(x_0)$. The posterior target is
+\begin{equation}\label{eq:posterior}
+  p(x_0\mid y)\ \propto\ p(y\mid x_0)\,p(x_0).
+\end{equation}
+With forward noising time $t\in[0,T]$ and reverse (sampling) time $\tau\coloneqq T-t$, define the
+reverse state $\xi_\tau\coloneqq x_{T-\tau}$, so that $\xi_0=x_T$ is pure noise and $\xi_T=x_0$ is
+data. The unguided reverse process has path measure $\bbP$ and dynamics
+\begin{equation}\label{eq:prior-sde}
+  \dd\xi_\tau = a(\xi_\tau,\tau)\,\dd\tau + g(\tau)\,\dd W^{\bbP}_\tau,
+  \qquad \Sigma(\tau)\coloneqq g(\tau)g(\tau)^\top .
+\end{equation}
+Fix a positive, smooth \emph{twist} $\phi_\tau(x)>0$ and put
+\begin{equation}\label{eq:twist}
+  \ell_\tau(x)\coloneqq\log\phi_\tau(x),
+  \qquad b_\tau(x)\coloneqq\nabla_x\ell_\tau(x),
+  \qquad H_\tau(x)\coloneqq\nabla_x^2\ell_\tau(x).
+\end{equation}
+The guided proposal, with path measure $\bbQ^\phi$, augments the drift by $\Sigma b$:
+\begin{equation}\label{eq:guided-sde}
+  \dd\xi_\tau = \bigl[a(\xi_\tau,\tau)+\Sigma(\tau)\,b_\tau(\xi_\tau)\bigr]\dd\tau
+  + g(\tau)\,\dd W^{\bbQ}_\tau .
+\end{equation}
+The path-space target is $p(y\mid\xi_T)\,\bbP(\dd\xi_{0:T})$, so the path weight is
+\begin{equation}\label{eq:path-weight}
+  W(\xi_{0:T}) = p(y\mid\xi_T)\,\frac{\dd\bbP}{\dd\bbQ^\phi}(\xi_{0:T}).
+\end{equation}
+If $\phi_\tau$ equals the exact intermediate likelihood
+$p(y\mid\xi_\tau)=\int p(y\mid\xi_T)p(\xi_T\mid\xi_\tau)\dd\xi_T$, then the guided drift is
+$\bbP$-harmonic, \eqref{eq:guided-sde} is the Doob $h$-transform of \eqref{eq:prior-sde}, and its
+terminal marginal is exactly \eqref{eq:posterior}. A general surrogate $\phi$ makes the proposal
+suboptimal but leaves the \emph{validity} of \eqref{eq:path-weight} untouched: the surrogate affects
+only weight variance, never the target, provided the terminal correction below is retained or the
+surrogate is terminally consistent.
+
+\subsection{Change of measure and sequential weights}
+
+Under standard regularity conditions, Girsanov's theorem gives
+\begin{equation}\label{eq:girsanov}
+\begin{aligned}
+  \log\frac{\dd\bbP}{\dd\bbQ^\phi}
+  ={} &-\int_0^T b_\tau(\xi_\tau)^\top g(\tau)\,\dd W^{\bbQ}_\tau \\
+  &-\frac12\int_0^T b_\tau(\xi_\tau)^\top \Sigma(\tau) b_\tau(\xi_\tau)\,\dd\tau,
+\end{aligned}
+\end{equation}
+and applying It\^o's formula to $\ell_\tau(\xi_\tau)$ to eliminate the stochastic integral yields the
+potential/\allowbreak Feynman--Kac representation
+\begin{equation}\label{eq:potential}
+  \log\frac{\dd\bbP}{\dd\bbQ^\phi}
+  = \ell_0(\xi_0)-\ell_T(\xi_T)+\int_0^T V_\tau(\xi_\tau)\,\dd\tau,
+\end{equation}
+\begin{equation}\label{eq:Vtau}
+  V_\tau(x) = \partial_\tau\ell_\tau(x)
+  + a(x,\tau)^\top b_\tau(x)
+  + \tfrac12 b_\tau(x)^\top\Sigma(\tau)b_\tau(x)
+  + \tfrac12\tr\!\bigl(\Sigma(\tau)H_\tau(x)\bigr).
+\end{equation}
+Discretizing $[0,T]$ by $0=\tau_0<\dots<\tau_K=T$ with step $k$ advancing $\xi_{k-1}\to\xi_k$,
+accumulated diffusion $\Sigma_k$ and realized increment $z_k\sim N(0,\Sigma_k)$, the twist increment
+telescopes:
+\begin{equation}\label{eq:twist-increment}
+  \Delta f_k \coloneqq f_{\tau_k}(\xi_k) - f_{\tau_{k-1}}(\xi_{k-1}),
+  \qquad
+  f_T(\xi_T) = f_0(\xi_0) + \sum_{k=1}^K \Delta f_k .
+\end{equation}
+This gives the common sequential form
+\begin{equation}\label{eq:logW}
+  \log W(\xi_{0:T})
+  = f_0(\xi_0) + \sum_{k=1}^K G_k + \bigl[\log p(y\mid\xi_T)-f_T(\xi_T)\bigr],
+\end{equation}
+with the \emph{same} exact continuous-time increment represented two ways,
+\begin{equation}\label{eq:Gstar}
+  G_k^\star = \Delta f_k + C_k = A_k,
+\end{equation}
+where the left-endpoint stochastic (Girsanov) increments are
+\begin{equation}\label{eq:Ck}
+  C_k = -b_{\tau_{k-1}}(\xi_{k-1})^\top z_k
+  - \tfrac12 b_{\tau_{k-1}}(\xi_{k-1})^\top\Sigma_k b_{\tau_{k-1}}(\xi_{k-1}),
+\end{equation}
+and $A_k=\int_{\tau_{k-1}}^{\tau_k} V_\tau(\xi_\tau)\dd\tau$ is the potential increment. The three
+standard choices are
+\begin{equation}\label{eq:three-increments}
+  G^{\mathrm{PBS}}_k = \Delta f_k,
+  \qquad
+  G^{\mathrm{Girs}}_k = \Delta f_k + C_k,
+  \qquad
+  G^{\mathrm{pot}}_k = A_k,
+\end{equation}
+with pseudo-bootstrap (PBS) obtained by dropping the path-measure correction $C_k$, and the
+one-parameter ablation
+\begin{equation}\label{eq:lambda}
+  G^\lambda_k = \Delta f_k + \lambda C_k, \qquad \lambda\in[0,1].
+\end{equation}
+The initial weight is $\log w_0 = f_0(\xi_0)$; the terminal correction is
+$\log w_K\leftarrow\log w_K+\log p(y\mid\xi_T)-f_T(\xi_T)$; and resampling fires when the effective
+sample size drops below half the particle count \citep{chopin2020smc}. Under the exact twist,
+$V_\tau\equiv0$ by the backward Kolmogorov equation, hence $G^{\mathrm{Girs}}_k=G^{\mathrm{pot}}_k=0$
+and the entire path weight collapses to the boundary factor $f_0(\xi_0)$ --- the zero-variance Doob
+ideal against which the machinery is validated \citep{note1,note2}.
+
+For an Euler--Maruyama proposal the kernel ratio is \emph{exactly} \eqref{eq:Ck} at every step size,
+because both the unguided kernel $p(\xi_k\mid\xi_{k-1})=N(\xi_k;\mu_p,\Sigma_k)$ and the guided
+kernel $q(\xi_k\mid\xi_{k-1})=N(\xi_k;\mu_q,\Sigma_k)$ share covariance $\Sigma_k$ and differ only in
+mean, with $\mu_q-\mu_p=\Sigma_k b_{\tau_{k-1}}$. Appendix~\ref{app:kernel} derives the two cases
+that matter below. We stress the structural requirement that will reappear in
+Section~\ref{sec:caveats}: \emph{the twist must enter the proposal drift}, i.e.\ the guided mean
+shift must be $\Sigma_k b$, not $b$.
+
+\section{The DiffusionPDE guided-ODE baseline}\label{sec:baseline}
+
+\subsection{As specified in the paper}
+
+The method of \citet{huang2024diffusionpde} trains one denoiser $D_\theta$ on the joint
+(coefficient, solution) field and samples by integrating the probability-flow ODE
+\begin{equation}\label{eq:paper-ode}
+  \dd x = -\dot\sigma(t)\,\sigma(t)\,\nabla_x\log p\bigl(x;\sigma(t)\bigr)\,\dd t,
+  \qquad
+  \nabla_x\log p\bigl(x;\sigma(t)\bigr)=\frac{D_\theta(x,\sigma(t))-x}{\sigma(t)^2},
+\end{equation}
+with guidance approximated \`a la DPS: under $y\mid x\sim N\!\bigl(\mathcal M(x),\delta^2 I\bigr)$,
+\begin{equation}\label{eq:paper-dps}
+  \nabla_x\log p\bigl(y\mid x_i;\sigma(t_i)\bigr)
+  \approx -\frac{1}{\delta^2}\nabla_{x_i}\bigl\|y-\mathcal M\bigl(\hat x_N^i\bigr)\bigr\|_2^2,
+  \qquad \hat x_N^i = D_\theta(x_i,\sigma(t_i)),
+\end{equation}
+so that
+\begin{equation}\label{eq:paper-guided-score}
+  \nabla_{x_i}\log p(x_i\mid y)
+  \approx \nabla_{x_i}\log p(x_i)
+  - \zeta_{\mathrm{obs}}\nabla_{x_i}\mathcal L_{\mathrm{obs}}
+  - \zeta_{\mathrm{pde}}\nabla_{x_i}\mathcal L_{\mathrm{pde}},
+  \qquad \zeta=\delta^{-2},
+\end{equation}
+with mean-squared losses
+\begin{equation}\label{eq:paper-losses}
+  \mathcal L_{\mathrm{obs}} = \frac1n\bigl\|y_{\mathrm{obs}}-\hat x_N^i\bigr\|_2^2,
+  \qquad
+  \mathcal L_{\mathrm{pde}} = \frac1m\bigl\|f(\hat x_N^i)\bigr\|_2^2 .
+\end{equation}
+Equation~\eqref{eq:paper-guided-score} is a \emph{score} (drift) correction.
+
+\subsection{As implemented}
+
+Algorithm~1 and the code apply the guidance differently. The released implementation in
+\path{scripts/generate_burgers.py} (and the siblings \path{generate_darcy.py},
+\path{generate_poisson.py}, \path{generate_helmholtz.py}, \path{generate_ns_*.py}) is, at
+step $i$, with $\sigma_i\coloneqq\sigma(t_i)$:
+\begin{align}
+  \hat x_N &= D_\theta(x_i,\sigma_i), & d_i &= \frac{x_i-\hat x_N}{\sigma_i},
+  \label{eq:code-euler}\\[2pt]
+  x_{i+1} &= x_i + (\sigma_{i+1}-\sigma_i)\,d_i,
+  \qquad\text{(Heun corrector if }\sigma_{i+1}\neq0\text{),} \label{eq:code-heun}\\[2pt]
+  x_{i+1} &\leftarrow x_{i+1}-\zeta_{\mathrm{obs}}\,\nabla_{x_i}\mathcal L_{\mathrm{obs}}
+  -\zeta_{\mathrm{pde}}\,\nabla_{x_i}\mathcal L_{\mathrm{pde}} . \label{eq:code-flat}
+\end{align}
+Three differences from \S\ref{sec:baseline} are immediate and all matter.
+
+\begin{enumerate}
+\item \textbf{Placement.} The guidance is applied to the \emph{state} after the ODE step
+\eqref{eq:code-flat}, not to the score inside the ODE as in \eqref{eq:paper-guided-score}. When a
+drift correction is pulled inside the discretized ODE it acquires the step factor
+$(\sigma_{i+1}-\sigma_i)$; the flat update does not. We quantify this in
+Section~\ref{sec:target}.
+\item \textbf{Loss normalization.} The code uses unsquared norms,
+\begin{equation}\label{eq:code-losses}
+  \mathcal L_{\mathrm{obs}} = \frac{\bigl\|m\odot(u-u_{\mathrm{GT}})\bigr\|_2}{128\cdot 5},
+  \qquad
+  \mathcal L_{\mathrm{pde}} = \frac{\bigl\|u_t+uu_x-0.01u_{xx}\bigr\|_2}{128\cdot 128},
+\end{equation}
+with a sensor mask $m$, not the squared MSE \eqref{eq:paper-losses}. Hence the implied twist is not
+Gaussian: $e^{-\zeta\|\cdot\|_2}$ is not a Gaussian likelihood in any noise model.
+\item \textbf{Scheduling.} The code uses a two-phase rule (observation term only, at full weight,
+for the first $80\%$ of steps, then observation weight divided by ten plus the PDE term), whereas
+Algorithm~1 applies both terms at every step. The scheduler is a heuristic anneal of
+$\zeta_{\mathrm{obs}},\zeta_{\mathrm{pde}}$ along the trajectory.
+\end{enumerate}
+
+The paper's own text acknowledges the anneal: the tuned weights ``range from $0.1$ to $10$'' and
+``a significant weight can swiftly decrease the error, but an excessively large weight might cause
+oversaturation and artifacts'' \citep{huang2024diffusionpde}. This is a reconstruction-oriented
+tuning, not a likelihood-derived schedule.
+
+\section{Is the baseline the probability-flow ODE of a twisted marginal?}\label{sec:target}
+
+We now ask the sharp question: does \eqref{eq:code-euler}--\eqref{eq:code-flat}, for some twist
+$\phi$, integrate the PF-ODE that transports the tilted marginal
+$\pi_\sigma\propto\phi_\sigma p_\sigma$? If so, then in the exact-ODE limit the terminal law would
+be $\pi_T\propto \phi_T p_T$, and the baseline would be a deterministic sampler of that twisted
+distribution. We show it is not, for any fixed $\phi$.
+
+\subsection{The principled guided PF-ODE}
+
+For a variance-exploding model $x_\sigma=x_0+\sigma z$, the heat equation
+$\partial_\sigma p_\sigma=\sigma\Delta p_\sigma$ is the continuity equation
+$\partial_\sigma p_\sigma+\nabla\!\cdot\!(p_\sigma v_\sigma)=0$ with velocity
+\begin{equation}\label{eq:pfode}
+  v_\sigma(x) = -\sigma\,\nabla_x\log p_\sigma(x).
+\end{equation}
+By Tweedie's identity $\nabla_x\log p_\sigma=(D_\theta(x,\sigma)-x)/\sigma^2$, so
+$v_\sigma=(x-D_\theta)/\sigma=d_i$, confirming that \eqref{eq:code-euler} is a forward-Euler step of
+$v_\sigma$ in the $\sigma$ variable. For the tilted marginal $\pi_\sigma\propto\phi_\sigma p_\sigma$
+the same continuity argument gives the guided PF-ODE
+\begin{equation}\label{eq:guided-pfode}
+  v^\pi_\sigma(x) = -\sigma\,\nabla_x\log\pi_\sigma(x)
+  = v_\sigma(x) - \sigma\,b_\sigma(x),
+  \qquad b_\sigma=\nabla_x\log\phi_\sigma .
+\end{equation}
+Integrating \eqref{eq:guided-pfode} exactly from $\sigma_{\max}$ down to $0$ transports the noise
+marginal to $\pi_0\propto\phi_0\,p_0$; with the terminally-consistent exact twist
+$\phi_0=p(y\mid\cdot)$ this is the posterior \eqref{eq:posterior}. This is the deterministic
+counterpart of the SMC construction, and it is the idealized object the baseline would have to
+approximate. (A jitter+ODE variant that makes this exact transport statement robust and connects it
+to the Feynman--Kac weighting is the subject of \citealp{note3}.)
+
+\subsection{What the baseline actually integrates}
+
+Take the DPS surrogate $\phi_\sigma(x)=N\!\bigl(y;\mathcal M(D_\theta(x,\sigma)),\delta^2\bigr)$
+(up to normalization), so that
+\begin{equation}\label{eq:dps-twist}
+  \ell_\sigma(x) = \log\phi_\sigma(x)
+  \simeq -\frac{1}{2\delta^2}\bigl\|y-\mathcal M(D_\theta(x,\sigma))\bigr\|_2^2,
+  \qquad
+  b_\sigma(x) = -\frac{1}{2\delta^2}\nabla_x\bigl\|\cdot\bigr\|_2^2 .
+\end{equation}
+The principled guided state update from $\sigma_i$ to $\sigma_{i+1}$ is obtained by inserting
+\eqref{eq:dps-twist} into \eqref{eq:guided-pfode}:
+\begin{equation}\label{eq:principled-update}
+  x_{i+1} = x_i + (\sigma_{i+1}-\sigma_i)\bigl(d_i-\sigma_i b_{\sigma_i}(x_i)\bigr)
+  = x_i + (\sigma_{i+1}-\sigma_i)d_i
+  - \frac{\Delta\sigma_i\,\sigma_i}{2\delta^2}
+  \nabla_{x_i}\bigl\|\cdot\bigr\|_2^2,
+\end{equation}
+with $\Delta\sigma_i\coloneqq\sigma_i-\sigma_{i+1}>0$; the last term is a \emph{descent} direction in
+the residual. Thus, if the DPS likelihood is used consistently, its guidance must carry the
+schedule-dependent coefficient
+\begin{equation}\label{eq:zeta-eff}
+  \zeta_{\mathrm{eff}}(\sigma_i) = \frac{\Delta\sigma_i\,\sigma_i}{2\delta^2}.
+\end{equation}
+The baseline \eqref{eq:code-flat} instead subtracts a \emph{constant} $\zeta$ times the residual
+gradient. Two complementary readings make precise how this differs from the guided PF-ODE.
+
+\paragraph{Reading 1: intended twist, wrong coefficient.}
+If $\zeta$ is intended as the DPS weight (roughly $1/(2\delta^2)$), then the constant replaces the
+schedule-dependent \eqref{eq:zeta-eff}. The ratio
+\begin{equation}\label{eq:ratio}
+  \frac{\zeta_{\mathrm{eff}}(\sigma_i)}{\zeta}
+  = \frac{\Delta\sigma_i\,\sigma_i}{2\delta^2\zeta}
+\end{equation}
+varies by orders of magnitude along a $\rho$-spaced schedule and tends to $0$ as $\sigma_i\to0$.
+Hence no constant $\zeta$ reproduces the DPS guided PF-ODE at more than one noise level.
+
+\paragraph{Reading 2: reverse-engineering the target.}
+One may instead ask which twist would make the flat update a \emph{consistent} guided PF-ODE. The PF
+guidance term is $\Delta\sigma_i\sigma_i\,b$, so equating it to $-\zeta\nabla\mathcal L$ gives
+\begin{equation}\label{eq:base-twist}
+  b_{\sigma_i}(x) = -c_i\,\nabla_x\mathcal L(x),
+  \qquad
+  c_i\coloneqq\frac{\zeta}{\Delta\sigma_i\,\sigma_i},
+\end{equation}
+which is a gradient, namely that of the schedule-tailored twist
+$\phi^{\mathrm{base}}_{\sigma_i}(x)=\exp\!\bigl(-c_i\mathcal L(x)\bigr)$. In other words, the
+baseline \emph{is} an Euler step of a guided PF-ODE --- but for $\phi^{\mathrm{base}}$, not for the
+DPS likelihood. This yields a sharper statement.
+
+\begin{proposition}[The baseline targets a schedule-dependent, cold reconstruction]\label{prop:no-twist}
+Run for $K$ steps, the baseline is the Euler discretization of the guided PF-ODE with twist
+$\phi^{\mathrm{base}}_{\sigma_i}(x)=\exp(-c_i\mathcal L(x))$ and terminal inverse temperature
+\begin{equation}
+  c_K = \frac{\zeta}{\Delta\sigma_{K-1}\,\sigma_{K-1}} .
+\end{equation}
+In the exact-flow limit (if the ODE with this twist were integrated exactly) its terminal law is
+therefore $\pi^{\mathrm{base}}\propto\exp(-c_K\mathcal L(x))\,p_0(x)$, not the posterior
+\eqref{eq:posterior}. Since $\Delta\sigma_{K-1}\to0$ as $K\to\infty$ for a fixed schedule endpoint,
+the target becomes infinitely cold and concentrates on minimizers of $\mathcal L$. In particular it
+depends on the number of steps $K$: it is not discretization-invariant, and no fixed twist reproduces
+it across schedules.
+\end{proposition}
+
+\begin{remark}
+The flat placement is what produces the schedule-tailored twist \eqref{eq:base-twist}. If the same
+guidance were instead moved inside the ODE as in \eqref{eq:paper-guided-score}, its coefficient
+would be $\zeta_{\mathrm{eff}}(\sigma_i)$ of \eqref{eq:zeta-eff}; the flat update replaces this with
+$\zeta$, which is equivalent to the tailored twist above. The paper is thus internally inconsistent
+between Eq.~(8) (a score/drift correction) and Algorithm~1 (a flat state update); the code implements
+the latter. The SMC framework's kernel ratio (Section~\ref{sec:caveats}) assumes guidance lives in
+the drift, i.e.\ an update of the form
+$x_{i+1}=x_i+\Sigma_i(s_{\sigma_i}+b_{\sigma_i})+z_i$, which is the step-scaled convention, not the
+flat one.
+\end{remark}
+
+\begin{remark}[Early vs.\ late weighting]
+The mismatch of Reading 1 is not a global rescaling: relative to \eqref{eq:zeta-eff} the baseline
+under-weights guidance at large $\sigma$ and over-weights it at small $\sigma$, where the required
+coefficient vanishes but the constant does not. This is exactly the signature of the effective
+inverse temperature $c_i$ of \eqref{eq:base-twist} growing without bound as the trajectory denoises,
+which is why the baseline behaves as a penalized reconstruction rather than a posterior sampler.
+\end{remark}
+
+
+\section{Structural comparison}\label{sec:table}
+
+Table~\ref{tab:compare} summarizes the two constructions. The rows are chosen so that every
+difference is a property of the algorithm, not of implementation detail.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{The Girsanov-corrected SMC framework versus the DiffusionPDE guided-ODE baseline.}
+\label{tab:compare}
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+ & \textbf{Girsanov-corrected SMC} \citep{note1} & \textbf{DiffusionPDE baseline} \citep{huang2024diffusionpde} \\
+\midrule
+Target & Posterior $p(x_0\mid y)\propto p(y\mid x_0)p(x_0)$; exact up to discretization and terminal correction & Implicit target $\propto\exp(-c_K\mathcal L)p_0$ with $c_K=\zeta/(\Delta\sigma_{K-1}\sigma_{K-1})\to\infty$; a schedule-dependent reconstruction, not the posterior \\
+Dynamics & Stochastic reverse SDE \eqref{eq:guided-sde} & Deterministic PF-ODE \eqref{eq:paper-ode}, Heun \\
+Guidance placement & Drift: $x_{i+1}=x_i+\Sigma_i(s+b)+z_i$ & Flat state update after the step, with or without a constant schedule \\
+Guidance scaling & $\Sigma_i b=\delta_i b$ (step-scaled) & $-\zeta\nabla\mathcal L$, $\zeta$ constant \\
+Guidance magnitude source & Twist gradient $b=\nabla\log\phi$, with the PF coefficient $\sigma$ & Tuned $\zeta$; loss is an unsquared residual norm \\
+Inference object & Weighted particle population; approximates a distribution & A single deterministic field per noise draw \\
+Weights / resampling & Girsanov/PBS/potential weights; systematic resampling at ESS $<N/2$ & None \\
+Uncertainty & Posterior spread, ESS available & None \\
+Consistency & Yes, for the posterior, as $K,N\to\infty$ under regularity & None claimed; not derived from a change of measure \\
+Metric & Posterior functionals (mean, credible region, calibration) & Relative $L^2$ to one ground-truth field \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Three distinct objects, not two}\label{sec:three}
+
+A frequent source of confusion is that this repository contains a third, intermediate update, the
+deterministic limit of the SMC proposal (the \texttt{--no-noise --rho 0} control in
+\path{scripts/generate_burgers_gem.py}). With no injected noise and unweighted particles, the
+GEM step is
+\begin{equation}\label{eq:gem-det}
+  x_{i+1} = x_i + \delta_i\bigl(s_{\sigma_i}(x_i)+b_{\sigma_i}(x_i)\bigr),
+  \qquad
+  \delta_i = \sigma_i^2-\sigma_{i+1}^2,
+  \qquad
+  s_{\sigma_i} = \frac{D_\theta(x_i,\sigma_i)-x_i}{\sigma_i^2}.
+\end{equation}
+This is \emph{not} the baseline. With $b\equiv0$, the ratio of the unguided parts of
+\eqref{eq:gem-det} and \eqref{eq:code-euler} is
+\begin{equation}\label{eq:gem-vs-baseline}
+  \frac{\delta_i\,s_{\sigma_i}}{(\sigma_{i+1}-\sigma_i)\,d_i}
+  = \frac{\dfrac{\delta_i(D_\theta-x_i)}{\sigma_i^2}}
+         {\dfrac{(\sigma_{i+1}-\sigma_i)(x_i-D_\theta)}{\sigma_i}}
+  = \frac{\sigma_i+\sigma_{i+1}}{\sigma_i}\in(1,2],
+\end{equation}
+using $\delta_i=(\sigma_i-\sigma_{i+1})(\sigma_i+\sigma_{i+1})$. So the deterministic SMC limit
+takes a systematically larger score step (up to a factor $2$ at small $\sigma$) than the baseline's
+PF-Euler step, even before guidance. The correct comparison is therefore three-way:
+\begin{enumerate}
+  \item[(A)] the baseline: PF-ODE Heun $+$ flat loss-gradient, constant $\zeta$;
+  \item[(B)] the guided SDE's deterministic limit: $\delta_i$-scaled score and guidance, no noise,
+        no weights (the natural same-target ablation);
+  \item[(C)] the full stochastic GEM $+$ Girsanov SMC.
+\end{enumerate}
+(A) and (C) differ in both target and dynamics; (B) and (C) differ only in the stochasticity and the
+reweighting, and are the pair that can be compared as two estimates of the same posterior.
+Using (A) as the reference against which (C)'s relative error is judged conflates target mismatch
+with sampling quality.
+
+\section{Two implementation-level caveats in the SMC code}\label{sec:caveats}
+
+The preceding sections concern the baseline. The next two observations concern the SMC code itself,
+where the baseline convention or a non-likelihood residual has been imported into places the theory
+does not cover. Both are reported here, not fixed.
+
+\subsection{Flat guidance invalidates the closed-form kernel ratio}
+
+The identity \eqref{eq:Ck} is the exact Gaussian kernel log-ratio
+$\log\frac{p(\xi_k\mid\xi_{k-1})}{q(\xi_k\mid\xi_{k-1})}$ only when the guidance enters the drift.
+Appendix~\ref{app:kernel} derives both cases:
+\begin{align}
+  \text{drift-embedded }(\mu_q-\mu_p=\Sigma_k b):\quad
+  C_k &= -b^\top z_k - \tfrac12 b^\top\Sigma_k b
+  = -b^\top z_k - \tfrac12\delta_k\|b\|^2,
+  \label{eq:Ck-scaled}\\[2pt]
+  \text{flat }(\mu_q-\mu_p=b):\quad
+  \widetilde C_k &= -\frac{1}{\delta_k}b^\top z_k - \frac{1}{2\delta_k}\|b\|^2,
+  \label{eq:Ck-flat}
+\end{align}
+in the scalar-covariance case $\Sigma_k=\delta_k I$. These agree only if
+$\delta_k=1$, which is not the case for any realistic step. Since $\delta_k$ varies across the
+schedule, \eqref{eq:Ck-flat} and \eqref{eq:Ck-scaled} cannot be reconciled by any constant
+rescaling of the weight either. Consequently the \texttt{--flat-guidance} control of
+\texttt{scripts/generate\_burgers\_gem.py}, which switches the proposal to
+$x_{i+1}=x_i+\delta_i s_{\sigma_i}+b_{\sigma_i}+z_i$ while still calling \texttt{girsanov\_increment}
+(i.e.\ \eqref{eq:Ck-scaled}), attaches a correction that is not the kernel ratio of the proposal
+actually used. The self-check \texttt{smc/scripts\_2/check\_gem\_tds\_real\_model.py} validates
+\eqref{eq:Ck-scaled} on the real network and therefore applies only to \texttt{scale\_guidance=True}
+(the default); it does not certify the flat mode. Any experiment that seeks to compare against the
+baseline convention must first derive the flat kernel ratio \eqref{eq:Ck-flat} (or, equivalently,
+stop calling it a Girsanov weight).
+
+\subsection{The PDE residual is not a likelihood}
+
+The SMC target \eqref{eq:posterior} presumes a specified observation likelihood $p(y\mid x_0)$. The
+Burgers runner instead defines the twist from the unsquared losses \eqref{eq:code-losses},
+\begin{equation}\label{eq:code-ell}
+  \ell_\sigma(x) = -\zeta_{\mathrm{obs}}\bigl\|m\odot(u-u_{\mathrm{GT}})\bigr\|_2/(128\cdot5)
+  -\zeta_{\mathrm{pde}}\bigl\|u_t+uu_x-\nu u_{xx}\bigr\|_2/(128\cdot128),
+\end{equation}
+so that the effective target is a \emph{tempered surrogate}
+$p(x_0)\exp(-\zeta_{\mathrm{obs}}\|\cdot\|_2-\zeta_{\mathrm{pde}}\|\cdot\|_2)$ rather than
+$p(x_0)p(y\mid x_0)$. Two consequences follow.
+
+First, the terminal correction of \eqref{eq:logW} is formally required for exactness whenever
+$\phi_0\neq p(y\mid\cdot)$. The runner omits it and instead asserts terminal consistency ``by
+construction'', on the grounds that the same loss is the only notion of fit available at every step
+including the last (\path{scripts/generate_burgers_gem.py}, comments around the boundary-weight
+initialization). That is a modeling choice, not a theorem: it fixes the target to the surrogate
+\eqref{eq:code-ell}, not to the Bayesian posterior of any stated observation model. If a genuine
+likelihood is intended, either $L(x_0)$ must be specified and the terminal correction retained, or
+the surrogate must be shown terminally consistent relative to that $L$.
+
+Second, because the residual is included in $\ell$ with a fixed $\zeta_{\mathrm{pde}}$, the ``PDE
+constraint'' is a soft prior whose weight is not derived from a noise model. Combined with the
+two-phase schedule, the effective target drifts over the trajectory. This is defensible as a
+regularized posterior, but it should be stated as such, and it means the SMC relative-error metric
+does not measure fidelity to the Bayesian posterior the \texttt{note\_1} framework is built to estimate.
+
+\section{Implications for experiments}\label{sec:implications}
+
+The analysis suggests the following comparison protocol, which separates the three objects of
+Section~\ref{sec:three} and the two notions of ``error''.
+
+\begin{enumerate}
+  \item \textbf{Choose a likelihood.} Specify $p(y\mid x_0)$ explicitly (e.g.\ a Gaussian sensor
+        model with stated $\delta$) and use it as $L$; keep the PDE residual either out of the twist
+        or explicitly declared as a prior. Then the target is unambiguous.
+  \item \textbf{Retain the terminal correction} (or prove terminal consistency), so the sampler
+        targets the stated posterior rather than a surrogate.
+  \item \textbf{Do not mix conventions.} If flat guidance is desired, use
+        \eqref{eq:Ck-flat}; if the theory's weight is desired, use drift-embedded guidance.
+  \item \textbf{Compare like with like.} Contrast (C) against (B), its own deterministic and
+        weighted-off limit, to isolate the value of stochasticity and reweighting. Treat (A) as a
+        separate reconstruction method, not as the same target.
+  \item \textbf{Report target-appropriate metrics.} For (B) and (C), posterior functionals
+        (weighted mean, spread, calibration, ESS); relative $L^2$ to a single ground-truth
+        realization is a reconstruction metric and can be minimized by point estimators that need
+        not be posterior samples.
+\end{enumerate}
+
+\section{Summary}\label{sec:summary}
+
+Table~\ref{tab:map} maps the repository artifacts to the methods and targets discussed here.
+
+\begin{table}[ht]
+\centering
+\small
+\caption{Repository artifacts, methods, and targets.}
+\label{tab:map}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}X@{}}
+\toprule
+Artifact & Method & Update & Target \\
+\midrule
+\path{scripts/generate_*.py} & DiffusionPDE baseline (A) & PF-ODE Heun $+$ flat $-\zeta\nabla\mathcal L$ & schedule-dependent cold reconstruction\newline (Proposition~\ref{prop:no-twist}); not the posterior \\
+\path{generate_burgers_gem.py} \texttt{--no-noise --rho 0} & Guided-SDE deterministic limit (B) & $x+\delta s+\delta b$ & twisted surrogate (same as C, zero-variance) \\
+\path{generate_burgers_gem.py} (default) & GEM $+$ Girsanov SMC (C) & $x+\delta(s+b)+z$, weighted & posterior (up to discretization, terminal correction) \\
+\path{scripts_2/weightings/doob_vtau.py} & Potential/Feynman--Kac weighting & $A_k=\int V_\tau\dd\tau$ & same as (C), Hessian-trace form \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+The central conclusion is a scope statement: the Girsanov-corrected SMC construction estimates the
+posterior \eqref{eq:posterior}; the DiffusionPDE baseline does not define or estimate that object.
+They are two different things that happen to share a denoiser and a sparse-observation loss, and
+they should not be placed on the same target axis. Within the SMC construction, the flat-guidance
+control and the use of an unnormalized PDE residual as the twist are the two places where the
+implementation currently leaves the theory, and both are documented above rather than changed here.
+
+\appendix
+
+\section{Gaussian kernel ratios for drift-embedded and flat guidance}\label{app:kernel}
+
+Consider Gaussian kernels with common covariance $\Sigma_k$,
+\begin{equation}
+  p(\xi_k\mid\xi_{k-1}) = N(\xi_k;\mu_p,\Sigma_k),
+  \qquad
+  q(\xi_k\mid\xi_{k-1}) = N(\xi_k;\mu_q,\Sigma_k),
+  \qquad
+  \xi_k = \mu_q + \Sigma_k^{1/2}\varepsilon_k ,
+\end{equation}
+so the realized increment is $z_k=\Sigma_k^{1/2}\varepsilon_k$. Writing
+$\|\cdot\|_{\Sigma_k^{-1}}^2$ for the $\Sigma_k^{-1}$-norm,
+\begin{equation}
+  \log\frac{p}{q}
+  = -\frac12\Bigl(\|\xi_k-\mu_p\|^2_{\Sigma_k^{-1}}
+  - \|\xi_k-\mu_q\|^2_{\Sigma_k^{-1}}\Bigr).
+\end{equation}
+\paragraph{Drift-embedded guidance.} If $\mu_q-\mu_p=\Sigma_k b$, then
+$\xi_k-\mu_p=\Sigma_k b+z_k$ and $\xi_k-\mu_q=z_k$, so
+\begin{equation}
+  \log\frac{p}{q}
+  = -\frac12\Bigl(\|\Sigma_k b+z_k\|^2_{\Sigma_k^{-1}}-\|z_k\|^2_{\Sigma_k^{-1}}\Bigr)
+  = -b^\top z_k-\frac12 b^\top\Sigma_k b,
+\end{equation}
+which is \eqref{eq:Ck} and, for $\Sigma_k=\delta_k I$, \eqref{eq:Ck-scaled}.
+\paragraph{Flat guidance.} If instead $\mu_q-\mu_p=b$, then
+$\xi_k-\mu_p=b+z_k$ and
+\begin{equation}
+  \log\frac{p}{q}
+  = -\frac12\Bigl(\|b+z_k\|^2_{\Sigma_k^{-1}}-\|z_k\|^2_{\Sigma_k^{-1}}\Bigr)
+  = -b^\top\Sigma_k^{-1}z_k-\frac12 b^\top\Sigma_k^{-1}b,
+\end{equation}
+which is \eqref{eq:Ck-flat} for $\Sigma_k=\delta_k I$. The two expressions coincide only at
+$\Sigma_k=I$; they cannot be related by a constant rescaling when $\Sigma_k$ varies along the
+schedule.
+
+\section{ODE coefficient comparison}\label{app:ode}
+
+Let $d_i=(x_i-D_\theta(x_i,\sigma_i))/\sigma_i=v_{\sigma_i}(x_i)$ and
+$s_{\sigma_i}=(D_\theta(x_i,\sigma_i)-x_i)/\sigma_i^2=-d_i/\sigma_i$. Then
+\begin{equation}
+  \text{(A) unguided: } (\sigma_{i+1}-\sigma_i)d_i,
+  \qquad
+  \text{(B) unguided: } \delta_i s_{\sigma_i}
+  = -\frac{\delta_i}{\sigma_i}d_i,
+\end{equation}
+and the ratio is
+\begin{equation}
+  \frac{\text{(B)}}{\text{(A)}} = \frac{-\delta_i/\sigma_i}{\sigma_{i+1}-\sigma_i}
+  = \frac{\delta_i}{\sigma_i(\sigma_i-\sigma_{i+1})}
+  = \frac{\sigma_i+\sigma_{i+1}}{\sigma_i},
+\end{equation}
+using $\delta_i=(\sigma_i-\sigma_{i+1})(\sigma_i+\sigma_{i+1})$. The two deterministic recursions
+therefore differ by a factor in $(1,2]$ even with no guidance at all.
+
+\bibliographystyle{plainnat}
+\bibliography{references}
+
+\end{document}
