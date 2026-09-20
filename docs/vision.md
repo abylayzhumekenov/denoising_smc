@@ -190,6 +190,31 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   *Consequence:* a deliberate, sanctioned deviation from upstream in the six baseline scripts
   (alongside device auto-detection), implemented through the `common/` writer (D11).
 
+- **D14 (2026-09-15) — Principled normalization for the SMC likelihood.** Two levels, both
+  explicit (implemented and commented in `smc/burgers.py`):
+  (i) **Data normalization.** Raw `.mat` fields are converted once, on load, into the network's
+  training units by dividing by `NORMALIZATION_SCALE = 1.415` (= sqrt(2) rounded; the raw Burgers
+  test fields have `max|u| = sqrt(2)`, and the ODE baseline applies the inverse `*1.415`). The
+  denoiser, proposal, likelihood and weighting all run in normalized units; arrays are denormalized
+  only for saving and for the raw evaluation metric. (The forward map is not in-repo for Burgers —
+  training data absent — so it is a *declared* convention, corroborated by the data; for other PDEs
+  it is explicit, e.g. Darcy in `merge_data.py`.)
+  (ii) **Loss normalization.** The likelihood uses dimensionless per-element mean-squared errors:
+  `l_obs = (1/n) sum_obs (D - y_norm)^2` (field amplitude `A = 1` in normalized units) and
+  `l_res = (1/m) sum (f / residual_scale)^2`, with the conservative Burgers residual
+  `f = v_t + sqrt(2) d_x(v^2/2) - nu v_xx` evaluated with physical derivatives (÷ grid spacing) and
+  periodic-space boundary conditions, and
+  `residual_scale = sqrt((A/T)^2 + (sqrt(2) A^2/L)^2 + (nu A/L^2)^2)`.
+  Then `log p = -obs_weight*l_obs - pde_weight*l_res` with dimensionless `O(1)` weights (both 1.0).
+  *Rationale:* the ODE baseline uses `norm/count` with free `zeta` constants (no transferability);
+  dimensionless per-element MSEs make `beta, omega` interpretable and transferable across
+  PDEs/resolutions. All parameters (`nu`, `L`, `T`, `N_x`, `N_t`, periodicity, `NORMALIZATION_SCALE`,
+  `A`) are problem definitions — PDE + grid + declared data normalization — not tuned knobs, and are
+  not taken from the test target (no oracle). *Consequence:* the SMC residual operator differs from
+  the ODE baseline's (physical derivatives + periodic space vs index differences + zero padding);
+  documented so comparisons are explicit. Raw-unit `relative_error` is the primary reported metric
+  (baseline comparability); a normalized `relative_error_norm` is stored for diagnostics.
+
 ---
 
 ## 6. Findings that inform the design

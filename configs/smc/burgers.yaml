@@ -23,5 +23,7 @@ smc:
   lambda_girs: 1.0
   resample_threshold: 0.5
   likelihood:
+    # Dimensionless temperatures on the normalized per-element MSEs (O(1)); derivation and
+    # the Burgers/grid/normalization constants are documented in smc/burgers.py.
     obs_weight: 1.0
     pde_weight: 1.0
