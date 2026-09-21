@@ -20,7 +20,6 @@
 # guessing partition names again.
 #SBATCH --job-name=burgers_gem
 #SBATCH --chdir=/home/alvarem/denoising_smc     # see smoke_test.sbatch's comment on this line
-#SBATCH --partition=debug
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G

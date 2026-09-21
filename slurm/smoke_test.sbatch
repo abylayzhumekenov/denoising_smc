@@ -12,7 +12,7 @@
                                                   # which directory `sbatch` is invoked from --
                                                   # every relative path below (.venv/, slurm/logs/,
                                                   # the smc./scripts. modules) assumes this
-#SBATCH --partition=debug
+
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G

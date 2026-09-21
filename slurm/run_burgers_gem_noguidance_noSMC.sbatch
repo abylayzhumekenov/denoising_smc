@@ -13,7 +13,6 @@
 #   sbatch slurm/run_burgers_gem_noguidance_noSMC.sbatch
 #SBATCH --job-name=burgers_gem_noguide
 #SBATCH --chdir=/home/alvarem/denoising_smc
-#SBATCH --partition=debug
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G
