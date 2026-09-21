@@ -1,0 +1,22 @@
+Loading module for CUDA 11.8
+CUDA 11.8 is now loaded
+GNU 12.2.0 is now loaded
+SQLite3 3.40.1 is now loaded
+Loading module for Python
+Python 3.11.0 is now loaded
+ -----------------------------
+To install additional python libraries/packages (to YOUR $HOME directory), please do the following:
+   mkdir -p $PYTHON_LIBS
+   pip install --prefix=$PYTHON_LIBS <your python_lib name>
+   Example: 
+           pip install --prefix=$PYTHON_LIBS biopython
+ -----------------------------
+
+Loading python/3.11.0
+  Loading requirement: gcc/12.2.0 sqlite/3.40.1/gnu-12.2.0
+=== 2026-09-21T11:19:53+03:00 smc_girs_b1w1_ri0 ===
+=== 2026-09-21T11:19:54+03:00 smc_girs_b1w1_ri1 ===
+=== 2026-09-21T11:19:54+03:00 smc_girs_b10w10_ri0 ===
+=== 2026-09-21T11:19:54+03:00 smc_girs_b10w10_ri1 ===
+=== 2026-09-21T11:19:54+03:00 aggregate ===
+=== 2026-09-21T11:19:54+03:00 done ===

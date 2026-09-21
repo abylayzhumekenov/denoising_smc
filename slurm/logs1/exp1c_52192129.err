@@ -1,0 +1,28 @@
+Traceback (most recent call last):
+  File "/home/alvarem/denoising_smc/generate_pde_smc.py", line 16, in <module>
+    from smc import burgers
+  File "/home/alvarem/denoising_smc/smc/burgers.py", line 35, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+Traceback (most recent call last):
+  File "/home/alvarem/denoising_smc/generate_pde_smc.py", line 16, in <module>
+    from smc import burgers
+  File "/home/alvarem/denoising_smc/smc/burgers.py", line 35, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+Traceback (most recent call last):
+  File "/home/alvarem/denoising_smc/generate_pde_smc.py", line 16, in <module>
+    from smc import burgers
+  File "/home/alvarem/denoising_smc/smc/burgers.py", line 35, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+Traceback (most recent call last):
+  File "/home/alvarem/denoising_smc/generate_pde_smc.py", line 16, in <module>
+    from smc import burgers
+  File "/home/alvarem/denoising_smc/smc/burgers.py", line 35, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+Traceback (most recent call last):
+  File "/home/alvarem/denoising_smc/slurm/logs1/aggregate_exp1.py", line 13, in <module>
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'

@@ -3,7 +3,6 @@
 #   sbatch slurm/logs1/smc_exp1a.sbatch      (or: bash slurm/logs1/submit_exp1.sh)
 #SBATCH --job-name=exp1a
 #SBATCH --chdir=/home/alvarem/denoising_smc
-#SBATCH --partition=debug
 #SBATCH --gres=gpu:v100:1
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=32G

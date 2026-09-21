@@ -1,3 +1,19 @@
+=== 2026-09-21T11:53:14+03:00 ode ===
+Solving Burgers equation...
+Loading networks from "pretrained-models/pretrained-burgers.pkl"...
+Generating 1 samples...
+Relative error: 0.05207246080961144
+saved run to results/ode/burgers/20260921-120101_84ee87
+Done.
+=== 2026-09-21T12:01:02+03:00 smc_unw_b1w1_ri0 ===
+saved run to results/smc/burgers/smc_unw_b1w1_ri0
+=== 2026-09-21T12:19:52+03:00 smc_unw_b1w1_ri1 ===
+saved run to results/smc/burgers/smc_unw_b1w1_ri1
+=== 2026-09-21T12:38:41+03:00 smc_unw_b10w10_ri0 ===
+saved run to results/smc/burgers/smc_unw_b10w10_ri0
+=== 2026-09-21T12:57:31+03:00 smc_unw_b10w10_ri1 ===
+saved run to results/smc/burgers/smc_unw_b10w10_ri1
+=== 2026-09-21T13:16:21+03:00 aggregate ===
 <!-- exp1 table, generated 2026-09-21 13:16:21, 13 runs -->
 | run | method | beta | omega | rho_temp | rho_init | lambda_girs | N | K | rel_err | rel_err_norm | ess_final |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -14,3 +30,4 @@
 | smc_unw_b10w10_ri1 | smc | 10.0 | 10.0 | 0.0 | 1.0 | 1.0 | 8 | 2000 | 1.334824685525231 | 1.3348246855252308 | 7.731724508519148 |
 | smc_unw_b1w1_ri0 | smc | 1.0 | 1.0 | 0.0 | 0.0 | 1.0 | 8 | 2000 | 1.2910576791111812 | 1.2910576791111812 | 8.0 |
 | smc_unw_b1w1_ri1 | smc | 1.0 | 1.0 | 0.0 | 1.0 | 1.0 | 8 | 2000 | 1.2947450513077587 | 1.2947450513077587 | 7.997322605182562 |
+=== 2026-09-21T13:16:22+03:00 done ===
