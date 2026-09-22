@@ -24,7 +24,9 @@ smc:
   resample_threshold: 0.5
   likelihood:
     # Guidance weights on the raw-units losses (unsquared L2 norms, index-unit residual).
-    # Burgers is not in Millard's weight table; 320/100 are the released ODE baseline's
-    # zeta_obs/zeta_pde (the convention Millard reused). Tuned per PDE, not transferable.
+    # obs_weight kept at the baseline's early-phase zeta_obs=320 (preserves the observation
+    # weight/guidance strength); pde_weight set so omega/beta ~= zeta_pde/(zeta_obs/10) ~= 3.1,
+    # i.e. the baseline's late-phase obs:pde balance, lifting the PDE drift share from ~0.6%
+    # (at 100) to ~5%. The guidance is delta-scaled, so these are independent of K. Tuned per PDE.
     obs_weight: 320.0
-    pde_weight: 100.0
+    pde_weight: 1000.0
