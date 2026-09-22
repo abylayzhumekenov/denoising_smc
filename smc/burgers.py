@@ -1,36 +1,30 @@
-"""GEM + Girsanov-weighted SMC for Burgers' equation (clean implementation).
+"""GEM + Girsanov-weighted SMC for Burgers' equation.
 
-Method (see docs/vision.md):
+Method (Millard et al. 2026 convention; see docs/vision.md):
 
-* **Likelihood** (Millard et al., normalized MSE, evaluated at the denoised estimate):
-  ``log p = -obs_weight * l_obs - pde_weight * l_res`` with *dimensionless* per-element
-  mean-squared errors ``l_obs`` and ``l_res`` (defined in `likelihood`).
-* **Proposal**: guided Euler--Maruyama (`smc/proposals/gem.py`), delta-scaled guidance. The
-  guidance gradient is ``b = grad ell`` (``ell`` is the log surrogate above), so the drift term
-  ``+delta * b = -delta * (obs_weight * grad l_obs + pde_weight * grad l_res)`` descends the loss
-  -- the same sign as Millard's ``-(...) * grad log p_tilde``. Score convention (see
-  `smc/proposals/gem.py`): ``nabla_log_p = (D - x) / sigma**2`` is the true score ``+grad log p``
-  (Tweedie), not EDM's ``(x - D) / sigma**2``.
+* **Units.** The reverse SDE, the score, the proposal and the Girsanov weight all live in the
+  network's *latent* (training / "normalized") units. The likelihood/guidance is evaluated on
+  the *raw* field ``u = to_raw(D)`` against the raw observations, exactly as the released ODE
+  baseline and Millard's PDE likelihoods do. ``to_network``/``to_raw`` are the only place the
+  two unit systems meet; the score/proposal never see them.
+* **Likelihood**: ``ell = -obs_weight * L_obs - pde_weight * L_pde`` with the released losses
+  ``L_obs = ||mask*(u - u_gt)||_2 / n`` and ``L_pde = ||u_t + u*u_x - nu*u_xx||_2 / m``
+  (index-unit central differences, zero padding -- see ``scripts/generate_burgers.get_burger_loss``);
+  ``obs_weight``/``pde_weight`` are tuned per PDE.
+* **Proposal**: guided Euler--Maruyama (`smc/proposals/gem.py`), delta-scaled guidance with
+  ``b = grad_x ell``; ``+delta * b`` descends the loss (same sign as Millard's guidance). Score
+  convention: ``nabla_log_p = (D - x) / sigma**2`` is the true score ``+grad log p`` (Tweedie).
 * **Weighting**: ``G_k = rho_temp * (Delta ell_k + lambda_girs * C_k)`` with the exact GEM
   kernel ratio ``C_k`` (`smc/weightings/girsanov.py`); ``lambda_girs=1`` corrected, ``0`` PBS.
-* **Boundary**: ``log w0 = rho_temp_init * ell_0(x_0)``.
-* **Resampling**: systematic when ``ESS < resample_threshold * N``. Readout: weighted mean.
+* **Boundary**: ``log w0 = rho_temp_init * ell_0(x_0)``. **Resampling**: systematic when
+  ``ESS < resample_threshold * N``. Readout: weighted mean.
 
-Normalization.  Raw ``.mat`` fields are converted to the network's training units (the
-"normalized" units) once, on load, and the denoiser / proposal / losses all operate in those
-units; we denormalize only for saving and for the raw evaluation metric.  This keeps a clean
-separation between the data layer and the sampler, instead of sprinkling the inverse scale
-through the loss as the ODE baseline does.
-
-* ``NORMALIZATION_SCALE = 1.415`` (= sqrt(2) rounded).  Evidence: the raw Burgers test fields
-  have global ``max|u| = sqrt(2)`` (1.41422), and the ODE baseline multiplies the network
-  output by ``1.415`` to return to the raw units (`scripts/generate_burgers.py:107,123`), i.e.
-  training divided the raw data by ``sqrt(2)`` to bring it to ~(-1, 1).  The forward map is not
-  present in this repo for Burgers (training data absent); the constant is the declared
-  convention, corroborated by the data.  (For other PDEs the forward map is explicit, e.g. Darcy
-  in `merge_data.py`.)
-* The residual is written in normalized units ``v`` (network output), so ``u = sqrt(2) * v`` and
-  the conservative Burgers residual becomes ``f = v_t + sqrt(2) * d_x(v^2/2) - nu * v_xx``.
+Units / data normalization.  ``FIELD_SCALE = 1.415`` is the documented training normalization for
+Burgers (the released ODE baseline denormalizes with ``*1.415``; ``merge_data.py`` documents the
+inverse-transform principle; see ``docs/vision.md`` D14).  The raw field is ``u = to_raw(v)``.
+The denoiser's output ``D`` is already in latent units, so the score ``(D - x)/sigma**2`` is used
+as-is; only the likelihood and the saved output go through ``to_raw``.  In the likelihood the
+field and the reference must both be raw (never mixed).
 
 The declared surrogate *is* the target (no oracle); see docs/note_4 and docs/vision.md.
 """
@@ -49,12 +43,19 @@ from smc.weightings.girsanov import girsanov_increment
 from torch_utils.misc import auto_device
 
 # --- Burgers / grid / normalization definitions ---------------------------------------------
-# All are problem definitions (PDE + grid + declared data normalization); no tuned parameters.
-NORMALIZATION_SCALE = 1.415   # raw -> normalized is /NORMALIZATION_SCALE (= sqrt(2) rounded)
+# Problem definitions (PDE + grid + declared data normalization); no tuned parameters.
+FIELD_SCALE = 1.415           # raw = FIELD_SCALE * v  (documented training normalization, ~sqrt(2))
 VISCOSITY = 0.01              # nu, from dataset_generation/burgers/burgers1.m (visc = 1/100)
-DOMAIN_LENGTH = 1.0           # x in [0, 1], periodic
-TIME_SPAN = 1.0               # t in [0, 1]
-FIELD_AMPLITUDE = 1.0         # normalized field amplitude A (data scaled to ~(-1, 1))
+
+
+def to_network(u_raw):
+    """Per-field raw -> latent (network training units).  Inverse of ``to_raw``."""
+    return u_raw / FIELD_SCALE
+
+
+def to_raw(v):
+    """Per-field latent (network training units) -> raw.  Inverse of ``to_network``."""
+    return v * FIELD_SCALE
 
 
 def load_ground_truth(datapath, offset, device):
@@ -80,56 +81,37 @@ def random_sensor(k, grid_size, seed=0, device=None):
     return index
 
 
-def residual_scale():
-    """Natural scale of the Burgers residual in normalized units (A=1).
+def burger_residual_raw(u):
+    """Burgers residual in *raw* units, ``u`` of shape ``[N, 1, N_t, N_x]``.
 
-    Term scales: ``v_t ~ A/T``, ``sqrt(2) d_x(v^2/2) ~ sqrt(2) A^2 / L``,
-    ``nu v_xx ~ nu A / L^2``.  Combined in quadrature.
+    ``f = u_t + u*u_x - nu*u_xx`` with the released baseline's index-unit central differences
+    and zero padding (cf. ``scripts/generate_burgers.get_burger_loss``).  Note: no grid-spacing
+    division -- this is the convention whose weights the baseline/Millard tuned.  Returns
+    ``[N, N_t, N_x]``.
     """
-    terms = [
-        FIELD_AMPLITUDE / TIME_SPAN,
-        NORMALIZATION_SCALE * FIELD_AMPLITUDE ** 2 / DOMAIN_LENGTH,
-        VISCOSITY * FIELD_AMPLITUDE / DOMAIN_LENGTH ** 2,
-    ]
-    return sum(t * t for t in terms) ** 0.5
+    deriv_t = torch.tensor([[-1.0], [0.0], [1.0]], dtype=torch.float64, device=u.device)
+    deriv_t = deriv_t.view(1, 1, 3, 1) / 2
+    deriv_x = torch.tensor([[-1.0, 0.0, 1.0]], dtype=torch.float64, device=u.device)
+    deriv_x = deriv_x.view(1, 1, 1, 3) / 2
+
+    u_t = F.conv2d(u, deriv_t, padding=(1, 0))
+    u_x = F.conv2d(u, deriv_x, padding=(0, 1))
+    u_xx = F.conv2d(u_x, deriv_x, padding=(0, 1))
+    return (u_t + u * u_x - VISCOSITY * u_xx).squeeze(1)
 
 
-def burger_residual(v):
-    """Conservative Burgers residual in *normalized* units, ``v`` of shape ``[N,1,N_t,N_x]``.
+def likelihood(u, u_gt, mask, obs_weight, pde_weight):
+    """Per-particle log surrogate ``[N]`` from a *raw*-units denoised field ``u``.
 
-    ``f = v_t + sqrt(2) d_x(v^2/2) - nu v_xx`` with physical derivatives (divided by the grid
-    spacing) and the correct boundary conditions: periodic in space, replicated in time.
-    Returns ``[N, N_t, N_x]``.
+    ``L_obs = ||mask*(u - u_gt)||_2 / n``, ``L_pde = ||f(u)||_2 / m`` (the released baseline's
+    unsquared-norm losses), returning ``-obs_weight * L_obs - pde_weight * L_pde``.  ``u`` and
+    ``u_gt`` must both be in raw units (see module docstring).
     """
-    n_t, n_x = v.shape[-2], v.shape[-1]
-    dt = TIME_SPAN / (n_t - 1)
-    dx = DOMAIN_LENGTH / n_x
-    kernel_t = torch.tensor([[-1.0], [0.0], [1.0]], dtype=torch.float64, device=v.device)
-    kernel_t = kernel_t.view(1, 1, 3, 1) / (2 * dt)
-    kernel_x = torch.tensor([[-1.0, 0.0, 1.0]], dtype=torch.float64, device=v.device)
-    kernel_x = kernel_x.view(1, 1, 1, 3) / (2 * dx)
-
-    v_t = F.conv2d(F.pad(v, (0, 0, 1, 1), mode='replicate'), kernel_t)
-    flux_x = F.conv2d(F.pad(0.5 * NORMALIZATION_SCALE * v ** 2, (1, 1, 0, 0), mode='circular'),
-                      kernel_x)
-    v_xx = F.conv2d(F.pad(F.conv2d(F.pad(v, (1, 1, 0, 0), mode='circular'), kernel_x),
-                          (1, 1, 0, 0), mode='circular'), kernel_x)
-    return (v_t + flux_x - VISCOSITY * v_xx).squeeze(1)
-
-
-def likelihood(v, y_norm, mask, obs_weight, pde_weight):
-    """Dimensionless per-particle log surrogate ``[N]`` from denoised estimate ``v``.
-
-    ``l_obs = (1/n) sum_obs (v - y_norm)^2`` (amplitude A=1), ``l_res = (1/m) sum (f/F)^2``
-    with ``F = residual_scale()``; returns ``-obs_weight * l_obs - pde_weight * l_res``.
-    """
-    f = burger_residual(v)                          # [N, N_t, N_x], normalized units
-    obs = (v.squeeze(1) - y_norm) * mask            # [N, N_t, N_x]
-    n = mask.sum()
-    m = f.shape[-1] * f.shape[-2]
-    l_obs = (obs ** 2).sum(dim=(1, 2)) / (FIELD_AMPLITUDE ** 2 * n)
-    l_res = (f ** 2).sum(dim=(1, 2)) / (m * residual_scale() ** 2)
-    return -obs_weight * l_obs - pde_weight * l_res
+    pde = burger_residual_raw(u)                    # [N, N_t, N_x], raw units
+    obs = (u.squeeze(1) - u_gt) * mask              # [N, N_t, N_x]
+    L_obs = obs.norm(dim=(1, 2)) / mask.sum()
+    L_pde = pde.norm(dim=(1, 2)) / (pde.shape[-1] * pde.shape[-2])
+    return -obs_weight * L_obs - pde_weight * L_pde
 
 
 def effective_sample_size(log_w):
@@ -155,9 +137,10 @@ def systematic_resample_indices(log_w, generator=None):
 def run(config):
     """Run one SMC inference for Burgers and write ``results/smc/burgers/<run_id>/``.
 
-    The denoiser, proposal, likelihood and weighting all operate in normalized units
-    (raw ``.mat`` field divided by ``NORMALIZATION_SCALE``); only the saved arrays and the
-    raw evaluation metric are denormalized.
+    The latent state ``x``, the score, the proposal and the weights are in the network's latent
+    units; the likelihood/guidance is evaluated on the raw field ``to_raw(D)`` against the raw
+    ground truth, and the saved arrays/metric are raw.  See the module docstring for the unit
+    discipline.
     """
     gen_cfg = config['generate']
     smc = config.get('smc', {})
@@ -168,11 +151,10 @@ def run(config):
     torch.manual_seed(seed)
     generator = torch.Generator(device=device).manual_seed(seed)
 
-    # Data layer: convert the raw test field to the network's normalized units here, once.
+    # Data layer: raw test field (the observation and evaluation space).
     ground_truth_raw = load_ground_truth(config['data']['datapath'], config['data']['offset'], device)
-    ground_truth = ground_truth_raw / NORMALIZATION_SCALE
     net = load_network(config['test']['pre-trained'], device)
-    mask = random_sensor(config['data'].get('sensors', 5), ground_truth.shape[-1],
+    mask = random_sensor(config['data'].get('sensors', 5), ground_truth_raw.shape[-1],
                          seed=config['data'].get('sensor_seed', 0), device=device)
 
     n_particles = smc.get('n_particles', 4)
@@ -198,7 +180,7 @@ def run(config):
 
     with torch.no_grad():
         D0, _ = denoise(net, x, sched[0])
-    log_w = rho_temp_init * likelihood(D0, ground_truth, mask, obs_weight, pde_weight)
+    log_w = rho_temp_init * likelihood(to_raw(D0), ground_truth_raw, mask, obs_weight, pde_weight)
 
     ess_history = []
     grad_norm_history = []
@@ -216,7 +198,7 @@ def run(config):
             need_fresh_D = False
         x_cur = x_leaf
 
-        ell_cur = likelihood(D, ground_truth, mask, obs_weight, pde_weight)
+        ell_cur = likelihood(to_raw(D), ground_truth_raw, mask, obs_weight, pde_weight)
         b_k = torch.autograd.grad(ell_cur.sum(), x_cur)[0].detach()
 
         x_next, z, delta = gem_step(x_cur.detach(), nabla_log_p.detach(), b_k,
@@ -225,7 +207,7 @@ def run(config):
         # Evaluate the denoiser once at the post-step state; carried forward into iteration i+1.
         x_leaf_next = x_next.detach().clone().requires_grad_(True)
         D_next, nabla_log_p_next = denoise(net, x_leaf_next, sigma_next)
-        ell_next = likelihood(D_next.detach(), ground_truth, mask, obs_weight, pde_weight)
+        ell_next = likelihood(to_raw(D_next.detach()), ground_truth_raw, mask, obs_weight, pde_weight)
         delta_ell = ell_next - ell_cur.detach()
 
         inc = rho_temp * (delta_ell + girsanov_increment(b_k, z, delta, lambda_girs))
@@ -252,12 +234,11 @@ def run(config):
         x = x_next
 
     w = torch.exp(log_w - torch.logsumexp(log_w, dim=0))
-    weighted_mean_norm = (w.view(n_particles, 1, 1, 1) * x).sum(dim=0)          # [1, N_t, N_x]
-    particles_raw = (x * NORMALIZATION_SCALE).to(torch.float64)
-    weighted_mean_raw = (weighted_mean_norm * NORMALIZATION_SCALE).to(torch.float64)
+    weighted_mean_norm = (w.view(n_particles, 1, 1, 1) * x).sum(dim=0)          # latent units
+    particles_raw = to_raw(x).to(torch.float64)
+    weighted_mean_raw = to_raw(weighted_mean_norm).to(torch.float64)
 
-    # Raw units (comparable to the ODE baseline). The scalar NORMALIZATION_SCALE cancels in the
-    # ratio, so this is identical to the normalized-units error; no separate metric is needed.
+    # Raw units, against the raw ground truth (same metric as the ODE baseline).
     relative_error = float((torch.norm(weighted_mean_raw - ground_truth_raw) /
                             torch.norm(ground_truth_raw)).detach())
 
@@ -279,9 +260,8 @@ def run(config):
         'seed': seed,
         'num_steps': num_steps,
         'device': str(device),
-        'relative_error': relative_error,            # raw units (denormalized); scale-invariant
-        'normalization_scale': NORMALIZATION_SCALE,
-        'residual_scale': residual_scale(),
+        'relative_error': relative_error,            # raw units vs raw ground truth
+        'field_scale': FIELD_SCALE,
     })
     print(f'saved run to {run_dir}')
     return run_dir

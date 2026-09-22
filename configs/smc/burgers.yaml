@@ -23,7 +23,8 @@ smc:
   lambda_girs: 1.0
   resample_threshold: 0.5
   likelihood:
-    # Dimensionless temperatures on the normalized per-element MSEs (O(1)); derivation and
-    # the Burgers/grid/normalization constants are documented in smc/burgers.py.
-    obs_weight: 1.0
-    pde_weight: 1.0
+    # Guidance weights on the raw-units losses (unsquared L2 norms, index-unit residual).
+    # Burgers is not in Millard's weight table; 320/100 are the released ODE baseline's
+    # zeta_obs/zeta_pde (the convention Millard reused). Tuned per PDE, not transferable.
+    obs_weight: 320.0
+    pde_weight: 100.0
