@@ -25,6 +25,13 @@ def girsanov_increment(guidance_grad, z, delta, lam=1.0):
     a python float. Returns a 1-D tensor ``[N]``.
     """
     dims = tuple(range(1, guidance_grad.dim()))
-    bz = (guidance_grad * z).sum(dim=dims)
-    b2 = (guidance_grad ** 2).sum(dim=dims)
+    prod = guidance_grad * z
+    sq = guidance_grad ** 2
+    if dims:
+        bz = prod.sum(dim=dims)
+        b2 = sq.sum(dim=dims)
+    else:
+        # Particle dim is the only dim (scalar per particle): reduce nothing. Note ``sum(dim=())``
+        # would reduce *all* dims in current PyTorch, so this case must be handled explicitly.
+        bz, b2 = prod, sq
     return lam * (-bz - 0.5 * delta * b2)
