@@ -190,7 +190,8 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   *Consequence:* a deliberate, sanctioned deviation from upstream in the six baseline scripts
   (alongside device auto-detection), implemented through the `common/` writer (D11).
 
-- **D14 (2026-09-15) — Principled normalization for the SMC likelihood.** Two levels, both
+- **D14 (2026-09-15) — Principled normalization for the SMC likelihood.** *(Data normalization (i)
+  retained; the loss-normalization part (ii) is superseded by D15.)* Two levels, both
   explicit (implemented and commented in `smc/burgers.py`):
   (i) **Data normalization.** Raw `.mat` fields are converted once, on load, into the network's
   training units by dividing by `NORMALIZATION_SCALE = 1.415` (= sqrt(2) rounded; the raw Burgers
@@ -214,6 +215,23 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   the ODE baseline's (physical derivatives + periodic space vs index differences + zero padding);
   documented so comparisons are explicit. Raw-unit `relative_error` is the primary reported metric
   (baseline comparability); a normalized `relative_error_norm` is stored for diagnostics.
+
+- **D15 (2026-09-22) — Raw-units guidance; follow Millard/baseline (supersedes D14(ii)).** The latent
+  `x`, the score `(D-x)/sigma^2`, the EM step and the Girsanov weight stay in the network's latent
+  units; the likelihood/guidance is evaluated on the raw field `u = to_raw(D) = FIELD_SCALE*D` against
+  the raw ground truth, exactly as the released baseline and Millard do. `to_network`/`to_raw`
+  (`FIELD_SCALE = 1.415`; D14(i) retained) are the only place the two unit systems meet. The
+  likelihood mirrors `scripts/generate_burgers.get_burger_loss`: `L_obs = ||mask*(u-u_gt)||_2 / n`,
+  `L_pde = ||u_t + u*u_x - nu*u_xx||_2 / m` (index-unit central differences, zero padding), and
+  `ell = -obs_weight*L_obs - pde_weight*L_pde` with weights tuned per PDE (Burgers `320/100`, taken
+  from the released baseline — Burgers is not in Millard's weight table). `residual_scale` and the
+  normalized-MSE form are removed; `relative_error_norm` is dropped (identical to `relative_error`).
+  *Rationale:* Millard's published weights equal the baseline's `zeta`s verbatim, i.e. they reuse the
+  baseline's units and losses; this avoids the per-PDE normalized-PDE derivation, keeps the
+  score/proposal unit-clean, and accepts per-PDE weight tuning (no transferability claim).
+  *Consequence:* the SMC likelihood operator now matches the baseline exactly (verified numerically in
+  a temporary check); a temporary unit check also confirms the score uses latent `D`, the raw/raw obs
+  term is 0, and the guidance gradient equals the FD of the raw-units `ell`.
 
 ---
 
@@ -251,8 +269,9 @@ Ordered roughly:
    options) — author to set after a working SMC.
 5. **Decide and add new checks** under the validation tier (start with the GEM↔TDS identity).
 6. **Sweep design** (one spec expanded at runtime) — deferred.
-7. **Modeling/algorithm follow-ups:** proper likelihood (e.g. squared-residual Gaussian form),
-   flat-guidance kernel ratio or removal, terminal correction, SOSaG proposal, tempering sweeps.
+7. **Modeling/algorithm follow-ups:** likelihood form settled to the baseline/Millard unsquared-norm
+   surrogate (D15); cross-PDE weight transferability deferred. Also: flat-guidance kernel ratio or
+   removal, terminal correction, SOSaG proposal, tempering sweeps.
 8. **New SMC slurm script** (`slurm/run_smc*.sbatch`) parameterized by config.
 9. **Stale docs:** delete/replace `slurm/README.md`; keep `README.md` upstream-oriented.
 
@@ -269,7 +288,7 @@ Status snapshot (git): `00ee0e1` archive restructure · `d3a00bc` note_4 · `b29
 |---|---|
 | `torchrun --standalone --nproc_per_node=N train.py --outdir=DIR --data=PATH --cond=0 --arch=ddpmpp --batch=60 --batch-gpu=20 --duration=20 --ema=0.05` | Train the diffusion model (EDM-style) |
 | `python3 generate_pde.py --config configs/<pde>.yaml` | Solve a PDE with the upstream guided ODE baseline |
-| `python3 generate_pde_smc.py --config configs/smc/<pde>.yaml` | **(to be built)** Solve a PDE with the new SMC sampler |
+| `python3 generate_pde_smc.py --config configs/smc/<pde>.yaml` | Solve a PDE with the new SMC sampler |
 | `python3 merge_data.py` | Merge raw `.mat` → scaled `.npy` for training |
 
 **Conventions / gotchas**
@@ -278,7 +297,9 @@ Status snapshot (git): `00ee0e1` archive restructure · `d3a00bc` note_4 · `b29
 - Two-phase guidance in the baseline: observation gradients only for the first ~80% of steps, then a
   10×-reduced observation weight plus the PDE-residual term.
 - Data live in `(-1, 1)`; inverse-transform before PDE/observation losses. Per-PDE scale factors
-  (Darcy: `a=(a+1.5)/0.2`, `u=(u+0.9)/115`; Burgers: `x*1.415`).
+  (Darcy: `a=(a+1.5)/0.2`, `u=(u+0.9)/115`; Burgers: `x*1.415`). The new SMC does the same through
+  `to_network`/`to_raw` in `smc/burgers.py`: latent state/score/proposal stay normalized, the
+  likelihood and saved output are raw (D15).
 - Pretrained models are `.pkl` pickles loaded via `pickle.load(f)['ema']` (~208 MB; git-ignored).
 - EDM ODE schedule: Heun 2nd order,
   `sigma_t = (sigma_max^(1/rho) + t/(N-1) (sigma_min^(1/rho) - sigma_max^(1/rho)))^rho`.
