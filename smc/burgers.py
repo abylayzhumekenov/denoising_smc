@@ -197,6 +197,8 @@ def run(config):
     log_w = rho_temp_init * likelihood(to_raw(D0), ground_truth_raw, mask, obs_weight, pde_weight)
 
     ess_history = []
+    rel_err_history = []
+    rel_err_particle_history = []
     grad_norm_history = []
     nabla_log_p_norm_history = []
     delta_history = []
@@ -271,6 +273,16 @@ def run(config):
             x_leaf, D, nabla_log_p = x_leaf_next, D_next, nabla_log_p_next
         x = x_next
 
+        # Per-step relative error to the raw ground truth (cheap; no forward pass).
+        with torch.no_grad():
+            xr = to_raw(x)                                                   # raw, [N,1,Nt,Nx]
+            denom = ground_truth_raw.norm()
+            per = (xr - ground_truth_raw).flatten(1).norm(dim=1) / denom      # [N]
+            rel_err_particle_history.append(float(per.mean()))
+            wn = torch.exp(log_w - torch.logsumexp(log_w, dim=0))
+            wm = (wn.view(-1, 1, 1, 1) * xr).sum(dim=0)                       # [1,Nt,Nx]
+            rel_err_history.append(float((wm - ground_truth_raw).norm() / denom))
+
     w = torch.exp(log_w - torch.logsumexp(log_w, dim=0))
     weighted_mean_norm = (w.view(n_particles, 1, 1, 1) * x).sum(dim=0)          # latent units
     particles_raw = to_raw(x).to(torch.float64)
@@ -286,6 +298,8 @@ def run(config):
              weights=w.detach().cpu().numpy(),
              weighted_mean=weighted_mean_raw.detach().cpu().numpy(),
              ess_history=np.array(ess_history),
+             rel_err_history=np.array(rel_err_history),
+             rel_err_particle_history=np.array(rel_err_particle_history),
              grad_norm_history=np.array(grad_norm_history),
              nabla_log_p_norm_history=np.array(nabla_log_p_norm_history),
              delta_history=np.array(delta_history),
