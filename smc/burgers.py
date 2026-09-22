@@ -100,17 +100,22 @@ def burger_residual_raw(u):
     return (u_t + u * u_x - VISCOSITY * u_xx).squeeze(1)
 
 
-def likelihood(u, u_gt, mask, obs_weight, pde_weight):
-    """Per-particle log surrogate ``[N]`` from a *raw*-units denoised field ``u``.
+def term_losses(u, u_gt, mask):
+    """Per-term raw-units losses ``(L_obs, L_pde)``, each shape ``[N]``.
 
     ``L_obs = ||mask*(u - u_gt)||_2 / n``, ``L_pde = ||f(u)||_2 / m`` (the released baseline's
-    unsquared-norm losses), returning ``-obs_weight * L_obs - pde_weight * L_pde``.  ``u`` and
-    ``u_gt`` must both be in raw units (see module docstring).
+    unsquared norms).  ``u`` and ``u_gt`` must both be raw units.
     """
     pde = burger_residual_raw(u)                    # [N, N_t, N_x], raw units
     obs = (u.squeeze(1) - u_gt) * mask              # [N, N_t, N_x]
     L_obs = obs.norm(dim=(1, 2)) / mask.sum()
     L_pde = pde.norm(dim=(1, 2)) / (pde.shape[-1] * pde.shape[-2])
+    return L_obs, L_pde
+
+
+def likelihood(u, u_gt, mask, obs_weight, pde_weight):
+    """Per-particle log surrogate ``[N]``: ``-obs_weight*L_obs - pde_weight*L_pde`` (raw units)."""
+    L_obs, L_pde = term_losses(u, u_gt, mask)
     return -obs_weight * L_obs - pde_weight * L_pde
 
 
@@ -167,6 +172,15 @@ def run(config):
     obs_weight = ll.get('obs_weight', 1.0)
     pde_weight = ll.get('pde_weight', 1.0)
 
+    # Guidance-attribution diagnostic: at ~sampled steps, decompose the total gradient b into its
+    # per-term contributions by projection, f_c = -beta_c * <grad L_c, b> / ||b||^2  (sum_c f_c = 1).
+    # The directional derivatives <grad L_c, b> come from two no-grad forward passes at x +/- eps*b.
+    n_diag = min(12, num_steps - 1)
+    diag_steps = set(int(round(j)) for j in
+                     np.linspace(0, num_steps - 2, n_diag)) if n_diag > 0 else set()
+    diag = {k: [] for k in ('step', 'sigma', 'loss_obs', 'loss_pde', 'frac_obs', 'frac_pde',
+                            'b_norm', 'score_norm')}
+
     sigma_min = max(gen_cfg['sigma_min'], net.sigma_min)
     sigma_max = min(gen_cfg['sigma_max'], net.sigma_max)
     rho_sched = gen_cfg['rho']
@@ -200,6 +214,30 @@ def run(config):
 
         ell_cur = likelihood(to_raw(D), ground_truth_raw, mask, obs_weight, pde_weight)
         b_k = torch.autograd.grad(ell_cur.sum(), x_cur)[0].detach()
+
+        if i in diag_steps:
+            with torch.no_grad():
+                b2 = (b_k ** 2).sum(dim=(1, 2, 3)).clamp_min(1e-30)          # [N]
+                x_det = x_cur.detach()
+                rms_x = (x_det ** 2).mean(dim=(1, 2, 3)).sqrt()             # [N]
+                eps = (1e-3 * rms_x / b2.sqrt()).view(-1, 1, 1, 1)          # [N,1,1,1]
+                Dp, _ = denoise(net, x_det + eps * b_k, sigma_cur)
+                Dm, _ = denoise(net, x_det - eps * b_k, sigma_cur)
+                Lo_p, Lp_p = term_losses(to_raw(Dp), ground_truth_raw, mask)
+                Lo_m, Lp_m = term_losses(to_raw(Dm), ground_truth_raw, mask)
+                Lo_0, Lp_0 = term_losses(to_raw(D.detach()), ground_truth_raw, mask)
+                dLo = (Lo_p - Lo_m) / (2 * eps.view(-1))
+                dLp = (Lp_p - Lp_m) / (2 * eps.view(-1))
+                f_obs = -obs_weight * dLo / b2
+                f_pde = -pde_weight * dLp / b2
+                diag['step'].append(i)
+                diag['sigma'].append(sigma_cur)
+                diag['loss_obs'].append(float(Lo_0.mean()))
+                diag['loss_pde'].append(float(Lp_0.mean()))
+                diag['frac_obs'].append(float(f_obs.mean()))
+                diag['frac_pde'].append(float(f_pde.mean()))
+                diag['b_norm'].append(float(b_k.norm()))
+                diag['score_norm'].append(float(nabla_log_p.detach().norm()))
 
         x_next, z, delta = gem_step(x_cur.detach(), nabla_log_p.detach(), b_k,
                                     sigma_cur, sigma_next, generator=generator)
@@ -251,6 +289,14 @@ def run(config):
              grad_norm_history=np.array(grad_norm_history),
              nabla_log_p_norm_history=np.array(nabla_log_p_norm_history),
              delta_history=np.array(delta_history),
+             diag_step=np.array(diag['step']),
+             diag_sigma=np.array(diag['sigma']),
+             diag_loss_obs=np.array(diag['loss_obs']),
+             diag_loss_pde=np.array(diag['loss_pde']),
+             diag_frac_obs=np.array(diag['frac_obs']),
+             diag_frac_pde=np.array(diag['frac_pde']),
+             diag_b_norm=np.array(diag['b_norm']),
+             diag_score_norm=np.array(diag['score_norm']),
              ground_truth=ground_truth_raw.detach().cpu().numpy())
     write_config(run_dir, config, run_id, section='smc')
     write_metrics(run_dir, {
@@ -262,6 +308,9 @@ def run(config):
         'device': str(device),
         'relative_error': relative_error,            # raw units vs raw ground truth
         'field_scale': FIELD_SCALE,
+        # Guidance attribution, mean over sampled steps (per-step values in result.npz; sum ~ 1).
+        'guidance_frac_obs_mean': float(np.mean(diag['frac_obs'])) if diag['frac_obs'] else None,
+        'guidance_frac_pde_mean': float(np.mean(diag['frac_pde'])) if diag['frac_pde'] else None,
     })
     print(f'saved run to {run_dir}')
     return run_dir
