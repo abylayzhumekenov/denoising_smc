@@ -7,6 +7,12 @@ For a Gaussian proposal with covariance ``delta * I`` the exact per-step kernel 
 summed over every non-batch dimension. The incremental weight is
 ``G_k = Delta_ell_k + lambda_girs * C_k`` (lambda=1 corrected Girsanov, lambda=0 pseudo-bootstrap).
 Ported from ``smc_archive/scripts_2/weightings/girsanov.py``.
+
+This is the *exact* discrete kernel ratio only for the Euler--Maruyama proposal, whose unguided
+and guided kernels share covariance ``delta_k * I`` and differ only in mean by ``delta_k * b_k``
+(note_1 App. B; it uses ``z_k ~ N(0, delta_k * I)``). For a non-EM integrator this expression is
+at best asymptotically valid as ``K -> infinity``; either derive that integrator's exact kernel
+ratio or use note_1's potential increment ``V_k`` instead.
 """
 
 import torch

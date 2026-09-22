@@ -5,7 +5,12 @@ Method (see docs/vision.md):
 * **Likelihood** (Millard et al., normalized MSE, evaluated at the denoised estimate):
   ``log p = -obs_weight * l_obs - pde_weight * l_res`` with *dimensionless* per-element
   mean-squared errors ``l_obs`` and ``l_res`` (defined in `likelihood`).
-* **Proposal**: guided Euler--Maruyama (`smc/proposals/gem.py`), delta-scaled guidance.
+* **Proposal**: guided Euler--Maruyama (`smc/proposals/gem.py`), delta-scaled guidance. The
+  guidance gradient is ``b = grad ell`` (``ell`` is the log surrogate above), so the drift term
+  ``+delta * b = -delta * (obs_weight * grad l_obs + pde_weight * grad l_res)`` descends the loss
+  -- the same sign as Millard's ``-(...) * grad log p_tilde``. Score convention (see
+  `smc/proposals/gem.py`): ``nabla_log_p = (D - x) / sigma**2`` is the true score ``+grad log p``
+  (Tweedie), not EDM's ``(x - D) / sigma**2``.
 * **Weighting**: ``G_k = rho_temp * (Delta ell_k + lambda_girs * C_k)`` with the exact GEM
   kernel ratio ``C_k`` (`smc/weightings/girsanov.py`); ``lambda_girs=1`` corrected, ``0`` PBS.
 * **Boundary**: ``log w0 = rho_temp_init * ell_0(x_0)``.
@@ -197,9 +202,9 @@ def run(config):
 
     ess_history = []
     grad_norm_history = []
-    score_norm_history = []
+    nabla_log_p_norm_history = []
     delta_history = []
-    x_leaf, D, score = None, None, None
+    x_leaf, D, nabla_log_p = None, None, None
     need_fresh_D = True
 
     for i in tqdm.tqdm(range(num_steps - 1), unit='step'):
@@ -207,19 +212,19 @@ def run(config):
 
         if need_fresh_D:
             x_leaf = x.detach().clone().requires_grad_(True)
-            D, score = denoise(net, x_leaf, sigma_cur)
+            D, nabla_log_p = denoise(net, x_leaf, sigma_cur)
             need_fresh_D = False
         x_cur = x_leaf
 
         ell_cur = likelihood(D, ground_truth, mask, obs_weight, pde_weight)
         b_k = torch.autograd.grad(ell_cur.sum(), x_cur)[0].detach()
 
-        x_next, z, delta = gem_step(x_cur.detach(), score.detach(), b_k,
+        x_next, z, delta = gem_step(x_cur.detach(), nabla_log_p.detach(), b_k,
                                     sigma_cur, sigma_next, generator=generator)
 
         # Evaluate the denoiser once at the post-step state; carried forward into iteration i+1.
         x_leaf_next = x_next.detach().clone().requires_grad_(True)
-        D_next, score_next = denoise(net, x_leaf_next, sigma_next)
+        D_next, nabla_log_p_next = denoise(net, x_leaf_next, sigma_next)
         ell_next = likelihood(D_next.detach(), ground_truth, mask, obs_weight, pde_weight)
         delta_ell = ell_next - ell_cur.detach()
 
@@ -230,7 +235,7 @@ def run(config):
         ess = effective_sample_size(log_w)
         ess_history.append(ess)
         grad_norm_history.append(float(b_k.norm()))
-        score_norm_history.append(float(score.detach().norm()))
+        nabla_log_p_norm_history.append(float(nabla_log_p.detach().norm()))
         delta_history.append(delta)
 
         if ess < resample_threshold * n_particles:
@@ -238,12 +243,12 @@ def run(config):
             x_next = x_next[ridx]
             log_w = torch.zeros(n_particles, dtype=torch.float64, device=device)
             need_fresh_D = True
-            # The carried-forward D_next/score_next were computed on the pre-resample particle
+            # The carried-forward D_next/nabla_log_p_next were computed on the pre-resample particle
             # ordering; release them so the discarded graph is freed before the fresh forward
             # at the top of the next iteration (otherwise two graphs are alive at once).
-            x_leaf_next = D_next = score_next = None
+            x_leaf_next = D_next = nabla_log_p_next = None
         else:
-            x_leaf, D, score = x_leaf_next, D_next, score_next
+            x_leaf, D, nabla_log_p = x_leaf_next, D_next, nabla_log_p_next
         x = x_next
 
     w = torch.exp(log_w - torch.logsumexp(log_w, dim=0))
@@ -251,11 +256,10 @@ def run(config):
     particles_raw = (x * NORMALIZATION_SCALE).to(torch.float64)
     weighted_mean_raw = (weighted_mean_norm * NORMALIZATION_SCALE).to(torch.float64)
 
-    # Primary metric in raw units (comparable to the ODE baseline); normalized one for diagnostics.
+    # Raw units (comparable to the ODE baseline). The scalar NORMALIZATION_SCALE cancels in the
+    # ratio, so this is identical to the normalized-units error; no separate metric is needed.
     relative_error = float((torch.norm(weighted_mean_raw - ground_truth_raw) /
                             torch.norm(ground_truth_raw)).detach())
-    relative_error_norm = float((torch.norm(weighted_mean_norm - ground_truth) /
-                                 torch.norm(ground_truth)).detach())
 
     run_dir, run_id = make_run_dir(config, 'burgers', default_root='results/smc', section='smc')
     np.savez(run_dir / 'result.npz',
@@ -264,7 +268,7 @@ def run(config):
              weighted_mean=weighted_mean_raw.detach().cpu().numpy(),
              ess_history=np.array(ess_history),
              grad_norm_history=np.array(grad_norm_history),
-             score_norm_history=np.array(score_norm_history),
+             nabla_log_p_norm_history=np.array(nabla_log_p_norm_history),
              delta_history=np.array(delta_history),
              ground_truth=ground_truth_raw.detach().cpu().numpy())
     write_config(run_dir, config, run_id, section='smc')
@@ -275,8 +279,7 @@ def run(config):
         'seed': seed,
         'num_steps': num_steps,
         'device': str(device),
-        'relative_error': relative_error,            # raw units (denormalized), primary
-        'relative_error_norm': relative_error_norm,  # normalized units, diagnostic
+        'relative_error': relative_error,            # raw units (denormalized); scale-invariant
         'normalization_scale': NORMALIZATION_SCALE,
         'residual_scale': residual_scale(),
     })
