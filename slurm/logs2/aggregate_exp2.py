@@ -17,7 +17,7 @@ from pathlib import Path
 import numpy as np
 import yaml
 
-COLS = ['run', 'method', 'beta', 'omega', 'lambda_girs', 'rho_temp', 'rho_init',
+COLS = ['run', 'method', 'beta', 'omega', 'ratio', 'lambda_girs', 'rho_temp', 'rho_init',
         'N', 'K', 'rel_err', 'frac_obs', 'frac_pde', 'ess_mean', 'ess_last', 'seed']
 ROOT = Path('results')
 OUT = Path(os.environ.get('EXP2_OUT', 'slurm/logs2/exp2_table.md'))
@@ -47,8 +47,11 @@ def _smc_row(run_dir):
     s = c.get('smc', {})
     ll = s.get('likelihood', {})
     ess_mean, ess_last = _ess(run_dir)
+    beta = ll.get('obs_weight', '')
+    omega = ll.get('pde_weight', '')
+    ratio = (omega / beta) if isinstance(beta, (int, float)) and isinstance(omega, (int, float)) and beta else ''
     return dict(run=m.get('run_id', run_dir.name), method='smc',
-                beta=ll.get('obs_weight', ''), omega=ll.get('pde_weight', ''),
+                beta=beta, omega=omega, ratio=ratio,
                 lambda_girs=s.get('lambda_girs', ''), rho_temp=s.get('rho_temp', ''),
                 rho_init=s.get('rho_temp_init', ''), N=s.get('n_particles', ''),
                 K=s.get('num_steps', ''), rel_err=m.get('relative_error'),
@@ -59,7 +62,7 @@ def _smc_row(run_dir):
 
 def _ode_row(run_dir):
     m, c = _load(run_dir)
-    return dict(run=m.get('run_id', run_dir.name), method='ode', beta='', omega='',
+    return dict(run=m.get('run_id', run_dir.name), method='ode', beta='', omega='', ratio='',
                 lambda_girs='', rho_temp='', rho_init='',
                 N=c.get('generate', {}).get('batch_size', ''),
                 K=c.get('test', {}).get('iterations', ''), rel_err=m.get('relative_error'),
