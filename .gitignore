@@ -20,7 +20,28 @@ __pycache__/
 venv/
 .opencode/
 
-# Generated binaries / large data (never source; match anywhere)
+# Build byproducts (never source, never a record; match anywhere). ".out"/".err"/".log" are
+# deliberately omitted because SLURM emits them as record logs (slurm/logs*); they are ignored
+# per-directory in the reference trees (docs/, literature/) instead. See docs/vision.md D17.
+*.aux
+*.blg
+*.bcf
+*.run.xml
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.toc
+*.lof
+*.lot
+*.nav
+*.snm
+*.vrb
+*.idx
+*.ind
+*.ilg
+*.thm
+
+# Generated binaries / large data (never source, never a record; match anywhere)
 *.pkl
 *.pt
 *.pth
@@ -29,4 +50,3 @@ venv/
 *.mat
 *.npy
 *.npz
-*.log

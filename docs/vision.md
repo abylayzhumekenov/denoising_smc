@@ -1,8 +1,8 @@
 # Vision and Decision Log — DiffusionPDE + Denoising SMC
 
-_Status snapshot: 2026-09-15. Repo: `denoising_smc` — the official DiffusionPDE reference
-implementation (Huang et al., NeurIPS 2024) plus a denoising / Sequential Monte Carlo (SMC)
-research extension._
+_Repo: `denoising_smc` — the official DiffusionPDE reference implementation (Huang et al.,
+NeurIPS 2024) plus a denoising / Sequential Monte Carlo (SMC) research extension. Living document:
+§1–§4 and §6–§8 describe the current state; §5 is an append-only decision log._
 
 This document is the single source of truth for the project's intent, structure, and the
 decisions taken along the way. It is agent-neutral: any LLM or human working here should read it
@@ -76,15 +76,16 @@ These principles generate the specific decisions in §5.
 | `generate_pde.py`, `scripts/generate_*.py`, `configs/*.yaml` | **Upstream ODE baseline only.** May use `common` (shared infra) but must not import from `smc/`. |
 | `scripts/generate_*.py` | Six PDE monoliths (Burgers, Darcy, Poisson, Helmholtz, NS bounded/non-bounded). |
 | `common/` | Shared project-owned infrastructure (results I/O; config, seeding, logging later). Imported by both baseline and SMC. |
-| `smc/` | **New SMC implementation** (currently empty; reserved with `.gitkeep`). |
+| `smc/` | **New SMC implementation** — Burgers monolith (`burgers.py`) + `proposals/gem.py` + `weightings/girsanov.py`. |
 | `smc_archive/scripts_1` | Frozen: toy (closed-form) SMC validation code. |
 | `smc_archive/scripts_2` | Frozen: real-model SMC (Burgers), GEM proposal, weightings, checks, old runner. |
 | `smc_archive/scripts_3` | Frozen: non-SMC newcomers (`sample_prior.py`, `generate_darcy_local.py`). |
-| `configs/smc/` | **(to be created)** SMC run configs, symmetric with `configs/`. |
-| `generate_pde_smc.py` | **(to be created)** SMC dispatcher, symmetric with `generate_pde.py`. |
-| `results/{ode,smc}/<pde>/<run_id>/` | Structured run outputs (resolved config, metrics, logs). |
-| `docs/note_1.pdf`, `docs/note_2.pdf`, `docs/note_4/` | Theory and comparison notes. |
-| `literature/` | Third-party papers and survey. |
+| `configs/smc/` | SMC run configs, symmetric with `configs/`. |
+| `generate_pde_smc.py` | SMC dispatcher, symmetric with `generate_pde.py`. |
+| `results/{ode,smc}/<pde>/<run_id>/` | Structured run outputs (resolved config, metrics, logs); ignored via placeholder. |
+| `slurm/logs1..3/`, `dcgm/`, `smc_archive/` | **Records** — tracked (job logs, GPU telemetry; D17). |
+| `docs/`, `literature/` | **Reference trees** — track sources and reference artifacts (PDFs, figures, `*.bbl`); ignore only transient LaTeX job output (D17). |
+| `docs/note_1.pdf`, `docs/note_2.pdf`, `docs/note_4/` | Theory and comparison notes; `literature/` is third-party papers + survey. |
 
 **Vendored-code constraint.** The pretrained `.pkl` checkpoints reference `torch_utils.persistence`
 (the `_reconstruct_persistent_obj` unpickle anchor) and `training.dataset.ImageFolderDataset` by
@@ -249,6 +250,21 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   residual discretization is the physical/conservative one (periodic space), not the released
   baseline's index-unit/zero-padded form.
 
+- **D17 (2026-09-29) — `.gitignore` location-total (extends D9; corrects D9's global `*.log`).**
+  One predicate decides every file: *output roots* (`data/`, `pretrained-models/`, `results/`,
+  `slurm/logs/`) are ignored wholesale via the D9 `*` / `!.gitignore` placeholders; *record trees*
+  (`slurm/logs1..N`, `dcgm/`, `smc_archive/`) are tracked, and no record path is ever encoded in an
+  ignore rule; *reference trees* (`docs/`, `literature/`) track hand-authored sources **and**
+  reference artifacts (PDFs, figures, `*.bbl`) and ignore only transient LaTeX job output (`*.out`,
+  `*.log`) via one recursive `.gitignore` each; everything else is tracked. Global *type* ignores are
+  reserved for never-source build byproducts (`*.aux`, `*.blg`, `*.bcf`, `*.run.xml`, `*.fls`,
+  `*.fdb_latexmk`, `*.synctex.gz`, `*.toc`, …) and never-record binaries; media/`.bbl`/`.out`/`*.err`/
+  `*.log` are never globally ignored. Vendored files (e.g. upstream `figures/.gitignore`s) are left
+  untouched. *Rationale:* SLURM emits `.out`/`.err`/`.log` as records, so D9's global `*.log` could
+  silently hide them, and resolving every role-dependent type by location makes each new file a
+  directory lookup instead of a per-extension debate. *Consequence:* `*.log` is removed from the root
+  list; the only residual maintenance is adding a new *output* root as a one-line placeholder.
+
 ---
 
 ## 6. Findings that inform the design
@@ -260,8 +276,9 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   `C_k = -bᵀz - ½δ‖b‖²` is the exact Gaussian kernel ratio only when guidance enters the drift
   (step-scaled). A flat state update yields a different ratio, so flat guidance + Girsanov is
   out-of-theory.
-- **The PDE residual is not a likelihood.** The current twist uses unsquared residual norms, so the
-  "target" is a tempered surrogate unless a genuine likelihood and terminal correction are specified.
+- **The PDE residual is not a likelihood.** The baseline's unsquared residual norms are a guidance
+  potential, not a likelihood. Since D16 the SMC uses Millard's squared, analytic raw-residual form
+  as its declared log-surrogate (still tempered, with no terminal correction).
 - **Millard et al. (2026, `literature/arXiv-2601.23262v2`).** Using the same pretrained models,
   they compare methods by reconstruction (relative L2), retune three likelihood weights and a
   tempering exponent, and use the SOSaG (jitter + 2nd-order) proposal with pseudo-bootstrap (pBS)
@@ -278,21 +295,19 @@ Ordered roughly:
 
 1. ~~Create `common/` with the shared results writer.~~ **(done)**
 2. ~~Route the six ODE scripts' outputs into `results/ode/<pde>/<run_id>/`.~~ **(done, D13)**
-3. **Implement the new Burgers SMC in `smc/`** — monolith + small helpers, wired to
-   `generate_pde_smc.py` and `configs/smc/burgers.yaml`, writing to `results/smc/`.
-   **Milestone:** runs on CPU at a small K and writes a structured run directory.
-4. **Finalize the `smc:` config fields** (likelihood parameter names, tempering key, run-id/out
-   options) — author to set after a working SMC.
-5. **Decide and add new checks** under the validation tier (start with the GEM↔TDS identity).
-6. **Sweep design** (one spec expanded at runtime) — deferred.
-7. **Modeling/algorithm follow-ups:** likelihood form settled to the baseline/Millard unsquared-norm
-   surrogate (D15); cross-PDE weight transferability deferred. Also: flat-guidance kernel ratio or
-   removal, terminal correction, SOSaG proposal, tempering sweeps.
-8. **New SMC slurm script** (`slurm/run_smc*.sbatch`) parameterized by config.
-9. **Stale docs:** delete/replace `slurm/README.md`; keep `README.md` upstream-oriented.
-
-Status snapshot (git): `00ee0e1` archive restructure · `d3a00bc` note_4 · `b29ca3e` note_4 `.bbl` ·
-`1ab2d8e` vision doc.
+3. ~~Implement the Burgers SMC in `smc/`~~ **(done).**
+4. ~~Finalize the `smc:` config fields~~ **(done; provisional, D6).**
+5. ~~Validation tier: GEM↔TDS identity check~~ **(done, D8).**
+6. **Sweep design** — one spec expanded at runtime; currently expressed as per-cell sbatch loops in
+   the `slurm/logs2` / `slurm/logs3` campaigns.
+7. **Modeling/algorithm follow-ups** — likelihood settled to Millard's squared analytic raw form
+   (D16); weight/`beta` calibration in progress (`slurm/logs2`). Open: cross-PDE weight
+   transferability, flat-guidance kernel ratio or removal, terminal correction, SOSaG proposal,
+   tempering sweeps.
+8. **New SMC slurm script** (`slurm/run_smc*.sbatch`) — partially met by the campaign sbatch files
+   under `slurm/logs1..3`; a config-parameterized runner is still open.
+9. ~~Stale docs~~ **(done): `slurm/README.md` removed; `README.md` SMC section refreshed; `AGENTS.md`
+   points here; this doc pruned.**
 
 ---
 
@@ -315,7 +330,7 @@ Status snapshot (git): `00ee0e1` archive restructure · `d3a00bc` note_4 · `b29
 - Data live in `(-1, 1)`; inverse-transform before PDE/observation losses. Per-PDE scale factors
   (Darcy: `a=(a+1.5)/0.2`, `u=(u+0.9)/115`; Burgers: `x*1.415`). The new SMC does the same through
   `to_network`/`to_raw` in `smc/burgers.py`: latent state/score/proposal stay normalized, the
-  likelihood and saved output are raw (D15).
+  likelihood and saved output are raw (D15/D16).
 - Pretrained models are `.pkl` pickles loaded via `pickle.load(f)['ema']` (~208 MB; git-ignored).
 - EDM ODE schedule: Heun 2nd order,
   `sigma_t = (sigma_max^(1/rho) + t/(N-1) (sigma_min^(1/rho) - sigma_max^(1/rho)))^rho`.

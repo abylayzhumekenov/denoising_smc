@@ -48,7 +48,7 @@ torchrun --standalone --nproc_per_node=3 train.py --outdir=pretrained-darcy-new 
 
 To solve the forward problem with sparse observation on the coefficient (or initial state) space, use, e.g.,
 
-```python
+```bash
 python3 generate_pde.py --config configs/darcy-forward.yaml
 ```
 
@@ -56,7 +56,7 @@ python3 generate_pde.py --config configs/darcy-forward.yaml
 
 To solve the inverse problem with sparse observation on the solution (or final state) space, use, e.g.,
 
-```python
+```bash
 python3 generate_pde.py --config configs/darcy-inverse.yaml
 ```
 
@@ -64,7 +64,7 @@ python3 generate_pde.py --config configs/darcy-inverse.yaml
 
 To simultaneously solve coefficient (initial state) space and solution (final state) space with sparse observations on both sides, use, e.g.,
 
-```python
+```bash
 python3 generate_pde.py --config configs/darcy.yaml
 ```
 
@@ -72,7 +72,7 @@ python3 generate_pde.py --config configs/darcy.yaml
 
 To recover the solution throughout a time interval with sparse sensors, use, e.g.,
 
-```python
+```bash
 python3 generate_pde.py --config configs/burgers.yaml
 ```
 
@@ -83,10 +83,12 @@ Please note that guidance weights could significantly influence the results. Wei
 ## SMC Extension
 
 This repo also contains an SMC (Sequential Monte Carlo) extension for diffusion-guided PDE solving:
-- [`docs/note_1.pdf`](docs/note_1.pdf) — Girsanov‑corrected SMC: $\lambda$-$\rho$ unified weight, toy model experiments and figures, appendices (kernel‑ratio verification, alternative discretisations)
-- [`docs/note_2.pdf`](docs/note_2.pdf) — V$_tau$ / Doob‑transform discretisation companion
-- [`smc/`](smc/) — SMC module (proposals, weights, Hutchinson estimator, validation scripts)
-- [`smc/scripts_1/toy_smc.py`](smc/scripts_1/toy_smc.py) — 1D Gaussian‑mixture toy: validates the four SMC weightings (pseudo‑bootstrap, Girsanov, potential, trapezoidal potential) against an analytic posterior as a uniform grid over twist (exact / surrogate / terminally‑consistent / plug‑in `N(y;D(x,σ),γ²)`), proposal (EM / Heun), and weighting. Tables T1–T4: validity, base grid, K/N convergence, γ² regime sweep (T2–T4 on the plug‑in baseline); 4‑seed mean±std. Writes figures to `smc/scripts_1/figures/` and LaTeX tables to `smc/scripts_1/tables/` (`.venv/bin/python smc/scripts_1/toy_smc.py`)
+- [`docs/note_1.pdf`](docs/note_1.pdf) — Girsanov-corrected SMC: lambda-rho unified weight, toy-model experiments and figures, appendices (kernel-ratio verification, alternative discretisations)
+- [`docs/note_2.pdf`](docs/note_2.pdf) — V_tau / Doob-transform discretisation companion
+- [`docs/note_4/`](docs/note_4/) — baseline-vs-SMC target comparison note
+- [`smc/`](smc/) — current SMC implementation: `burgers.py` (Burgers monolith), `proposals/gem.py` (guided Euler-Maruyama), `weightings/girsanov.py` (kernel-ratio weight)
+- [`generate_pde_smc.py`](generate_pde_smc.py) + [`configs/smc/`](configs/smc/) — SMC dispatcher and run configs
+- [`smc_archive/`](smc_archive/) — frozen exploratory code: toy validation (`scripts_1`), first real-model Burgers arm (`scripts_2`); do not edit, extend, or import
 
 ## License
 

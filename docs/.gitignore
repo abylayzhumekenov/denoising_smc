@@ -1,0 +1,5 @@
+# Reference tree: track hand-authored sources AND reference artifacts (PDFs, raster figures,
+# *.bbl). Only transient LaTeX job output is ignored here; build byproducts (*.aux/*.fls/...) are
+# handled globally in the root .gitignore (see docs/vision.md D17).
+*.out
+*.log
