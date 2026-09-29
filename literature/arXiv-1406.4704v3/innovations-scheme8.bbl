@@ -1,0 +1,241 @@
+\def\cprime{$'$}
+\begin{thebibliography}{38}
+\expandafter\ifx\csname natexlab\endcsname\relax\def\natexlab#1{#1}\fi
+
+\bibitem[{Beskos et~al.(2006)Beskos, Papaspiliopoulos, Roberts and
+  Fearnhead}]{BeskosPapaspiliopoulosRobertsFearnhead}
+Beskos, A., Papaspiliopoulos, O., Roberts, G.~O. and Fearnhead, P. (2006).
+\newblock Exact and computationally efficient likelihood-based estimation for
+  discretely observed diffusion processes.
+\newblock {\em J. R. Stat. Soc. Ser. B Stat. Methodol.\/} {\bf 68}(3),
+  333--382.
+\newblock With discussions and a reply by the authors.
+
+\bibitem[{Bezanson et~al.(2012)Bezanson, Karpinski, Shah and Edelman}]{julia}
+Bezanson, J., Karpinski, S., Shah, V.~B. and Edelman, A. (2012).
+\newblock Julia: A fast dynamic language for technical computing.
+\newblock {\em CoRR\/} {\bf abs/1209.5145}.
+
+\bibitem[{Bladt and S{\o}rensen(2014)}]{Bladt}
+Bladt, M. and S{\o}rensen, M. (2014).
+\newblock Simple simulation of diffusion bridges with application to likelihood
+  inference for diffusions.
+\newblock {\em Bernoulli\/} {\bf 20}(2), 645--675.
+
+\bibitem[{Bladt and S{\o}rensen(2015)}]{Bladt2}
+Bladt, M. and S{\o}rensen, M. (2015).
+\newblock Simulation of multivariate diffusion bridges.
+\newblock {\em To appear in Journal of the Royal Statistical Society, series
+  B\/} .
+
+\bibitem[{Chib et~al.(2004)Chib, Pitt and Shephard}]{ChibPittShephard}
+Chib, S., Pitt, M.~K. and Shephard, N. (2004).
+\newblock {Likelihood based inference for diffusion driven models}.
+\newblock Economics Papers 2004-W20, Economics Group, Nuffield College,
+  University of Oxford.
+
+\bibitem[{Clark(1990)}]{Clark}
+Clark, J. M.~C. (1990).
+\newblock The simulation of pinned diffusions.
+\newblock In {\em Decision and Control, 1990., Proceedings of the 29th IEEE
+  Conference on\/}, pp. 1418--1420. IEEE.
+
+\bibitem[{Delyon and Hu(2006)}]{DelyonHu}
+Delyon, B. and Hu, Y. (2006).
+\newblock Simulation of conditioned diffusion and application to parameter
+  estimation.
+\newblock {\em Stochastic Processes and their Applications\/} {\bf 116}(11),
+  1660 -- 1675.
+
+\bibitem[{Durham and Gallant(2002)}]{DurhamGallant}
+Durham, G.~B. and Gallant, A.~R. (2002).
+\newblock Numerical techniques for maximum likelihood estimation of
+  continuous-time diffusion processes.
+\newblock {\em J. Bus. Econom. Statist.\/} {\bf 20}(3), 297--338.
+\newblock With comments and a reply by the authors.
+
+\bibitem[{Elerian et~al.(2001)Elerian, Chib and Shephard}]{ElerianChibShephard}
+Elerian, O., Chib, S. and Shephard, N. (2001).
+\newblock Likelihood inference for discretely observed nonlinear diffusions.
+\newblock {\em Econometrica\/} {\bf 69}(4), 959--993.
+
+\bibitem[{Eraker(2001)}]{Eraker}
+Eraker, B. (2001).
+\newblock M{CMC} analysis of diffusion models with application to finance.
+\newblock {\em J. Bus. Econom. Statist.\/} {\bf 19}(2), 177--191.
+
+\bibitem[{Fuchs(2013)}]{Fuchs}
+Fuchs, C. (2013).
+\newblock {\em Inference for diffusion processes\/}.
+\newblock Springer, Heidelberg.
+\newblock With applications in life sciences, With a foreword by Ludwig
+  Fahrmeir.
+
+\bibitem[{Golightly and Wilkinson(2010)}]{GolightlyWilkinsonChapter}
+Golightly, A. and Wilkinson, D.~J. (2010).
+\newblock {\em Learning and Inference in Computational Systems Biology\/},
+  chapter {Markov chain Monte Carlo algorithms for SDE parameter estimation},
+  pp. 253--276.
+\newblock MIT Press.
+
+\bibitem[{Gugushvili and Spreij(2012)}]{GugushviliSpreij}
+Gugushvili, S. and Spreij, P. (2012).
+\newblock Parametric inference for stochastic differential equations: a smooth
+  and match approach.
+\newblock {\em ALEA Lat. Am. J. Probab. Math. Stat.\/} {\bf 9}(2), 609--635.
+
+\bibitem[{Gy{\"o}ngy(1998)}]{Gyongy}
+Gy{\"o}ngy, I. (1998).
+\newblock A note on {E}uler's approximations.
+\newblock {\em Potential Anal.\/} {\bf 8}(3), 205--216.
+
+\bibitem[{Jensen et~al.(2012)Jensen, Ditlevsen, Kessler and
+  Papaspiliopoulos}]{JensenDitlevsen}
+Jensen, A.~C., Ditlevsen, S., Kessler, M. and Papaspiliopoulos, O. (2012).
+\newblock Markov chain {M}onte {C}arlo approach to parameter estimation in the
+  {F}itz{H}ugh-{N}agumo model.
+\newblock {\em Phys. Rev. E\/} {\bf 86}, 041114.
+
+\bibitem[{Jensen(2014)}]{Jensen}
+Jensen, C., Anders (2014).
+\newblock {\em Statistical Inference for Partially Observed Diffusion
+  Processes\/}.
+\newblock Ph.d. Thesis University of Copenhagen.
+
+\bibitem[{Khasminskii and Klebaner(2001)}]{KhasminskiiKlebaner}
+Khasminskii, R.~Z. and Klebaner, F.~C. (2001).
+\newblock Long term behavior of solutions of the {L}otka-{V}olterra system
+  under small random perturbations.
+\newblock {\em Ann. Appl. Probab.\/} {\bf 11}(3), 952--963.
+
+\bibitem[{K{\"u}chler and S{\o}rensen(1997)}]{Kuchler-Sorensen}
+K{\"u}chler, U. and S{\o}rensen, M. (1997).
+\newblock {\em Exponential families of stochastic processes\/}.
+\newblock Springer Series in Statistics. Springer-Verlag, New York.
+
+\bibitem[{Lin et~al.(2010)Lin, Chen and Mykland}]{LinChenMykland}
+Lin, M., Chen, R. and Mykland, P. (2010).
+\newblock On generating {M}onte {C}arlo samples of continuous diffusion
+  bridges.
+\newblock {\em J. Amer. Statist. Assoc.\/} {\bf 105}(490), 820--838.
+
+\bibitem[{Papaspiliopoulos and Roberts(2012)}]{PapaspiliopoulosRoberts}
+Papaspiliopoulos, O. and Roberts, G. (2012).
+\newblock Importance sampling techniques for estimation of diffusion models.
+\newblock In {\em Statistical Methods for Stochastic Differential Equations\/},
+  Monographs on Statistics and Applied Probability, p. 311–337. Chapman and
+  Hall.
+
+\bibitem[{Papaspiliopoulos et~al.(2003)Papaspiliopoulos, Roberts and
+  Sk{\"o}ld}]{PapasRobertsSkoeld}
+Papaspiliopoulos, O., Roberts, G.~O. and Sk{\"o}ld, M. (2003).
+\newblock Non-centered parameterizations for hierarchical models and data
+  augmentation.
+\newblock In {\em Bayesian statistics, 7 ({T}enerife, 2002)\/}, pp. 307--326.
+  Oxford Univ. Press, New York.
+\newblock With a discussion by Alan E. Gelfand, Ole F. Christensen and Darren
+  J. Wilkinson, and a reply by the authors.
+
+\bibitem[{Papaspiliopoulos et~al.(2013)Papaspiliopoulos, Roberts and
+  Stramer}]{PapaRobertsStramer}
+Papaspiliopoulos, O., Roberts, G.~O. and Stramer, O. (2013).
+\newblock Data {A}ugmentation for {D}iffusions.
+\newblock {\em J. Comput. Graph. Statist.\/} {\bf 22}(3), 665--688.
+
+\bibitem[{Pedersen(1995)}]{Pedersen}
+Pedersen, A.~R. (1995).
+\newblock Consistency and asymptotic normality of an approximate maximum
+  likelihood estimator for discretely observed diffusion processes.
+\newblock {\em Bernoulli\/} {\bf 1}(3), 257--279.
+
+\bibitem[{Roberts and Stramer(2001)}]{RobertsStramer}
+Roberts, G.~O. and Stramer, O. (2001).
+\newblock On inference for partially observed nonlinear diffusion models using
+  the {M}etropolis-{H}astings algorithm.
+\newblock {\em Biometrika\/} {\bf 88}(3), 603--621.
+
+\bibitem[{Rogers and Williams(2000)}]{RogersWilliams2}
+Rogers, L. C.~G. and Williams, D. (2000).
+\newblock {\em Diffusions, {M}arkov processes, and martingales. {V}ol. 2\/}.
+\newblock Cambridge Mathematical Library. Cambridge University Press,
+  Cambridge.
+\newblock It{\^o} calculus, Reprint of the second (1994) edition.
+
+\bibitem[{Rosenthal(2011)}]{RosenthalChapter}
+Rosenthal, J.~S. (2011).
+\newblock {\em {Handbook of Markov Chain Monte Carlo (Chapman \& Hall/CRC
+  Handbooks of Modern Statistical Methods)}\/}, chapter Optimal proposal
+  distributions and adaptive MCMC.
+\newblock Chapman and Hall/CRC, 1 edition.
+
+\bibitem[{Schauer et~al.(2016)Schauer, Van~der Meulen and Van~Zanten}]{Schauer}
+Schauer, M., Van~der Meulen, F.~H. and Van~Zanten, J.~H. (2016).
+\newblock Guided proposals for simulating multi-dimensional diffusion bridges.
+\newblock {\em Accepted for publication in Bernoulli. ArXiv e-prints
+  1311.3606\/} .
+
+\bibitem[{Sermaidis et~al.(2013)Sermaidis, Papaspiliopoulos, Roberts, Beskos
+  and Fearnhead}]{Sermaidis}
+Sermaidis, G., Papaspiliopoulos, O., Roberts, G.~O., Beskos, A. and Fearnhead,
+  P. (2013).
+\newblock Markov chain {M}onte {C}arlo for exact inference for diffusions.
+\newblock {\em Scand. J. Stat.\/} {\bf 40}(2), 294--321.
+
+\bibitem[{S\o{}rensen(2004)}]{Sorensen}
+S\o{}rensen, H. (2004).
+\newblock {Parametric Inference for Diffusion Processes Observed at Discrete
+  Points in Time: a Survey}.
+\newblock {\em Internat. Statist. Rev.\/} {\bf 72}, 337--354.
+
+\bibitem[{Steiner and Gander(1999)}]{SteinerGander}
+Steiner, A. and Gander, M.~J. (1999).
+\newblock Parametrische l{\"o}sungen der r{\"a}uber-beute-gleichungen im
+  vergleich.
+\newblock {\em Il Volterriano\/} (7), 32--44.
+
+\bibitem[{Stramer and Bognar(2011)}]{StramerBognar}
+Stramer, O. and Bognar, M. (2011).
+\newblock Bayesian inference for irreducible diffusion processes using the
+  pseudo-marginal approach.
+\newblock {\em Bayesian Anal.\/} {\bf 6}(2), 231--258.
+
+\bibitem[{Tierney(1998)}]{tierneyAnnapl}
+Tierney, L. (1998).
+\newblock A note on metropolis-hastings kernels for general state spaces.
+\newblock {\em Ann. Appl. Probab.\/} {\bf 8}(1), 1--9.
+
+\bibitem[{{van der Meulen} and {Schauer}(2016)}]{vdm-schauer}
+{van der Meulen}, F. and {Schauer}, M. (2016).
+\newblock {Bayesian estimation of incompletely observed diffusions}.
+\newblock {\em ArXiv e-prints\/} .
+
+\bibitem[{Van~der Meulen et~al.(2014)Van~der Meulen, Schauer and
+  Van~Zanten}]{vdMeulen}
+Van~der Meulen, F.~H., Schauer, M. and Van~Zanten, J.~H. (2014).
+\newblock Reversible jump {MCMC} for nonparametric drift estimation for
+  diffusion processes.
+\newblock {\em Comput. Statist. Data Anal.\/} {\bf 71}, 615--632.
+
+\bibitem[{Van~der Meulen and Van~Zanten(2013)}]{vdMeulenvZanten}
+Van~der Meulen, F.~H. and Van~Zanten, J.~H. (2013).
+\newblock Consistent nonparametric {B}ayesian inference for discretely observed
+  scalar diffusions.
+\newblock {\em Bernoulli\/} {\bf 19}(1), 44--63.
+
+\bibitem[{Van~Zanten(2013)}]{vZanten}
+Van~Zanten, J.~H. (2013).
+\newblock Nonparametric bayesian methods for one-dimensional diffusion models.
+\newblock {\em Mathematical biosciences\/} {\bf 243}(2), 215--222.
+
+\bibitem[{{Vats} et~al.(2015){Vats}, {Flegal} and {Jones}}]{vats}
+{Vats}, D., {Flegal}, J.~M. and {Jones}, G.~L. (2015).
+\newblock {Multivariate Output Analysis for Markov chain Monte Carlo}.
+\newblock {\em ArXiv e-prints\/} .
+
+\bibitem[{Whitaker et~al.(2015)Whitaker, Golightly, Boys and
+  Sherlock}]{Whitaker}
+Whitaker, G.~A., Golightly, A., Boys, R.~J. and Sherlock, C. (2015).
+\newblock Improved bridge constructs for stochastic differential equations.
+\newblock {\em ArXiv eprints\/} .
+
+\end{thebibliography}

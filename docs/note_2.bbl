@@ -1,0 +1,38 @@
+\begin{thebibliography}{5}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Chopin and Papaspiliopoulos(2020)]{chopin2020smc}
+Nicolas Chopin and Omiros Papaspiliopoulos.
+\newblock \emph{{An Introduction to Sequential Monte Carlo}}, volume~4.
+\newblock Springer, 2020.
+
+\bibitem[Karras et~al.(2022)Karras, Aittala, Aila, and Laine]{karras2022edm}
+Tero Karras, Miika Aittala, Timo Aila, and Samuli Laine.
+\newblock {Elucidating the Design Space of Diffusion-Based Generative Models},
+  2022.
+\newblock URL \url{https://openreview.net/forum?id=k7FuTOWMOc7}.
+
+\bibitem[Millard et~al.(2026)Millard, Lindsten, and Zhao]{millard2026particle}
+Andrew Millard, Fredrik Lindsten, and Zheng Zhao.
+\newblock {Particle-Guided Diffusion Models for PDEs}, 2026.
+\newblock arXiv:2601.23262, ICML 2026.
+
+\bibitem[{\O}ksendal(2003)]{ksendal}
+Bernt {\O}ksendal.
+\newblock \emph{{Stochastic Differential Equations: An Introduction with
+  Applications}}.
+\newblock Springer, 6th edition, 2003.
+
+\bibitem[Wu et~al.(2023)Wu, Trippe, Naesseth, Blei, and Cunningham]{wu2023tds}
+Luhuan Wu, Brian~L. Trippe, Christian~A. Naesseth, David Blei, and John~Patrick
+  Cunningham.
+\newblock {Practical and Asymptotically Exact Conditional Sampling in Diffusion
+  Models}.
+\newblock In \emph{Advances in Neural Information Processing Systems 36}, 2023.
+\newblock URL \url{https://openreview.net/forum?id=eWKqr1zcRv}.
+
+\end{thebibliography}
