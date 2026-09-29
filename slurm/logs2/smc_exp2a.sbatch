@@ -1,7 +1,7 @@
 #!/bin/bash
-# exp2a (Stage 1: beta calibration, part 1): ODE baseline + SMC beta in {1, 10},
-# omega = 2e-4 * beta (the cheap balance calibration), lambda_girs=1, rho_temp=rho_temp_init=1,
-# K=2000, N=8. Goal: locate the overall guidance scale (beta) at large K.
+# exp2a (Stage 1: beta x ratio likelihood sweep, beta=1000): ODE baseline + SMC at
+# r = omega/beta in {0, 1e-3, 3e-3, 1e-2} (omega = 0, 1, 3, 10), lambda_girs=1,
+# rho_temp=rho_temp_init=1, K=2000, N=8.
 #   sbatch slurm/logs2/smc_exp2a.sbatch      (or: bash slurm/logs2/submit_exp2.sh)
 #SBATCH --job-name=exp2a
 #SBATCH --chdir=/home/alvarem/denoising_smc
@@ -26,20 +26,21 @@ export PYTORCH_CUDA_ALLOC_CONF=expandable_segments:True
 export PYTHONUNBUFFERED=1
 
 CFG=configs/smc/burgers.yaml
-N_PARTICLES="${N_PARTICLES:-8}"
-NUM_STEPS="${NUM_STEPS:-2000}"
 
 echo "=== $(date -Is) ode ==="
 python3 generate_pde.py --config configs/burgers.yaml
 
-# beta in {1, 10}, omega = 2e-4 * beta
-for b in 1 10; do
-  w=$(python3 -c "print($b * 2e-4)")
-  echo "=== $(date -Is) exp2_b${b}_l1 ==="
-  python3 generate_pde_smc.py --config $CFG --n-particles "$N_PARTICLES" --num-steps "$NUM_STEPS" \
-    --obs-weight "$b" --pde-weight "$w" --rho-temp 1 --rho-temp-init 1 --lambda-girs 1 \
-    --run-id "exp2_b${b}_l1"
-done
+echo "=== $(date -Is) exp2_b1000_r0 ==="
+python3 generate_pde_smc.py --config $CFG --n-particles 8 --num-steps 2000 --obs-weight 1000 --pde-weight 0 --rho-temp 1 --rho-temp-init 1 --lambda-girs 1 --run-id exp2_b1000_r0
+
+echo "=== $(date -Is) exp2_b1000_r1em3 ==="
+python3 generate_pde_smc.py --config $CFG --n-particles 8 --num-steps 2000 --obs-weight 1000 --pde-weight 1 --rho-temp 1 --rho-temp-init 1 --lambda-girs 1 --run-id exp2_b1000_r1em3
+
+echo "=== $(date -Is) exp2_b1000_r3em3 ==="
+python3 generate_pde_smc.py --config $CFG --n-particles 8 --num-steps 2000 --obs-weight 1000 --pde-weight 3 --rho-temp 1 --rho-temp-init 1 --lambda-girs 1 --run-id exp2_b1000_r3em3
+
+echo "=== $(date -Is) exp2_b1000_r1em2 ==="
+python3 generate_pde_smc.py --config $CFG --n-particles 8 --num-steps 2000 --obs-weight 1000 --pde-weight 10 --rho-temp 1 --rho-temp-init 1 --lambda-girs 1 --run-id exp2_b1000_r1em2
 
 echo "=== $(date -Is) aggregate ==="
 python3 slurm/logs2/aggregate_exp2.py

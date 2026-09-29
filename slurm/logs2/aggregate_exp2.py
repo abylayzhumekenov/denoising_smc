@@ -2,11 +2,12 @@
 
 Run at the end of each exp2 sbatch (and any time by hand). Scans ``results/``, filters to the
 campaign settings (ODE: ``test.iterations == K``; SMC: ``num_steps == K``, ``n_particles == N``,
-``run_id`` starts with ``PREFIX``), writes ``slurm/logs2/exp2_table.md`` and prints it. Safe with
-partial or no results.
+``run_id`` starts with ``PREFIX``), and drops the superseded legacy 1-D scan rows (``run_id``
+ending in ``LEGACY_SUFFIX``). Writes ``slurm/logs2/exp2_table.md`` and prints it. Safe with partial
+or no results.
 
 Env overrides (used by local smoke tests): ``EXP2_K`` (2000), ``EXP2_N`` (8),
-``EXP2_PREFIX`` (exp2), ``EXP2_OUT`` (slurm/logs2/exp2_table.md).
+``EXP2_PREFIX`` (exp2), ``EXP2_LEGACY_SUFFIX`` (_l1), ``EXP2_OUT`` (slurm/logs2/exp2_table.md).
 """
 
 import json
@@ -24,6 +25,7 @@ OUT = Path(os.environ.get('EXP2_OUT', 'slurm/logs2/exp2_table.md'))
 K = int(os.environ.get('EXP2_K', '2000'))
 N = int(os.environ.get('EXP2_N', '8'))
 PREFIX = os.environ.get('EXP2_PREFIX', 'exp2')
+LEGACY_SUFFIX = os.environ.get('EXP2_LEGACY_SUFFIX', '_l1')
 
 
 def _load(run_dir):
@@ -82,7 +84,8 @@ for p in sorted((ROOT / 'smc' / 'burgers').glob('*/metrics.json')):
         r = _smc_row(p.parent)
     except Exception:
         continue
-    if r['K'] == K and r['N'] == N and str(r['run']).startswith(PREFIX):
+    if (r['K'] == K and r['N'] == N and str(r['run']).startswith(PREFIX)
+            and not str(r['run']).endswith(LEGACY_SUFFIX)):
         rows.append(r)
 
 lines = [f'<!-- exp2 table, generated {time.strftime("%Y-%m-%d %H:%M:%S")}, {len(rows)} runs -->',
