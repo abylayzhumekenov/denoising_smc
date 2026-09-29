@@ -216,7 +216,8 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   documented so comparisons are explicit. Raw-unit `relative_error` is the primary reported metric
   (baseline comparability); a normalized `relative_error_norm` is stored for diagnostics.
 
-- **D15 (2026-09-22) — Raw-units guidance; follow Millard/baseline (supersedes D14(ii)).** The latent
+- **D15 (2026-09-22) — Raw-units guidance; follow Millard/baseline (supersedes D14(ii); its loss form
+  and residual are superseded by D16).** The latent
   `x`, the score `(D-x)/sigma^2`, the EM step and the Girsanov weight stay in the network's latent
   units; the likelihood/guidance is evaluated on the raw field `u = to_raw(D) = FIELD_SCALE*D` against
   the raw ground truth, exactly as the released baseline and Millard do. `to_network`/`to_raw`
@@ -232,6 +233,21 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   *Consequence:* the SMC likelihood operator now matches the baseline exactly (verified numerically in
   a temporary check); a temporary unit check also confirms the score uses latent `D`, the raw/raw obs
   term is 0, and the guidance gradient equals the FD of the raw-units `ell`.
+
+- **D16 (2026-09-29) — Millard squared likelihood over the analytic raw PDE; weights are per-problem.**
+  Keep D15's units (latent SMC + `to_network`/`to_raw`, likelihood on the raw field `u`), but restore
+  the proper likelihood: `l_obs = (1/n) Σ mask*(u-u_gt)^2`, `l_res = (1/m) Σ f(u)^2`,
+  `ell = -obs_weight*l_obs - pde_weight*l_res`, with the *analytic raw* Burgers residual
+  `f = u_t + d_x(u^2/2) - nu*u_xx` (physical derivatives, periodic space, replicate time). This
+  supersedes D15's "mirrors the released baseline losses; weights 320/1000". *Rationale:* the
+  baseline's loss is a guidance potential for a deterministic ODE, not a likelihood, and its `zeta`s
+  have no meaning for our log-surrogate; making the residual/L2 terms invariant to units,
+  discretization, and physics would require reformulating each PDE in the normalized field's
+  coordinates (rejected as too complex). *Consequence:* `obs_weight`/`pde_weight` (and `gamma` where
+  an `a` field exists) absorb all discretization/physics/unit scaling and are tuned per problem —
+  explicitly **not** claimed O(1)-invariant or portable. `residual_scale`/`F` is not used, and the
+  residual discretization is the physical/conservative one (periodic space), not the released
+  baseline's index-unit/zero-padded form.
 
 ---
 

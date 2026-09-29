@@ -23,10 +23,8 @@ smc:
   lambda_girs: 1.0
   resample_threshold: 0.5
   likelihood:
-    # Guidance weights on the raw-units losses (unsquared L2 norms, index-unit residual).
-    # obs_weight kept at the baseline's early-phase zeta_obs=320 (preserves the observation
-    # weight/guidance strength); pde_weight set so omega/beta ~= zeta_pde/(zeta_obs/10) ~= 3.1,
-    # i.e. the baseline's late-phase obs:pde balance, lifting the PDE drift share from ~0.6%
-    # (at 100) to ~5%. The guidance is delta-scaled, so these are independent of K. Tuned per PDE.
-    obs_weight: 320.0
-    pde_weight: 1000.0
+    # Guidance weights on Millard's squared raw-units losses (l_obs = mean mask*(u-u_gt)^2,
+    # l_res = mean f(u)^2). They absorb all units/discretization/physics scaling and are tuned
+    # per problem (no invariance/transfer claim); start at 1 and tune.
+    obs_weight: 1.0
+    pde_weight: 1.0

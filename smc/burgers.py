@@ -4,13 +4,13 @@ Method (Millard et al. 2026 convention; see docs/vision.md):
 
 * **Units.** The reverse SDE, the score, the proposal and the Girsanov weight all live in the
   network's *latent* (training / "normalized") units. The likelihood/guidance is evaluated on
-  the *raw* field ``u = to_raw(D)`` against the raw observations, exactly as the released ODE
-  baseline and Millard's PDE likelihoods do. ``to_network``/``to_raw`` are the only place the
-  two unit systems meet; the score/proposal never see them.
-* **Likelihood**: ``ell = -obs_weight * L_obs - pde_weight * L_pde`` with the released losses
-  ``L_obs = ||mask*(u - u_gt)||_2 / n`` and ``L_pde = ||u_t + u*u_x - nu*u_xx||_2 / m``
-  (index-unit central differences, zero padding -- see ``scripts/generate_burgers.get_burger_loss``);
-  ``obs_weight``/``pde_weight`` are tuned per PDE.
+  the *raw* field ``u = to_raw(D)`` against the raw observations. ``to_network``/``to_raw`` are
+  the only place the two unit systems meet; the score/proposal never see them.
+* **Likelihood** (Millard's squared form): ``ell = -obs_weight * l_obs - pde_weight * l_res`` with
+  ``l_obs = (1/n) sum mask*(u - u_gt)^2`` and ``l_res = (1/m) sum f(u)^2`` over the *raw* field
+  ``u``, where ``f = u_t + d_x(u^2/2) - nu*u_xx`` (physical derivatives, periodic space).  The
+  weights ``obs_weight``/``pde_weight`` absorb all units/discretization/physics scaling and are
+  tuned per problem (no invariance claim).
 * **Proposal**: guided Euler--Maruyama (`smc/proposals/gem.py`), delta-scaled guidance with
   ``b = grad_x ell``; ``+delta * b`` descends the loss (same sign as Millard's guidance). Score
   convention: ``nabla_log_p = (D - x) / sigma**2`` is the true score ``+grad log p`` (Tweedie).
@@ -21,10 +21,11 @@ Method (Millard et al. 2026 convention; see docs/vision.md):
 
 Units / data normalization.  ``FIELD_SCALE = 1.415`` is the documented training normalization for
 Burgers (the released ODE baseline denormalizes with ``*1.415``; ``merge_data.py`` documents the
-inverse-transform principle; see ``docs/vision.md`` D14).  The raw field is ``u = to_raw(v)``.
+inverse-transform principle; see ``docs/vision.md`` D15/D16).  The raw field is ``u = to_raw(v)``.
 The denoiser's output ``D`` is already in latent units, so the score ``(D - x)/sigma**2`` is used
-as-is; only the likelihood and the saved output go through ``to_raw``.  In the likelihood the
-field and the reference must both be raw (never mixed).
+as-is; only the likelihood and the saved output go through ``to_raw``, and the likelihood evaluates
+the *original raw PDE* on ``u``.  In the likelihood the field and the reference must both be raw
+(never mixed).
 
 The declared surrogate *is* the target (no oracle); see docs/note_4 and docs/vision.md.
 """
@@ -46,6 +47,8 @@ from torch_utils.misc import auto_device
 # Problem definitions (PDE + grid + declared data normalization); no tuned parameters.
 FIELD_SCALE = 1.415           # raw = FIELD_SCALE * v  (documented training normalization, ~sqrt(2))
 VISCOSITY = 0.01              # nu, from dataset_generation/burgers/burgers1.m (visc = 1/100)
+DOMAIN_LENGTH = 1.0           # x in [0, 1], periodic
+TIME_SPAN = 1.0               # t in [0, 1]
 
 
 def to_network(u_raw):
@@ -81,35 +84,41 @@ def random_sensor(k, grid_size, seed=0, device=None):
     return index
 
 
-def burger_residual_raw(u):
-    """Burgers residual in *raw* units, ``u`` of shape ``[N, 1, N_t, N_x]``.
+def burger_residual(u):
+    """Conservative Burgers residual in *raw* units, ``u`` of shape ``[N, 1, N_t, N_x]``.
 
-    ``f = u_t + u*u_x - nu*u_xx`` with the released baseline's index-unit central differences
-    and zero padding (cf. ``scripts/generate_burgers.get_burger_loss``).  Note: no grid-spacing
-    division -- this is the convention whose weights the baseline/Millard tuned.  Returns
+    ``f = u_t + d_x(u^2/2) - nu*u_xx`` with physical derivatives (divided by the grid spacing):
+    periodic in space, replicated in time.  This is the analytic raw Burgers residual; the
+    discretization/scale is absorbed by ``pde_weight`` (see docs/vision.md), so it deliberately
+    does *not* mirror the released baseline's index-unit/zero-padded form.  Returns
     ``[N, N_t, N_x]``.
     """
-    deriv_t = torch.tensor([[-1.0], [0.0], [1.0]], dtype=torch.float64, device=u.device)
-    deriv_t = deriv_t.view(1, 1, 3, 1) / 2
-    deriv_x = torch.tensor([[-1.0, 0.0, 1.0]], dtype=torch.float64, device=u.device)
-    deriv_x = deriv_x.view(1, 1, 1, 3) / 2
+    n_t, n_x = u.shape[-2], u.shape[-1]
+    dt = TIME_SPAN / (n_t - 1)
+    dx = DOMAIN_LENGTH / n_x
+    kernel_t = torch.tensor([[-1.0], [0.0], [1.0]], dtype=torch.float64, device=u.device)
+    kernel_t = kernel_t.view(1, 1, 3, 1) / (2 * dt)
+    kernel_x = torch.tensor([[-1.0, 0.0, 1.0]], dtype=torch.float64, device=u.device)
+    kernel_x = kernel_x.view(1, 1, 1, 3) / (2 * dx)
 
-    u_t = F.conv2d(u, deriv_t, padding=(1, 0))
-    u_x = F.conv2d(u, deriv_x, padding=(0, 1))
-    u_xx = F.conv2d(u_x, deriv_x, padding=(0, 1))
-    return (u_t + u * u_x - VISCOSITY * u_xx).squeeze(1)
+    u_t = F.conv2d(F.pad(u, (0, 0, 1, 1), mode='replicate'), kernel_t)
+    flux_x = F.conv2d(F.pad(0.5 * u ** 2, (1, 1, 0, 0), mode='circular'), kernel_x)
+    u_xx = F.conv2d(F.pad(F.conv2d(F.pad(u, (1, 1, 0, 0), mode='circular'), kernel_x),
+                          (1, 1, 0, 0), mode='circular'), kernel_x)
+    return (u_t + flux_x - VISCOSITY * u_xx).squeeze(1)
 
 
 def term_losses(u, u_gt, mask):
-    """Per-term raw-units losses ``(L_obs, L_pde)``, each shape ``[N]``.
+    """Squared per-term losses (raw units), each shape ``[N]`` (Millard's likelihood form).
 
-    ``L_obs = ||mask*(u - u_gt)||_2 / n``, ``L_pde = ||f(u)||_2 / m`` (the released baseline's
-    unsquared norms).  ``u`` and ``u_gt`` must both be raw units.
+    ``L_obs = (1/n) sum mask*(u - u_gt)^2``, ``L_pde = (1/m) sum f(u)^2``.  ``obs_weight``/
+    ``pde_weight`` absorb all units/discretization/physics scaling (see docs/vision.md).  ``u``
+    and ``u_gt`` must both be raw units.
     """
-    pde = burger_residual_raw(u)                    # [N, N_t, N_x], raw units
+    f = burger_residual(u)                          # [N, N_t, N_x], raw units
     obs = (u.squeeze(1) - u_gt) * mask              # [N, N_t, N_x]
-    L_obs = obs.norm(dim=(1, 2)) / mask.sum()
-    L_pde = pde.norm(dim=(1, 2)) / (pde.shape[-1] * pde.shape[-2])
+    L_obs = (obs ** 2).sum(dim=(1, 2)) / mask.sum()
+    L_pde = (f ** 2).sum(dim=(1, 2)) / (f.shape[-1] * f.shape[-2])
     return L_obs, L_pde
 
 
