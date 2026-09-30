@@ -1,0 +1,30 @@
+Loading module for CUDA 11.8
+CUDA 11.8 is now loaded
+GNU 12.2.0 is now loaded
+SQLite3 3.40.1 is now loaded
+Loading module for Python
+Python 3.11.0 is now loaded
+ -----------------------------
+To install additional python libraries/packages (to YOUR $HOME directory), please do the following:
+   mkdir -p $PYTHON_LIBS
+   pip install --prefix=$PYTHON_LIBS <your python_lib name>
+   Example: 
+           pip install --prefix=$PYTHON_LIBS biopython
+ -----------------------------
+
+Loading python/3.11.0
+  Loading requirement: gcc/12.2.0 sqlite/3.40.1/gnu-12.2.0
+=== 2026-09-29T16:07:11+03:00 exp2_b100_l1 ===
+saved run to results/smc/burgers/exp2_b100_l1
+=== 2026-09-29T16:28:15+03:00 exp2_b1000_l1 ===
+saved run to results/smc/burgers/exp2_b1000_l1
+=== 2026-09-29T16:48:53+03:00 aggregate ===
+<!-- exp2 table, generated 2026-09-29 16:48:54, 5 runs -->
+| run | method | beta | omega | lambda_girs | rho_temp | rho_init | N | K | rel_err | frac_obs | frac_pde | ess_mean | ess_last | seed |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 20260921-120101_84ee87 | ode |  |  |  |  |  | 1 | 2000 | 0.05207246080961144 |  |  |  |  | 0 |
+| 20260929-161726_84ee87 | ode |  |  |  |  |  | 1 | 2000 | 0.052088235301414744 |  |  |  |  | 0 |
+| exp2_b1000_l1 | smc | 1000.0 | 0.2 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 0.368636555034945 | 0.9727866287928899 | 0.027190888747406574 | 5.991038268603889 | 7.935261524453394 | 0 |
+| exp2_b100_l1 | smc | 100.0 | 0.02 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 1.1554498772494926 | 0.992226926480273 | 0.007710846740415168 | 5.087017426763431 | 4.858039657441969 | 0 |
+| exp2_b1_l1 | smc | 1.0 | 0.0002 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 1.290564425168917 | 0.9967939559446205 | 0.00318559684460633 | 7.996532604121232 | 7.995230792868926 | 0 |
+=== 2026-09-29T16:48:54+03:00 done ===

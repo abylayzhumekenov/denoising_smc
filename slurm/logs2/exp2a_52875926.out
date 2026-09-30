@@ -1,3 +1,35 @@
+Loading module for CUDA 11.8
+CUDA 11.8 is now loaded
+GNU 12.2.0 is now loaded
+SQLite3 3.40.1 is now loaded
+Loading module for Python
+Python 3.11.0 is now loaded
+ -----------------------------
+To install additional python libraries/packages (to YOUR $HOME directory), please do the following:
+   mkdir -p $PYTHON_LIBS
+   pip install --prefix=$PYTHON_LIBS <your python_lib name>
+   Example: 
+           pip install --prefix=$PYTHON_LIBS biopython
+ -----------------------------
+
+Loading python/3.11.0
+  Loading requirement: gcc/12.2.0 sqlite/3.40.1/gnu-12.2.0
+=== 2026-09-30T09:38:40+03:00 ode ===
+Solving Burgers equation...
+Loading networks from "pretrained-models/pretrained-burgers.pkl"...
+Generating 1 samples...
+Relative error: 0.05208482908466341
+saved run to results/ode/burgers/20260930-094720_84ee87
+Done.
+=== 2026-09-30T09:47:23+03:00 exp2_b1000_r0 ===
+saved run to results/smc/burgers/exp2_b1000_r0
+=== 2026-09-30T10:06:55+03:00 exp2_b1000_r1em3 ===
+saved run to results/smc/burgers/exp2_b1000_r1em3
+=== 2026-09-30T10:26:27+03:00 exp2_b1000_r3em3 ===
+saved run to results/smc/burgers/exp2_b1000_r3em3
+=== 2026-09-30T10:45:58+03:00 exp2_b1000_r1em2 ===
+saved run to results/smc/burgers/exp2_b1000_r1em2
+=== 2026-09-30T11:05:31+03:00 aggregate ===
 <!-- exp2 table, generated 2026-09-30 11:05:31, 15 runs -->
 | run | method | beta | omega | ratio | lambda_girs | rho_temp | rho_init | N | K | rel_err | frac_obs | frac_pde | ess_mean | ess_last | seed |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -16,3 +48,4 @@
 | exp2_b3000_r1em2 | smc | 3000.0 | 30.0 | 0.01 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 0.34101425757069365 | 0.6381407754378913 | 0.3618430424232717 | 6.0462642519094505 | 6.963961036164594 | 0 |
 | exp2_b3000_r1em3 | smc | 3000.0 | 3.0 | 0.001 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 0.36352545376069384 | 0.8890774981584308 | 0.1109013492335897 | 6.012858903422818 | 6.132740356195199 | 0 |
 | exp2_b3000_r3em3 | smc | 3000.0 | 9.0 | 0.003 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 0.23861468868173616 | 0.8070576380956299 | 0.19281648815913177 | 6.109498147103359 | 6.674776144286348 | 0 |
+=== 2026-09-30T11:05:32+03:00 done ===
