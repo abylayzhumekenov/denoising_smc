@@ -1,4 +1,29 @@
-<!-- exp3 table, generated 2026-10-01 17:20:09, 12 runs -->
+Loading module for CUDA 11.8
+CUDA 11.8 is now loaded
+GNU 12.2.0 is now loaded
+SQLite3 3.40.1 is now loaded
+Loading module for Python
+Python 3.11.0 is now loaded
+ -----------------------------
+To install additional python libraries/packages (to YOUR $HOME directory), please do the following:
+   mkdir -p $PYTHON_LIBS
+   pip install --prefix=$PYTHON_LIBS <your python_lib name>
+   Example: 
+           pip install --prefix=$PYTHON_LIBS biopython
+ -----------------------------
+
+Loading python/3.11.0
+  Loading requirement: gcc/12.2.0 sqlite/3.40.1/gnu-12.2.0
+=== 2026-10-01T15:25:06+03:00 exp3_l0_ri0 ===
+saved run to results/smc/burgers/exp3_l0_ri0
+=== 2026-10-01T15:45:40+03:00 exp3_l0_ri1 ===
+saved run to results/smc/burgers/exp3_l0_ri1
+=== 2026-10-01T16:06:14+03:00 exp3_l1_ri0 ===
+saved run to results/smc/burgers/exp3_l1_ri0
+=== 2026-10-01T16:26:50+03:00 exp3_l1_ri1 ===
+saved run to results/smc/burgers/exp3_l1_ri1
+=== 2026-10-01T16:47:24+03:00 aggregate ===
+<!-- exp3 table, generated 2026-10-01 16:47:24, 12 runs -->
 | run | method | beta | omega | lambda_girs | rho_temp | rho_init | N | K | rel_err | frac_obs | frac_pde | ess_mean | ess_last | seed |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 20260921-120101_84ee87 | ode |  |  |  |  |  | 1 | 2000 | 0.05207246080961144 |  |  |  |  | 0 |
@@ -11,5 +36,6 @@
 | exp3_noguidance | smc | 0.0 | 0.0 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 1.287556561472087 | 0.0 | 0.0 | 8.0 | 8.0 | 0 |
 | exp3_obsonly | smc | 100.0 | 0.0 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 1.2078638623405 | 0.9999886348195619 | 0.0 | 5.091869053100059 | 4.855108358001248 | 0 |
 | exp3_pdeonly | smc | 0.0 | 0.02 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 1.2799778709039655 | 0.0 | 1.0000824547515375 | 7.9989589730985395 | 7.995633146765564 | 0 |
-| exp3_rt0 | smc | 100.0 | 0.02 | 1.0 | 0.0 | 1.0 | 8 | 2000 | 0.9664998712928249 | 0.9931969237367508 | 0.006812071185437176 | 6.259146535503873 | 6.259146535503872 | 0 |
-| exp3_rt1 | smc | 100.0 | 0.02 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 1.1554498928315815 | 0.9922779288294096 | 0.007707868481605501 | 5.0870180835921985 | 4.858040880689961 | 0 |
+| exp3_rt0 | smc | 100.0 | 0.02 | 1.0 | 0.0 | 1.0 | 8 | 2000 | 0.9664998703184324 | 0.9931730557008375 | 0.006814710634288201 | 6.259146535503873 | 6.259146535503872 | 0 |
+| exp3_rt1 | smc | 100.0 | 0.02 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 1.1554498136453948 | 0.9922623509364595 | 0.007700708329779908 | 5.087017684963275 | 4.858040223459071 | 0 |
+=== 2026-10-01T16:47:24+03:00 done ===
