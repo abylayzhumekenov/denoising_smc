@@ -1,0 +1,368 @@
+\newcommand{\rmd}{\mathrm{d}}
+\newcommand{\rme}{\mathrm{e}}
+\newcommand{\eqsp}{\,}
+\newcommand{\ola}{\overleftarrow}
+\newcommand{\ora}{\overrightarrow}
+\newcommand{\eqdef}{:=}
+\newcommand{\pf}{p}
+\newcommand{\pb}{\overleftarrow{p}}
+\newcommand{\hell}{\mathrm{H}}
+\newcommand{\miss}{\mathrm{miss}}
+\newcommand{\obs}{\mathrm{obs}}
+\newcommand{\E}{\mathbb{E}}
+
+
+\newcommand{\pidata}{\pi_{\mathrm{data}}}
+\newcommand{\rmL}{\mathrm{L}}
+\def\maxsw{Max SW}
+\newcommand{\dobs}{d_\mathrm{y}}
+\newcommand{\dmiss}{d_\mathrm{x}}
+\newcommand{\xobs}{y} %^{\mathrm{obs}}}
+\newcommand{\xmiss}{x} 
+\newcommand{\Xobs}{Y} %^{\mathrm{obs}}}
+\newcommand{\Xmiss}{X}
+\newcommand{\Xora}{\overrightarrow{\mathbf{X}}}
+\newcommand{\Xola}{\overleftarrow{\mathbf{X}}}
+\newcommand{\Xbar}{\bar{\mathbf{X}}}
+\newcommand{\X}{\mathbf{X}}
+\newcommand{\x}{\mathbf{x}}
+\newcommand{\z}{\mathbf{z}}
+
+\newcommand{\Id}{\mathbf{I}}
+\newcommand{\K}{\mathrm{K}}
+\newcommand{\M}{\mathrm{M}}
+\newcommand{\Z}{\mathbf{Z}}
+\newcommand{\Q}{\mathrm{Q}}
+\newcommand{\Cbias}{C_{\mathrm{bias}}^k}
+\newcommand{\Y}{\mathbf{Y}}
+\newcommandx{\pdata}[1][1=]{\ifthenelse{\equal{#1}{}}{p_{\operatorname{data}}}{p_{\operatorname{data}}\left(#1\right)}}
+\NewDocumentCommand{\gaussiand}{m m o}{\IfValueTF{#3}{\mathcal{N}\left(#3; #1, #2\right)}{\mathcal{N}\left(#1, #2\right)}}
+\newcommandx{\gaussMarg}[2][2=]{\ifthenelse{\equal{#2}{}}{\varphi_{#1}}{\varphi_{#1}\left(#2\right)}}
+\NewDocumentCommand{\unif}{m o}{\IfValueTF{#2}{\mathcal{U}_{#1}\left(#2\right)}{\mathcal{U}_{#1}}}
+\NewDocumentCommand{\indi}{m o}{\mathrm{1}_{#1}\IfValueTF{#2}{\left(#2\right)}{}}
+\newcommand{\PE}[2]{\mathbb{E}_{#1}\left[#2\right]}
+\newcommand{\PV}[2]{\mathbb{V}_{#1}\left[#2\right]}
+\newcommand{\CPE}[3]{\mathbb{E}_{#1}\left[#3 \middle | #2\right]}
+\newcommand{\CPV}[3]{\mathbb{V}_{#1}\left[#3 \middle | #2\right]}
+\newcommand{\set}[1]{\mathrm{#1}}
+\newcommand{\kernel}[1]{\mathsf{#1}}
+\newcommand{\m}[1]{\operatorname{#1}}
+\newcommand{\borelians}[1]{\mathcal{B}(#1)}
+\newcommand{\ball}[2]{\operatorname{B}_{#2}(#1)}
+\newcommand{\sphere}[1]{\mathbb{S}_{#1}}
+
+\NewDocumentCommand{\minconst}{m m o}{\varepsilon_{#2|#1}\IfValueTF{#3}{^{(#3)}}{}}
+\NewDocumentCommand{\minconstnor}{m m}{\tilde{\varepsilon}_{#2|#1}}
+\NewDocumentCommand{\minmeas}{m m o}{\IfValueTF{#3}{\upsilon_{#2| #1}\left(#3\right)}{\upsilon_{#2|#1}}}
+\NewDocumentCommand{\minmeasintcte}{m m}{\mathrm{I}_{#2|#1}}
+\def\rset{\mathbb{R}}
+\def\rsetpos{\mathbb{R}_{+}}
+\def\nset{\mathbb{N}}
+\def\nsetpos{\mathbb{N}^{*}}
+\def\xdim{d}
+\def\tensprod{\otimes}
+\newcommand\signedmeasures[1]{\mathcal{M}_s\left(#1\right)}
+\newcommand\vsignedmeasures[1]{\mathcal{M}_{V}\left(#1\right)}
+\newcommand\measures[1]{\mathcal{M}_{+}\left(#1\right)}
+\newcommand\probmeasures[1]{\mathcal{P} \left(#1\right)}
+\newcommand\measfuns[1]{\mathcal{F}(#1)}
+
+%\def\Z{\mathrm{Z}}
+\newcommand{\mt}[1]{{#1}^{\operatorname{T}}}
+\newcommand{\trace}[1]{\operatorname{Tr}\left(#1\right)}
+\NewDocumentCommand{\timechange}{o}{\IfValueTF{#1}{\tau\left(#1\right)}{\tau}}
+\newcommand{\vp}[1]{{#1}^{\operatorname{VP}}}
+\newcommand{\ve}[1]{{#1}^{\operatorname{VE}}}
+%% Score based related stuff (Always time first, then arguments)
+\newcommandx{\fwdmarg}[2][2=]{\ifthenelse{\equal{#2}{}}{\pf_{#1}}{\pf_{#1}\left(#2\right)}}
+\newcommandx{\fwdtrans}[4][3=,4=]{\ifthenelse{\equal{#3}{}}{\pf_{#2|#1}}{\pf_{#2|#1}\left(#4|#3\right)}}
+\newcommand{\fwdmean}[2]{\operatorname{m}_{#2|#1}}
+\newcommand{\fwdstd}[2]{\sigma_{#2|#1}}
+\newcommand{\fwdvar}[2]{\sigma^2_{#2|#1}}
+\newcommandx{\bwdmarg}[2][2=]{\ifthenelse{\equal{#2}{}}{\pb_{#1}}{\pb_{#1}\left(#2\right)}}
+\NewDocumentCommand{\bwdker}{m o o o}{\IfValueTF{#3}{\IfValueTF{#2}{\Q_{#2|#1}(#3; #4)}{\Q_{#1}(#3; #4)}}{\IfValueTF{#2}{\Q_{#2|#1}}{\Q_{#1}}}}
+\NewDocumentCommand{\bwdkercomp}{O{} m m o o}{
+\mathbb{Q}^{#1}_{#2:#3}\IfValueTF{#4}{(#4; #5)}{}}
+\NewDocumentCommand{\pgen}{O{}}{\hat{\pi}^{\theta}}
+
+\NewDocumentCommand{\bwdkerdiscr}{m o o o}{\IfValueTF{#3}{\IfValueTF{#2}{\bar{\Q}_{#2|#1}(#3; #4)}{\bar{\Q}_{#1}(#3; #4)}}{\IfValueTF{#2}{\bar{\Q}_{#2|#1}}{\bar{\Q}_{#1}}}}
+
+
+\NewDocumentCommand{\approxbwdker}{O{\theta} m o o o o}{\IfValueTF{#4}{\IfValueTF{#3}{\Q^{#1}_{#3|#2}(#4; #5)}{\Q^{#1}_{#2}(#4; #5)}}{\IfValueTF{#3}{\Q^{#1}_{#3| #2}}{\Q^{#1}_{#2}}}}
+\NewDocumentCommand{\approxbwdkercomp}{O{\theta} O{} m m o o}{
+\mathbb{Q}^{\theta\IfValueTF{#2}{#2}{}}_{#3:#4}\IfValueTF{#5}{(#5; #6)}{}}
+\newcommandx{\bridge}[4][3=,4=]{\ifthenelse{\equal{#3}{}}{\pf_{#2 | #1}}{\pf_{#2 | #1}\left(#4 |#3\right)}}
+\newcommand{\bridgemean}[3]{\operatorname{m}_{#2|#1}^{#3}}
+\newcommand{\bridgevar}[2]{\gamma^2_{#2|#1}}
+
+\NewDocumentCommand{\score}{o o}{\IfValueTF{#2}{\operatorname{S}_{#1}\left(#2\right)}{\operatorname{S}_{#1}}}
+\NewDocumentCommand{\tildescore}{o o}{\IfValueTF{#2}{\operatorname{\tilde{S}}_{#1}\left(#2\right)}{\operatorname{\tilde{S}}_{#1}}}
+\NewDocumentCommand{\jscore}{o o}{\IfValueTF{#2}{\nabla \operatorname{S}_{#1}\left(#2\right)}{\nabla \operatorname{S}_{#1}}}
+\NewDocumentCommand{\scorenet}{o o O{\theta} }{\IfValueTF{#1}{\operatorname{s}_{#3}\left(#2, #1\right)}{\operatorname{s}_{#3}}}
+\NewDocumentCommand{\denoiser}{o o}{\IfValueTF{#2}{\operatorname{D}_{#1}(#2)}{\operatorname{D}_{#1}}}
+\NewDocumentCommand{\pset}{m O{}}{\IfValueTF{#2}{\mathcal{P}_{#2}(#1)}{\mathcal{P}\left(#1\right)}}
+
+\newcommand{\dotprod}[2]{\left<#1, #2\right>}
+
+\def\eqlaw{\stackrel{\mathcal L}{=}}
+\NewDocumentCommand{\csp}{m m o}{\IfValueTF{#3}{\mathcal{C}^{#1}\left(#2; #3\right)}{\mathcal{C}^{#1}\left(#2\right)}}
+\NewDocumentCommand{\lpsp}{m m o}{\IfValueTF{#3}{\mathcal{L}_{#1}\left(#2; #3\right)}{\mathcal{L}_{#1}\left(#2\right)}}
+\newcommand{\divergence}[1]{\operatorname{div}(#1)}
+\newcommand{\setdiff}[2]{#1 \setminus #2}
+\newcommand{\border}[1]{\partial#1}
+\def\refmeas{\pi_{\infty}}
+\def\isvp{\alpha}
+\newcommand{\noisesch}[1]{\beta_{#1}}
+\newcommand{\bwdnoisesch}[1]{\bar{\beta}_{#1}}
+\newcommand{\noiseschmean}[3]{\overline{#1}^{\beta}_{#2:#3}}
+\newcommand{\brownvar}[1]{\operatorname{B}_{t}}
+\newcommand{\dbrown}[1]{\rmd\!\operatorname{B}_{#1}}
+
+\newcommand{\scoreloss}[1]{\mathcal{L}(#1)}
+\NewDocumentCommand{\pnorm}{O{2} m}{\left\|#2\right\|_{#1}}
+\newcommand{\minimum}[2]{\min\left\{#1, #2\right\}}
+\NewDocumentCommand{\lyapunov}{m o}{%
+  \operatorname{V}_{#1}%
+  \IfValueT{#2}{\!\left(#2\right)}%
+}
+
+%% constants
+
+
+\NewDocumentCommand{\ctescorenorm}{o m}{%
+  \IfValueTF{#1}
+    {\tilde{\gamma}_{#2}}
+    {\gamma_{#2}}
+}
+
+\NewDocumentCommand{\ctescoreoffset}{o m}{%
+  \IfValueTF{#1}
+    {\tilde{\kappa}_{#2}}
+    {\kappa_{#2}}
+}
+
+\newcommand{\cstediscr}{\mathrm{D}^{(0)}_{s:t}}
+\newcommand{\cstediscrx}{\mathrm{D}^{(1)}_{s:t}}
+\newcommand{\cstediscrgamma}[1][s:t]{\overline{\Gamma}^{(0)}_{#1}}
+\newcommand{\cstediscrgammax}[1][s:t]{\overline{\Gamma}^{(1)}_{#1}}
+
+
+
+
+%\newcommand{\ctescoreoffset}[1]{\kappa_{#1}}
+\newcommand{\ctegrowth}[1]{\operatorname{C}_{g, #1}}
+\newcommand{\ctegrowthHess}[1]{\operatorname{C}_{H, #1}}
+\newcommand{\maxctegrowthHess}[1]{\overline{\operatorname{C}}_{H, #1}}
+
+\def\pgrowth{p}
+\newcommand{\ctejscore}[1]{\operatorname{C}_{#1}}
+\def\powerjscore{p}
+\def\ctescorepoly{\operatorname{C}_{s}}
+\newcommand{\ctestable}[1]{\Gamma^{s}_{#1}}
+\def\gridn{N}
+\NewDocumentCommand{\grid}{o o}{
+    {\IfValueTF{#1}{t_{\IfValueTF{#2}{#1:#2}{#1}}}{\mathcal{T}}}
+}
+\NewDocumentCommand{\multlyap}{m m o}{\lambda_{#2|#1}^{\IfValueTF{#3}{(#3)}{}}}
+\NewDocumentCommand{\maxmultlyap}{m m o}{\overline{\lambda}_{#2 |#1}^{\IfValueTF{#3}{(#3)}{}}}
+\NewDocumentCommand{\biaslyap}{m m o}{\mathrm{K}_{#2|#1}^{\IfValueTF{#3}{(#3)}{}}}
+\NewDocumentCommand{\maxbiaslyap}{m m o}{\overline{\mathrm{K}}_{#2|#1}^{\IfValueTF{#3}{(#3)}{}}}
+\newcommand{\mixtime}[2]{\alpha_{#1,#2}}
+\NewDocumentCommand{\cteb}{m m}{\operatorname{C}^{b}_{#2|#1}}
+%\newcommand{\pmixtime}[2]{\bar\alpha_{#1:#2}}
+\NewDocumentCommand{\pmixtime}{o o}{%
+  \IfValueTF{#1}
+    {\bar\alpha_{#2|#1}}
+    {\bar\alpha}
+}
+\newcommand{\nofrac}[2]{\left(#1 \middle/#2\right)}
+
+\NewDocumentCommand{\errscore}{m m}{\mathcal{E}_{#1}^{#2}}
+
+
+%%% Metrics and norms
+%\newcommand{\bmetric}[2]{\rho_{b}\left(#1, #2\right)}
+\NewDocumentCommand{\bmetric}{s m m}{%
+  \IfBooleanTF{#1}
+    {\vnorm[#2 - #3][b^\star V]} % starred version
+    {\vnorm[#2 - #3][bV]}       % normal version
+}
+
+\NewDocumentCommand{\vmetric}{s m m}{%
+  \IfBooleanTF{#1}
+    {\vnorm[#2 - #3][V]} % starred version
+    {\vnorm[#2 - #3][V]}       % normal version
+}
+\newcommand{\normEc}[1]{\left\|#1\right\|}
+\newcommand{\normTV}[1]{\left\|#1\right\|_{\mathrm{TV}}}
+\newcommand{\normFr}[1]{\left\|#1\right\|_{\operatorname{F}}}
+\newcommand{\hellinger}[2]{\hell\left(#1, #2\right)}
+\newcommand{\kl}[2]{\mathrm{KL}\left(#1 \middle \| #2\right)}
+\NewDocumentCommand{\wasserstein}{O{} O{} m m}{%
+  \mathcal{W}_{#1}%
+  \IfNoValueF{#2}{^{#2}}%
+  \!\left(#3,#4\right)%
+}
+\newcommand{\norminfty}[1]{\left\|#1\right\|_{\infty}}
+
+\NewDocumentCommand{\Cdiscr}{m o}{%
+  C^{\rm discr}_{#1}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+\NewDocumentCommand{\Cmix}{m o}{%
+  C^{\rm mix}_{#1}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+\NewDocumentCommand{\Cnet}{m o}{%
+  C^{\rm net}_{#1}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+\newcommand{\ie}{\emph{i.e.}}
+
+
+
+%%%%% NEW COMMANDS FOR CONDITIONAL LAWS AND STUFF
+
+\newcommand{\un}{\mathds{1}}
+
+\newcommand{\id}[2]{^{(#1)}_{#2}}
+
+\NewDocumentCommand{\filter}{m o}{%
+  \phi_{#1}%^{\xobs}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+
+\NewDocumentCommand{\mcfilter}{m o O{\theta} O{\npart}}{%
+  \phi_{#1}^{#3,#4}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+
+\NewDocumentCommand{\tildemcfilter}{m o}{%
+  \widetilde{\phi}_{#1}^{\theta,M}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+
+\NewDocumentCommand{\approxfilter}{m o}{%
+  \phi_{#1}^\theta%^{\xobs}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+
+\NewDocumentCommand{\filterinit}{o}{%
+  \phi_{0}%^{\xobs_{t_{0}}}%
+  \IfValueT{#1}{\!\left[#1\right]}%
+}
+
+\NewDocumentCommand{\approxfilterinit}{o}{%
+  \phi^{\theta}_{0}% ^{\xobs_{t_{0}}}%
+  \IfValueT{#1}{\!\left[#1\right]}%
+}
+
+\newcommand{\unapproxfilter}[1]{\Phi_{#1}^{\theta}}
+\newcommand{\unmcfilter}[1]{\Phi_{#1}^{\theta, M}}
+
+\NewDocumentCommand{\muterr}{m o}{%
+  M_{#1}^{M}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+
+\NewDocumentCommand{\selerr}{m o}{%
+  S_{#1}^{M}%
+  \IfValueT{#2}{\!\left[#2\right]}%
+}
+
+\NewDocumentCommand{\filtertransform}{m s o}{
+  \mathbb{F}_{#1}
+  \IfValueTF{#3}{^{#3}}{}
+}
+
+% \NewDocumentCommand{\filtertransform}{m o o}{
+%   \mathbb{F}_{#1}\IfValueTF{#3}{^{#3}}{}\IfValueTF{#2}{\left(#2\right)}{}
+% }
+
+\newcommand{\backwardfunInternal}{\beta}
+\newcommand{\minconstbarbackfun}{c_{\bar\backwardfunInternal}}
+
+
+\NewDocumentCommand{\backwardfun}{m m O{\theta}}{
+  \backwardfunInternal_{#1|#2}\IfValueTF{#3}{^{#3}}{}
+}
+\NewDocumentCommand{\barbackwardfun}{m m O{\theta}}{
+  \bar{\backwardfunInternal}_{#1|#2}\IfValueTF{#3}{^{#3}}{}
+}
+\NewDocumentCommand{\backwardnu}{m m O{\theta}}{
+  \nu_{#1|#2}\IfValueTF{#3}{^{#3}}{}
+}
+\NewDocumentCommand{\normbackwardfun}{m m O{\theta} o}{
+  \widetilde{\backwardfunInternal}_{#1|#2}^{#3}%
+  \IfValueT{#4}{\!\left(#4\right)}%
+}
+
+
+% \NewDocumentCommand{\muBias}{m m O{\theta}}{
+\NewDocumentCommand{\muBias}{m m o}{
+  \mu_{#1|#2}\IfValueTF{#3}{^{#3}}{}
+}
+\NewDocumentCommand{\vosc}{m O{b}}{\operatorname{osc}_{#2V}\left(#1\right)}
+\NewDocumentCommand{\measvnorm}{m O{b}}{\|#1\|_{#2V}}
+\NewDocumentCommand{\pot}{m o}{g_{#1}\IfValueTF{#2}{\left(#2\right)}{}}
+
+\NewDocumentCommand{\approxpot}{m o}{\hat{g}_{#1}\IfValueTF{#2}{\left(#2\right)}{}}
+
+\NewDocumentCommand{\potnorm}{m o}{\tilde{g}_{#1}\IfValueTF{#2}{\left(#2\right)}{}}
+
+\NewDocumentCommand{\unpredictive}{m o}{\kernel{K}_{#1}\IfValueTF{#2}{^{#2}}{}}
+\NewDocumentCommand{\predictive}{m o}{\kernel{F}_{#1}\IfValueTF{#2}{^{#2}}{}}
+\NewDocumentCommand{\fsmk}{m m o o o}{\kernel{G}_{#1|#2}\IfValueTF{#3}{^{#3}}{}\IfValueTF{#4}{(#4, #5)}{}}
+
+\NewDocumentCommand{\fsmkstar}{m m o o o}{\kernel{G}_{#1|#2} \IfValueTF{#3}{^{#3,*}}{^{\star}} \IfValueTF{#4}{(#4, #5)}{} }
+
+\NewDocumentCommand{\prodfsmk}{m m o o o}{\kernel{G}_{#1:#2}\IfValueTF{#3}{^{#3}}{}\IfValueTF{#4}{(#4, #5)}{}}
+\def\onecte{\mathts 1}
+\NewDocumentCommand{\mk}{m o o o}{\kernel{Q}_{#1}\IfValueTF{#2}{^{#2}}{}\IfValueTF{#3}{(#3, #4)}{}}
+\NewDocumentCommand{\eulermk}{m o}{ \overline{\kernel Q}_{#1}\IfValueTF{#2}{^{#2}}{} }
+\def\particle{\xi}
+\newcommand{\chunk}[3]{#1_{#2:#3}}
+\NewDocumentCommand{\dirac}{m o}{\delta_{#1}\IfValueTF{#2}{\left(#2\right)}{}}
+\def\npart{M}
+\def\ndisc{N}
+\NewDocumentCommand{\empmeas}{m o}{\mu_{\left(#1\right)}\IfValueTF{#2}{\left(#2\right)}{}}
+\NewDocumentCommand{\vnorm}{O{} O{V}}{\left\|#1\right\|_{#2}}
+\def\eg{\emph{e.g.}}
+\def\ie{\emph{i.e.}}
+
+\NewDocumentCommand{\CsupSMC}{O{\theta} m m}{%
+  C_{\beta,#2|#3}^{#1}%
+}
+\NewDocumentCommand{\ClpSMC}{O{\theta} m m}{%
+  C_{\Gamma,#2|#3}^{#1}%
+}
+
+\newcommand{\offsetfk}{K_{\kernel{G}}}
+
+
+\NewDocumentCommand{\twistedlyap}{m m O{\theta} o}{%
+  V_{#1|#2}^{#3}%
+  \IfValueT{#4}{\!\left(#4\right)}%
+}
+
+\NewDocumentCommand{\Gminor}{m m o}{%
+  \nu_{#1,#2}^{\mathsf G}%
+  \IfValueT{#3}{\!\left(#3\right)}%
+}
+
+\NewDocumentCommand{\lambdaG}{m}{\lambda_{#1}^{\mathsf G}}
+\NewDocumentCommand{\KG}{m}{K_{#1}^{\mathsf G}}
+
+\NewDocumentCommand{\Ftwist}{m m O{\theta} o}{%
+  F_{#1|#2}^{#3}%
+  \IfValueT{#4}{\!\left(#4\right)}%
+}
+
+\NewDocumentCommand{\kappaG}{m O{a}}{%
+  \kappa_{#1}^{\mathsf G,#2}%
+}
+
+\NewDocumentCommand{\bareps}{m}{\overline\varepsilon_{#1}}
+\NewDocumentCommand{\barlambda}{m}{\overline\lambda_{#1}}
+\NewDocumentCommand{\barb}{m}{\overline b_{#1}}
+

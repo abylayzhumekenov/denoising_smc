@@ -1,0 +1,238 @@
+\begin{thebibliography}{}
+
+\bibitem[Bakry et~al., 2014]{bakry2014analysis}
+Bakry, D., Gentil, I., and Ledoux, M. (2014).
+\newblock {\em Analysis and geometry of Markov diffusion operators}.
+\newblock Springer.
+
+\bibitem[Benton et~al., 2024]{benton2024nearly}
+Benton, J., Bortoli, V.~D., Doucet, A., and Deligiannidis, G. (2024).
+\newblock Nearly {$d$}-linear convergence bounds for diffusion models via stochastic localization.
+\newblock In {\em The Twelfth International Conference on Learning Representations}.
+
+\bibitem[Bergmeister et~al., 2026]{bergmeister2026reinforce}
+Bergmeister, A., Jegelka, S., N{\"u}sken, N., Domingo-Enrich, C., and Pidstrigach, J. (2026).
+\newblock Reinforce adjoint matching: Scaling rl post-training of diffusion and flow-matching models.
+\newblock {\em arXiv preprint arXiv:2605.10759}.
+
+\bibitem[Black et~al., 2024]{black2024training}
+Black, K., Janner, M., Du, Y., Kostrikov, I., and Levine, S. (2024).
+\newblock Training diffusion models with reinforcement learning.
+\newblock In {\em International Conference on Learning Representations}, volume 2024, pages 4965--4987.
+
+\bibitem[Cardoso et~al., 2024]{cardoso2024monte}
+Cardoso, G., Janati El~Idrissi, Y., Le~Corff, S., and Moulines, E. (2024).
+\newblock Monte carlo guided denoising diffusion models for bayesian linear inverse problems.
+\newblock In {\em International Conference on Learning Representations}.
+
+\bibitem[Cattiaux et~al., 2023]{cattiaux}
+Cattiaux, P., Conforti, G., Gentil, I., and L{\'e}onard, C. (2023).
+\newblock {Time reversal of diffusion processes under a finite entropy condition}.
+\newblock {\em {Annales de l'Institut Henri Poincar{\'e} (B) Probabilit{\'e}s et Statistiques}}, 59(4):1844--1881.
+
+\bibitem[Chen et~al., 2023]{chen2023sampling}
+Chen, S., Chewi, S., Li, J., Li, Y., Salim, A., and Zhang, A. (2023).
+\newblock Sampling is as easy as learning the score: theory for diffusion models with minimal data assumptions.
+\newblock In {\em The Eleventh International Conference on Learning Representations}.
+
+\bibitem[Chopin and Papaspiliopoulos, 2020]{chopin2020introduction}
+Chopin, N. and Papaspiliopoulos, O. (2020).
+\newblock {\em An Introduction to Sequential Monte Carlo}.
+\newblock Springer Series in Statistics. Springer.
+
+\bibitem[Conforti et~al., 2025a]{conforti2025non}
+Conforti, G., Durmus, A., Pham, L.-T.-N., and Raoul, G. (2025a).
+\newblock Non-asymptotic convergence of discrete diffusion models: Masked and random walk dynamics.
+\newblock {\em arXiv preprint arXiv:2512.00580}.
+
+\bibitem[Conforti et~al., 2025b]{conforti_kl}
+Conforti, G., Durmus, A., and Silveri~Gentiloni, M. (2025b).
+\newblock Kl convergence guarantees for score diffusion models under minimal data assumptions.
+\newblock {\em SIAM Journal on Mathematics of Data Science}, 7(1):86--109.
+
+\bibitem[Del~Moral, 2004]{delmoral2004feynman}
+Del~Moral, P. (2004).
+\newblock {\em Feynman-Kac Formulae: Genealogical and Interacting Particle Systems with Applications}.
+\newblock Probability and Its Applications. Springer.
+
+\bibitem[Del~Moral et~al., 2006]{del2006sequential}
+Del~Moral, P., Doucet, A., and Jasra, A. (2006).
+\newblock Sequential monte carlo samplers.
+\newblock {\em Journal of the Royal Statistical Society Series B: Statistical Methodology}, 68(3):411--436.
+
+\bibitem[Domingo-Enrich et~al., 2025]{domingo2025adjoint}
+Domingo-Enrich, C., Drozdzal, M., Karrer, B., and Chen, R. T.~Q. (2025).
+\newblock Adjoint matching: Fine-tuning flow and diffusion generative models with memoryless stochastic optimal control.
+\newblock In {\em International Conference on Learning Representations}, pages 53791--53846.
+
+\bibitem[Domingo-Enrich et~al., 2026]{domingo2026unified}
+Domingo-Enrich, C., Du, Y., and Albergo, M.~S. (2026).
+\newblock A unified perspective on fine-tuning and sampling with diffusion and flow models.
+\newblock {\em arXiv preprint arXiv:2605.00229}.
+
+\bibitem[Domingo-Enrich and Han, 2026]{domingo2026smp}
+Domingo-Enrich, C. and Han, J. (2026).
+\newblock Adjoint matching through the lens of the stochastic maximum principle in optimal control.
+\newblock {\em arXiv preprint arXiv:2604.08580}.
+
+\bibitem[Dou and Song, 2024]{dou2024diffusion}
+Dou, Z. and Song, Y. (2024).
+\newblock Diffusion posterior sampling for linear inverse problem solving: A filtering perspective.
+\newblock In {\em International Conference on Learning Representations}, volume 2024, pages 12069--12095.
+
+\bibitem[Douc et~al., 2014]{douc2014longterm}
+Douc, R., Moulines, {\'E}., and Olsson, J. (2014).
+\newblock Long-term stability of sequential monte carlo methods under verifiable conditions.
+\newblock {\em The Annals of Applied Probability}, 24(5):1767--1802.
+
+\bibitem[Douc et~al., 2018]{douc2018markov}
+Douc, R., Moulines, E., Priouret, P., and Soulier, P. (2018).
+\newblock {\em Markov Chains}.
+\newblock Springer {{Series}} in {{Operations Research}} and {{Financial Engineering}}. Springer, Cham.
+
+\bibitem[Doucet et~al., 2001]{doucet2001sequential}
+Doucet, A., De~Freitas, N., and Gordon, N.~J. (2001).
+\newblock {\em Sequential Monte Carlo methods in practice}.
+\newblock Springer.
+
+\bibitem[Fan et~al., 2023]{fan2023dpok}
+Fan, Y., Watkins, O., Du, Y., Liu, H., Ryu, M., Boutilier, C., Abbeel, P., Ghavamzadeh, M., Lee, K., and Lee, K. (2023).
+\newblock Dpok: Reinforcement learning for fine-tuning text-to-image diffusion models.
+\newblock {\em Advances in neural information processing systems}, 36:79858--79885.
+
+\bibitem[Gentiloni~Silveri and Ocello, 2025]{silveri205beyond}
+Gentiloni~Silveri, M. and Ocello, A. (2025).
+\newblock Beyond log-concavity and score regularity: Improved convergence bounds for score-based generative models in w2-distance.
+\newblock In {\em Proceedings of the 42nd International Conference on Machine Learning}, volume 267 of {\em Proceedings of Machine Learning Research}, pages 55631--55656. PMLR.
+
+\bibitem[Gloaguen et~al., 2022]{gloaguen2022pseudo}
+Gloaguen, P., Le~Corff, S., and Olsson, J. (2022).
+\newblock A pseudo-marginal sequential monte carlo online smoothing algorithm.
+\newblock {\em Bernoulli}, 28(4):2606--2633.
+
+\bibitem[Hairer and Mattingly, 2008]{HairerMattingly2008}
+Hairer, M. and Mattingly, J.~C. (2008).
+\newblock Yet another look at harris' ergodic theorem for markov chains.
+\newblock {\em arXiv preprint arXiv:0810.2777}.
+
+\bibitem[Haussmann and Pardoux, 1986]{haussmann1986time}
+Haussmann, U.~G. and Pardoux, E. (1986).
+\newblock Time reversal of diffusions.
+\newblock {\em The Annals of Probability}, 14(4):1188--1205.
+
+\bibitem[Havens et~al., 2025]{havens2025adjoint}
+Havens, A., Miller, B.~K., Yan, B., Domingo-Enrich, C., Sriram, A., Wood, B., Levine, D., Hu, B., Amos, B., Karrer, B., Fu, X., Liu, G.-H., and Chen, R. T.~Q. (2025).
+\newblock Adjoint sampling: Highly scalable diffusion samplers via adjoint matching.
+\newblock {\em arXiv preprint arXiv:2504.11713}.
+
+\bibitem[Ho et~al., 2020]{ho2020denoising}
+Ho, J., Jain, A., and Abbeel, P. (2020).
+\newblock Denoising diffusion probabilistic models.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)}, pages 6840--6851.
+
+\bibitem[Ho and Salimans, 2021]{ho2021classifierfree}
+Ho, J. and Salimans, T. (2021).
+\newblock Classifier-free diffusion guidance.
+\newblock In {\em NeurIPS 2021 Workshop on Deep Generative Models and Downstream Applications}.
+
+\bibitem[Liu et~al., 2025]{liu2025valuegradient}
+Liu, Z., Xiao, T., Domingo-Enrich, C., Liu, W., and Zhang, D. (2025).
+\newblock Value gradient guidance for flow matching alignment.
+\newblock In {\em Advances in Neural Information Processing Systems}, volume~38, pages 11372--11404. Curran Associates, Inc.
+
+\bibitem[Marion et~al., 2025]{marion2025implicit}
+Marion, P., Korba, A., Bartlett, P., Blondel, M., De~Bortoli, V., Doucet, A., Llinares-L{\'o}pez, F., Paquette, C., and Berthet, Q. (2025).
+\newblock Implicit diffusion: Efficient optimization through stochastic sampling.
+\newblock In {\em Proceedings of The 28th International Conference on Artificial Intelligence and Statistics}, volume 258 of {\em Proceedings of Machine Learning Research}, pages 1999--2007. PMLR.
+
+\bibitem[Nazemi et~al., 2024]{nazemi2024particle}
+Nazemi, A., Sepanj, M.~H., Pellegrino, N., Czarnecki, C., and Fieguth, P. (2024).
+\newblock Particle-filtering-based latent diffusion for inverse problems.
+\newblock {\em arXiv preprint arXiv:2408.13868}.
+
+\bibitem[Pham et~al., 2025]{pham2025discrete}
+Pham, L.-T.-N., Shariatian, D., Ocello, A., Conforti, G., and Durmus, A.~O. (2025).
+\newblock Discrete markov probabilistic models: An improved discrete score-based framework with sharp convergence bounds under minimal assumptions.
+\newblock In {\em Forty-second International Conference on Machine Learning}.
+
+\bibitem[Pidstrigach et~al., 2025]{pidstrigach2025malliavin}
+Pidstrigach, J., Baker, E., Domingo-Enrich, C., Deligiannidis, G., and N{\"u}sken, N. (2025).
+\newblock Conditioning diffusions using malliavin calculus.
+\newblock {\em arXiv preprint arXiv:2504.03461}.
+
+\bibitem[Rombach et~al., 2022]{rombach2022highresolution}
+Rombach, R., Blattmann, A., Lorenz, D., Esser, P., and Ommer, B. (2022).
+\newblock High-resolution image synthesis with latent diffusion models.
+\newblock In {\em Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)}, pages 10684--10695.
+
+\bibitem[Rudin, 1987]{rudin1987real}
+Rudin, W. (1987).
+\newblock {\em Real and {{Complex Analysis}}}.
+\newblock McGraw-Hill, Singapore.
+
+\bibitem[Saharia et~al., 2022]{saharia2022palette}
+Saharia, C., Chan, W., Chang, H., Lee, C.~A., Ho, J., Salimans, T., Fleet, D.~J., and Norouzi, M. (2022).
+\newblock Palette: Image-to-image diffusion models.
+\newblock In {\em ACM SIGGRAPH 2022 Conference Proceedings}, New York, NY, USA. Association for Computing Machinery.
+
+\bibitem[Singhal et~al., 2025]{singhal2025general}
+Singhal, R., Horvitz, Z., Teehan, R., Ren, M., Yu, Z., McKeown, K., and Ranganath, R. (2025).
+\newblock A general framework for inference-time scaling and steering of diffusion models.
+\newblock In {\em Proceedings of the 42nd International Conference on Machine Learning}, volume 267 of {\em Proceedings of Machine Learning Research}, pages 55810--55827. PMLR.
+
+\bibitem[Sohl-Dickstein et~al., 2015]{dickstein2015}
+Sohl-Dickstein, J., Weiss, E., Maheswaranathan, N., and Ganguli, S. (2015).
+\newblock Deep unsupervised learning using nonequilibrium thermodynamics.
+\newblock In Bach, F. and Blei, D., editors, {\em Proceedings of the 32nd International Conference on Machine Learning}, volume~37 of {\em Proceedings of Machine Learning Research}, pages 2256--2265, Lille, France. PMLR.
+
+\bibitem[Song and Ermon, 2019]{song2019generative}
+Song, Y. and Ermon, S. (2019).
+\newblock Generative modeling by estimating gradients of the data distribution.
+\newblock In {\em Advances in Neural Information Processing Systems (NeurIPS)}, pages 11918--11930.
+
+\bibitem[Song et~al., 2021]{song2021score}
+Song, Y., Sohl-Dickstein, J., Kingma, D.~P., Kumar, A., Ermon, S., and Poole, B. (2021).
+\newblock Score-based generative modeling through stochastic differential equations.
+\newblock In {\em International Conference on Learning Representations}.
+
+\bibitem[Strasman et~al., 2026]{strasman2026forgetting}
+Strasman, S., Cardoso, G., Le~Corff, S., Lemaire, V., and Ocello, A. (2026).
+\newblock On forgetting and stability of score-based generative models.
+\newblock {\em arXiv preprint arXiv:2601.21868}.
+
+\bibitem[Strasman et~al., 2025a]{strasman2025an}
+Strasman, S., Ocello, A., Boyer, C., Corff, S.~L., and Lemaire, V. (2025a).
+\newblock An analysis of the noise schedule for score-based generative models.
+\newblock {\em Transactions on Machine Learning Research}.
+
+\bibitem[Strasman et~al., 2025b]{strasman2025wasserstein}
+Strasman, S., Surendran, S., Boyer, C., Corff, S.~L., Lemaire, V., and Ocello, A. (2025b).
+\newblock Wasserstein convergence of critically damped langevin diffusions.
+\newblock In {\em The Thirty-ninth Annual Conference on Neural Information Processing Systems}.
+
+\bibitem[Trippe et~al., 2023]{trippe2023diffusion}
+Trippe, B.~L., Yim, J., Tischer, D., Baker, D., Broderick, T., Barzilay, R., and Jaakkola, T.~S. (2023).
+\newblock Diffusion probabilistic modeling of protein backbones in 3d for the motif-scaffolding problem.
+\newblock In {\em The Eleventh International Conference on Learning Representations}.
+
+\bibitem[Virmaux and Scaman, 2018]{virmaux2018lipschitz}
+Virmaux, A. and Scaman, K. (2018).
+\newblock Lipschitz regularity of deep neural networks: analysis and efficient estimation.
+\newblock {\em Advances in neural information processing systems}, 31.
+
+\bibitem[Whiteley, 2012]{whiteley2012sequential}
+Whiteley, N. (2012).
+\newblock Sequential monte carlo samplers: error bounds and insensitivity to initial conditions.
+\newblock {\em Stochastic Analysis and Applications}, 30(5):774--798.
+
+\bibitem[Wu et~al., 2023a]{wu2023practical}
+Wu, L., Trippe, B., Naesseth, C., Blei, D., and Cunningham, J.~P. (2023a).
+\newblock Practical and asymptotically exact conditional sampling in diffusion models.
+\newblock {\em Advances in Neural Information Processing Systems}, 36:31372--31403.
+
+\bibitem[Wu et~al., 2023b]{wu2023human}
+Wu, X., Sun, K., Zhu, F., Zhao, R., and Li, H. (2023b).
+\newblock Human preference score: Better aligning text-to-image models with human preference.
+\newblock In {\em 2023 IEEE/CVF International Conference on Computer Vision (ICCV)}, pages 2096--2105. IEEE.
+
+\end{thebibliography}
