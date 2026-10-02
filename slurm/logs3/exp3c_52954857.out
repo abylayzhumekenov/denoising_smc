@@ -1,3 +1,28 @@
+Loading module for CUDA 11.8
+CUDA 11.8 is now loaded
+GNU 12.2.0 is now loaded
+SQLite3 3.40.1 is now loaded
+Loading module for Python
+Python 3.11.0 is now loaded
+ -----------------------------
+To install additional python libraries/packages (to YOUR $HOME directory), please do the following:
+   mkdir -p $PYTHON_LIBS
+   pip install --prefix=$PYTHON_LIBS <your python_lib name>
+   Example: 
+           pip install --prefix=$PYTHON_LIBS biopython
+ -----------------------------
+
+Loading python/3.11.0
+  Loading requirement: gcc/12.2.0 sqlite/3.40.1/gnu-12.2.0
+=== 2026-10-01T18:36:07+03:00 exp3_girs_b1e4_r0_ri0 ===
+saved run to results/smc/burgers/exp3_girs_b1e4_r0_ri0
+=== 2026-10-01T18:57:52+03:00 exp3_girs_b1e4_r0_ri1 ===
+saved run to results/smc/burgers/exp3_girs_b1e4_r0_ri1
+=== 2026-10-01T19:19:00+03:00 exp3_girs_b1e4_r1em3_ri0 ===
+saved run to results/smc/burgers/exp3_girs_b1e4_r1em3_ri0
+=== 2026-10-01T19:40:45+03:00 exp3_girs_b1e4_r1em3_ri1 ===
+saved run to results/smc/burgers/exp3_girs_b1e4_r1em3_ri1
+=== 2026-10-01T20:02:01+03:00 aggregate ===
 <!-- exp3 table, generated 2026-10-01 20:02:01, 25 runs -->
 | run | method | beta | omega | ratio | lambda_girs | rho_temp | rho_init | N | K | rel_err | frac_obs | frac_pde | ess_mean | ess_last | seed |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
@@ -26,3 +51,4 @@
 | exp3_unw_b1e4_r0_ri1 | smc | 10000.0 | 0.0 | 0.0 | 1.0 | 0.0 | 1.0 | 8 | 2000 | 0.11908521995934099 | 0.9999535917536919 | 0.0 | 7.996970361738203 | 8.0 | 0 |
 | exp3_unw_b1e4_r1em3_ri0 | smc | 10000.0 | 10.0 | 0.001 | 1.0 | 0.0 | 0.0 | 8 | 2000 | 0.1214577046941462 | 0.8686819971443226 | 0.13140352373086922 | 8.0 | 8.0 | 0 |
 | exp3_unw_b1e4_r1em3_ri1 | smc | 10000.0 | 10.0 | 0.001 | 1.0 | 0.0 | 1.0 | 8 | 2000 | 0.12017505995735747 | 0.8683343698027977 | 0.13164705557396758 | 7.99691258960666 | 8.0 | 0 |
+=== 2026-10-01T20:02:01+03:00 done ===

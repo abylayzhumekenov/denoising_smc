@@ -1,4 +1,36 @@
-<!-- exp3 table, generated 2026-10-01 20:02:01, 25 runs -->
+Loading module for CUDA 11.8
+CUDA 11.8 is now loaded
+GNU 12.2.0 is now loaded
+SQLite3 3.40.1 is now loaded
+Loading module for Python
+Python 3.11.0 is now loaded
+ -----------------------------
+To install additional python libraries/packages (to YOUR $HOME directory), please do the following:
+   mkdir -p $PYTHON_LIBS
+   pip install --prefix=$PYTHON_LIBS <your python_lib name>
+   Example: 
+           pip install --prefix=$PYTHON_LIBS biopython
+ -----------------------------
+
+Loading python/3.11.0
+  Loading requirement: gcc/12.2.0 sqlite/3.40.1/gnu-12.2.0
+=== 2026-10-01T18:17:41+03:00 ode ===
+Solving Burgers equation...
+Loading networks from "pretrained-models/pretrained-burgers.pkl"...
+Generating 1 samples...
+Relative error: 0.052064515994198486
+saved run to results/ode/burgers/20261001-182622_84ee87
+Done.
+=== 2026-10-01T18:26:25+03:00 exp3_unw_b1e4_r0_ri0 ===
+saved run to results/smc/burgers/exp3_unw_b1e4_r0_ri0
+=== 2026-10-01T18:45:32+03:00 exp3_unw_b1e4_r0_ri1 ===
+saved run to results/smc/burgers/exp3_unw_b1e4_r0_ri1
+=== 2026-10-01T19:04:39+03:00 exp3_unw_b1e4_r1em3_ri0 ===
+saved run to results/smc/burgers/exp3_unw_b1e4_r1em3_ri0
+=== 2026-10-01T19:23:46+03:00 exp3_unw_b1e4_r1em3_ri1 ===
+saved run to results/smc/burgers/exp3_unw_b1e4_r1em3_ri1
+=== 2026-10-01T19:42:53+03:00 aggregate ===
+<!-- exp3 table, generated 2026-10-01 19:42:54, 24 runs -->
 | run | method | beta | omega | ratio | lambda_girs | rho_temp | rho_init | N | K | rel_err | frac_obs | frac_pde | ess_mean | ess_last | seed |
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | 20260921-120101_84ee87 | ode |  |  |  |  |  |  | 1 | 2000 | 0.05207246080961144 |  |  |  |  | 0 |
@@ -8,7 +40,6 @@
 | exp3_girs_b1e4_r0_ri0 | smc | 10000.0 | 0.0 | 0.0 | 1.0 | 1.0 | 0.0 | 8 | 2000 | 0.15210107030184875 | 1.0000416837480324 | 0.0 | 5.161052878084304 | 5.137079838353058 | 0 |
 | exp3_girs_b1e4_r0_ri1 | smc | 10000.0 | 0.0 | 0.0 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 0.1030314170356925 | 0.9999594994920988 | 0.0 | 5.389586758920414 | 5.406196296795984 | 0 |
 | exp3_girs_b1e4_r1em3_ri0 | smc | 10000.0 | 10.0 | 0.001 | 1.0 | 1.0 | 0.0 | 8 | 2000 | 0.14794905027536057 | 0.8845258899421635 | 0.11551493642752912 | 5.502288346974465 | 6.341860001893598 | 0 |
-| exp3_girs_b1e4_r1em3_ri1 | smc | 10000.0 | 10.0 | 0.001 | 1.0 | 1.0 | 1.0 | 8 | 2000 | 0.13788892614731862 | 0.8824827456220773 | 0.11742180803313529 | 5.746818242173264 | 6.401816882069602 | 0 |
 | exp3_l0_ri0 | smc | 100.0 | 0.02 | 0.0002 | 0.0 | 1.0 | 0.0 | 8 | 2000 | 0.8656395712303991 | 0.9931935911670009 | 0.006814394921625354 | 5.336568454698749 | 4.8117258577472715 | 0 |
 | exp3_l0_ri1 | smc | 100.0 | 0.02 | 0.0002 | 0.0 | 1.0 | 1.0 | 8 | 2000 | 0.8498357468203712 | 0.9931684094518549 | 0.006812169212813083 | 7.393256399453953 | 7.580287301529541 | 0 |
 | exp3_l1_ri0 | smc | 100.0 | 0.02 | 0.0002 | 1.0 | 1.0 | 0.0 | 8 | 2000 | 1.181035732929377 | 0.9935950659554568 | 0.006439740846369957 | 6.039936992438426 | 5.808076100331422 | 0 |
@@ -26,3 +57,4 @@
 | exp3_unw_b1e4_r0_ri1 | smc | 10000.0 | 0.0 | 0.0 | 1.0 | 0.0 | 1.0 | 8 | 2000 | 0.11908521995934099 | 0.9999535917536919 | 0.0 | 7.996970361738203 | 8.0 | 0 |
 | exp3_unw_b1e4_r1em3_ri0 | smc | 10000.0 | 10.0 | 0.001 | 1.0 | 0.0 | 0.0 | 8 | 2000 | 0.1214577046941462 | 0.8686819971443226 | 0.13140352373086922 | 8.0 | 8.0 | 0 |
 | exp3_unw_b1e4_r1em3_ri1 | smc | 10000.0 | 10.0 | 0.001 | 1.0 | 0.0 | 1.0 | 8 | 2000 | 0.12017505995735747 | 0.8683343698027977 | 0.13164705557396758 | 7.99691258960666 | 8.0 | 0 |
+=== 2026-10-01T19:42:54+03:00 done ===
