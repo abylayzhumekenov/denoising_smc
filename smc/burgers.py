@@ -39,7 +39,8 @@ import torch.nn.functional as F
 import tqdm
 
 from common.results import make_run_dir, write_config, write_metrics
-from smc.proposals.gem import denoise, gem_step
+from smc.proposals.gem import brownian_increment, denoise, gem_step
+from smc.proposals.heun import heun_correct, heun_predict
 from smc.weightings.girsanov import girsanov_increment
 from torch_utils.misc import auto_device
 
@@ -180,6 +181,9 @@ def run(config):
     ll = smc.get('likelihood', {})
     obs_weight = ll.get('obs_weight', 1.0)
     pde_weight = ll.get('pde_weight', 1.0)
+    proposal = smc.get('proposal', 'em')
+    if proposal not in ('em', 'heun'):
+        raise ValueError(f"unknown smc.proposal: {proposal!r} (expected 'em' or 'heun')")
 
     # Guidance-attribution diagnostic: at ~sampled steps, decompose the total gradient b into its
     # per-term contributions by projection, f_c = -beta_c * <grad L_c, b> / ||b||^2  (sum_c f_c = 1).
@@ -211,6 +215,7 @@ def run(config):
     grad_norm_history = []
     nabla_log_p_norm_history = []
     delta_history = []
+    proposal_correction_rel_history = []
     x_leaf, D, nabla_log_p = None, None, None
     need_fresh_D = True
 
@@ -250,8 +255,34 @@ def run(config):
                 diag['b_norm'].append(float(b_k.norm()))
                 diag['score_norm'].append(float(nabla_log_p.detach().norm()))
 
-        x_next, z, delta = gem_step(x_cur.detach(), nabla_log_p.detach(), b_k,
-                                    sigma_cur, sigma_next, generator=generator)
+        if proposal == 'em':
+            x_next, z, delta = gem_step(x_cur.detach(), nabla_log_p.detach(), b_k,
+                                        sigma_cur, sigma_next, generator=generator)
+            proposal_correction_rel = 0.0
+        else:  # heun: predict, evaluate the drift at x_pred, trapezoidal correct (reusing z)
+            delta = float(sigma_cur) ** 2 - float(sigma_next) ** 2
+            if delta <= 0:
+                raise ValueError(
+                    f"non-decreasing sigma schedule: sigma_cur={sigma_cur}, sigma_next={sigma_next}")
+            drift_cur = (nabla_log_p + b_k).detach()
+            z = brownian_increment(x_cur.shape, delta, generator=generator,
+                                   dtype=x_cur.dtype, device=x_cur.device)
+            x_pred = heun_predict(x_cur.detach(), drift_cur, z, delta)
+            x_pred_leaf = x_pred.detach().clone().requires_grad_(True)
+            D_pred, nabla_log_p_pred = denoise(net, x_pred_leaf, sigma_next)
+            ell_pred = likelihood(to_raw(D_pred), ground_truth_raw, mask, obs_weight, pde_weight)
+            b_pred = torch.autograd.grad(ell_pred.sum(), x_pred_leaf)[0].detach()
+            drift_pred = (nabla_log_p_pred + b_pred).detach()
+            x_next = heun_correct(x_cur.detach(), drift_cur, drift_pred, z, delta)
+            # Diagnostic: ||0.5*delta*(drift_pred - drift_cur)|| / ||delta*drift_cur||, i.e. how
+            # much the 2nd-order term moves the EM step (0 for EM runs).
+            with torch.no_grad():
+                num = (0.5 * delta * (drift_pred - drift_cur)).flatten(1).norm(dim=1)
+                den = (delta * drift_cur).flatten(1).norm(dim=1).clamp_min(1e-30)
+                proposal_correction_rel = float((num / den).mean())
+            # Release the predictor graph now; only the post-step graph at x_next (built below) is
+            # carried into the next iteration.
+            x_pred_leaf = D_pred = nabla_log_p_pred = ell_pred = b_pred = None
 
         # Evaluate the denoiser once at the post-step state; carried forward into iteration i+1.
         x_leaf_next = x_next.detach().clone().requires_grad_(True)
@@ -268,6 +299,7 @@ def run(config):
         grad_norm_history.append(float(b_k.norm()))
         nabla_log_p_norm_history.append(float(nabla_log_p.detach().norm()))
         delta_history.append(delta)
+        proposal_correction_rel_history.append(proposal_correction_rel)
 
         if ess < resample_threshold * n_particles:
             ridx = systematic_resample_indices(log_w, generator=generator)
@@ -312,6 +344,7 @@ def run(config):
              grad_norm_history=np.array(grad_norm_history),
              nabla_log_p_norm_history=np.array(nabla_log_p_norm_history),
              delta_history=np.array(delta_history),
+             proposal_correction_rel_history=np.array(proposal_correction_rel_history),
              diag_step=np.array(diag['step']),
              diag_sigma=np.array(diag['sigma']),
              diag_loss_obs=np.array(diag['loss_obs']),
@@ -325,6 +358,7 @@ def run(config):
     write_metrics(run_dir, {
         'method': 'smc',
         'pde': 'burgers',
+        'proposal': proposal,
         'run_id': run_id,
         'seed': seed,
         'num_steps': num_steps,
@@ -334,6 +368,9 @@ def run(config):
         # Guidance attribution, mean over sampled steps (per-step values in result.npz; sum ~ 1).
         'guidance_frac_obs_mean': float(np.mean(diag['frac_obs'])) if diag['frac_obs'] else None,
         'guidance_frac_pde_mean': float(np.mean(diag['frac_pde'])) if diag['frac_pde'] else None,
+        # Mean relative size of the Heun corrector vs the EM step (0 for EM runs).
+        'proposal_correction_rel_mean': (float(np.mean(proposal_correction_rel_history))
+                                         if proposal_correction_rel_history else None),
     })
     print(f'saved run to {run_dir}')
     return run_dir

@@ -86,7 +86,7 @@ This repo also contains an SMC (Sequential Monte Carlo) extension for diffusion-
 - [`docs/note_1.pdf`](docs/note_1.pdf) — Girsanov-corrected SMC: lambda-rho unified weight, toy-model experiments and figures, appendices (kernel-ratio verification, alternative discretisations)
 - [`docs/note_2.pdf`](docs/note_2.pdf) — V_tau / Doob-transform discretisation companion
 - [`docs/note_4/`](docs/note_4/) — baseline-vs-SMC target comparison note
-- [`smc/`](smc/) — current SMC implementation: `burgers.py` (Burgers monolith), `proposals/gem.py` (guided Euler-Maruyama), `weightings/girsanov.py` (kernel-ratio weight)
+- [`smc/`](smc/) — current SMC implementation: `burgers.py` (Burgers monolith), `proposals/gem.py` (guided Euler-Maruyama), `proposals/heun.py` (2nd-order stochastic Heun, same z; EM weight kept), `weightings/girsanov.py` (kernel-ratio weight)
 - [`generate_pde_smc.py`](generate_pde_smc.py) + [`configs/smc/`](configs/smc/) — SMC dispatcher and run configs
 - [`smc_archive/`](smc_archive/) — frozen exploratory code: toy validation (`scripts_1`), first real-model Burgers arm (`scripts_2`); do not edit, extend, or import
 

@@ -265,6 +265,30 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   directory lookup instead of a per-extension debate. *Consequence:* `*.log` is removed from the root
   list; the only residual maintenance is adding a new *output* root as a one-line placeholder.
 
+- **D18 (2026-10-04) — Second-order (Heun-SDE) proposal, EM weight unchanged; exp4 proposal×K campaign.**
+  Added `smc/proposals/heun.py`: a two-stage stochastic Heun step (Euler predictor, then a
+  trapezoidal corrector) that reuses the *same* Brownian increment `z` in both stages. It integrates
+  the *drift* only; the reverse SDE's noise is additive, so the Milstein correction vanishes and the
+  trapezoid is genuinely second order in the drift. `delta` and the guidance placement are unchanged
+  from EM (guidance still enters the drift scaled by `delta`). **The incremental weight is left
+  exactly as EM's**: the same `girsanov_increment(b_k, z, delta, lambda_girs)` with `b_k` at the
+  step's *start* and the same `z`. For this non-EM integrator that is *asymptotically* consistent
+  (`K -> inf`) rather than finite-step exact, because the guided and unguided transition means differ
+  by `delta*b_k + O(delta**2)`, so EM's kernel ratio is correct up to `O(delta**3/2)` -- below the
+  scheme's own discretization error. `smc/weightings/` is untouched. Selection is `smc.proposal` /
+  `--proposal {em,heun}` (default `em`, so existing runs are byte-identical). The runner also records
+  `proposal_correction_rel` = `||0.5*delta*(h_pred-h_cur)|| / ||delta*h_cur||`, the size of the
+  corrector relative to the EM step (0 for EM). *Rationale:* the exp1/2/3 localization put the limiter
+  in the transport + target degeneracy, not the exact weight, so the weight is held fixed and only
+  the drift integrator varies -- to test whether second-order drift integration closes the SMC-vs-ODE
+  gap or lets the sampler reach its asymptote at smaller `K` (cost). *Campaign (`slurm/logs4`):*
+  `{em,heun} x {pbs (lambda=0), girs (lambda=1), unw (rho_temp=0)} x K in
+  {125,250,500,1000,2000,4000}`, `beta=1e4`, `omega=0`, `N=8`, seed 0, offset 0, sensors 5, plus an
+  ODE K-sweep (42 runs, 7 jobs). *Robustness:* the explicit Heun is stiff at very coarse steps -- at
+  `K=10` the per-step `sigma` change is ~2-4x and the corrector is O(1) of the step (local smoke
+  diverges), so the sweep starts at `K=125` (~16x smaller per-step `sigma` change), where
+  `correction_rel` is O(0.05).
+
 ---
 
 ## 6. Findings that inform the design
@@ -301,7 +325,8 @@ Ordered roughly:
 6. **Sweep design** — one spec expanded at runtime; currently expressed as per-cell sbatch loops in
    the `slurm/logs2` / `slurm/logs3` campaigns.
 7. **Modeling/algorithm follow-ups** — likelihood settled to Millard's squared analytic raw form
-   (D16); weight/`beta` calibration in progress (`slurm/logs2`). Open: cross-PDE weight
+   (D16); weight/`beta` calibration in progress (`slurm/logs2`). Heun-SDE proposal implemented with
+   the EM weight held fixed (D18); proposal x K campaign in `slurm/logs4`. Open: cross-PDE weight
    transferability, flat-guidance kernel ratio or removal, terminal correction, SOSaG proposal,
    tempering sweeps.
 8. **New SMC slurm script** (`slurm/run_smc*.sbatch`) — partially met by the campaign sbatch files

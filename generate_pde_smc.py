@@ -45,6 +45,8 @@ if __name__ == '__main__':
     parser.add_argument('--rho-temp', type=float, default=None)
     parser.add_argument('--rho-temp-init', type=float, default=None)
     parser.add_argument('--lambda-girs', type=float, default=None)
+    parser.add_argument('--proposal', type=str, default=None, choices=['em', 'heun'],
+                        help="SMC proposal integrator: 'em' (Euler--Maruyama) or 'heun' (2nd order).")
     args = parser.parse_args()
 
     with open(args.config, 'r') as f:
@@ -54,4 +56,4 @@ if __name__ == '__main__':
                    run_id=args.run_id, out_dir=args.out_dir,
                    obs_weight=args.obs_weight, pde_weight=args.pde_weight,
                    rho_temp=args.rho_temp, rho_temp_init=args.rho_temp_init,
-                   lambda_girs=args.lambda_girs))
+                   lambda_girs=args.lambda_girs, proposal=args.proposal))

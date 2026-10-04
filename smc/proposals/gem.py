@@ -42,6 +42,17 @@ def denoise(net, x_cur, sigma_cur, class_labels=None):
     return D, nabla_log_p
 
 
+def brownian_increment(shape, delta, generator=None, dtype=torch.float64, device=None):
+    """Realized Brownian increment ``z = sqrt(delta) * eps`` with ``eps ~ N(0, I)`` of ``shape``.
+
+    ``delta`` is the accumulated diffusion over the step (Ito isometry), which is
+    *integrator-independent*. A multi-stage integrator (e.g. Heun) must reuse the *same* ``z``
+    across its stages -- never redraw it -- so both stages see the same sample path.
+    """
+    eps = torch.randn(shape, generator=generator, dtype=dtype, device=device)
+    return delta ** 0.5 * eps
+
+
 def gem_step(x_cur, nabla_log_p, guidance_grad, sigma_cur, sigma_next, generator=None):
     """Advance one guided Euler--Maruyama step (EM only; see module docstring):
 
@@ -58,7 +69,7 @@ def gem_step(x_cur, nabla_log_p, guidance_grad, sigma_cur, sigma_next, generator
         raise ValueError(
             f"non-decreasing sigma schedule: sigma_cur={sigma_cur}, sigma_next={sigma_next}")
 
-    eps = torch.randn(x_cur.shape, generator=generator, dtype=x_cur.dtype, device=x_cur.device)
-    z = delta ** 0.5 * eps
+    z = brownian_increment(x_cur.shape, delta, generator=generator,
+                           dtype=x_cur.dtype, device=x_cur.device)
     x_next = x_cur + delta * (nabla_log_p + guidance_grad) + z
     return x_next.detach(), z.detach(), delta
