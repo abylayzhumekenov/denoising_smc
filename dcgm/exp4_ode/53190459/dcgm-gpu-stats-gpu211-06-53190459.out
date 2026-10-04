@@ -1,0 +1,54 @@
+Successfully retrieved statistics for job: 53190459. 
++------------------------------------------------------------------------------+
+| GPU ID: 5                                                                    |
++====================================+=========================================+
+|-----  Execution Stats  ------------+-----------------------------------------|
+| Start Time                         | Sun Oct  4 13:24:11 2026                |
+| End Time                           | Sun Oct  4 13:56:15 2026                |
+| Total Execution Time (sec)         | 1924.38                                 |
+| No. of Processes                   | 6                                       |
++-----  Performance Stats  ----------+-----------------------------------------+
+| Energy Consumed (Joules)           | 509586                                  |
+| Power Usage (Watts)                | Avg: 266.762, Max: 304.545, Min: 42.559 |
+| Max GPU Memory Used (bytes)        | 4412407808                              |
+| SM Clock (MHz)                     | Avg: 1405, Max: 1522, Min: 135          |
+| Memory Clock (MHz)                 | Avg: 877, Max: 877, Min: 877            |
+| SM Utilization (%)                 | Avg: 93, Max: 100, Min: 0               |
+| Memory Utilization (%)             | Avg: 39, Max: 46, Min: 0                |
+| PCIe Rx Bandwidth (megabytes)      | Avg: N/A, Max: N/A, Min: N/A            |
+| PCIe Tx Bandwidth (megabytes)      | Avg: N/A, Max: N/A, Min: N/A            |
++-----  Event Stats  ----------------+-----------------------------------------+
+| Single Bit ECC Errors              | 0                                       |
+| Double Bit ECC Errors              | 0                                       |
+| PCIe Replay Warnings               | 0                                       |
+| Critical XID Errors                | 0                                       |
++-----  Slowdown Stats  -------------+-----------------------------------------+
+| Due to - Power (%)                 | 0                                       |
+|        - Thermal (%)               | 0                                       |
+|        - Reliability (%)           | Not Supported                           |
+|        - Board Limit (%)           | Not Supported                           |
+|        - Low Utilization (%)       | Not Supported                           |
+|        - Sync Boost (%)            | 0                                       |
++--  Compute Process Utilization  ---+-----------------------------------------+
+| PID                                | 3855120                                 |
+|     Avg SM Utilization (%)         | 1                                       |
+|     Avg Memory Utilization (%)     | 0                                       |
+| PID                                | 3855343                                 |
+|     Avg SM Utilization (%)         | 2                                       |
+|     Avg Memory Utilization (%)     | 0                                       |
+| PID                                | 3855477                                 |
+|     Avg SM Utilization (%)         | 5                                       |
+|     Avg Memory Utilization (%)     | 2                                       |
+| PID                                | 3855908                                 |
+|     Avg SM Utilization (%)         | 11                                      |
+|     Avg Memory Utilization (%)     | 5                                       |
+| PID                                | 3856746                                 |
+|     Avg SM Utilization (%)         | 25                                      |
+|     Avg Memory Utilization (%)     | 10                                      |
+| PID                                | 3859796                                 |
+|     Avg SM Utilization (%)         | 51                                      |
+|     Avg Memory Utilization (%)     | 22                                      |
++-----  Overall Health  -------------+-----------------------------------------+
+| Overall Health                     | Healthy                                 |
++------------------------------------+-----------------------------------------+
+
