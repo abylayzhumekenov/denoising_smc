@@ -83,7 +83,7 @@ These principles generate the specific decisions in §5.
 | `configs/smc/` | SMC run configs, symmetric with `configs/`. |
 | `generate_pde_smc.py` | SMC dispatcher, symmetric with `generate_pde.py`. |
 | `results/{ode,smc}/<pde>/<run_id>/` | Structured run outputs (resolved config, metrics, logs); ignored via placeholder. |
-| `slurm/logs1..3/`, `dcgm/`, `smc_archive/` | **Records** — tracked (job logs, GPU telemetry; D17). |
+| `slurm/logs1..4/`, `dcgm/`, `smc_archive/` | **Records** — tracked (job logs, GPU telemetry; D17). `slurm/logs1..4` also hold the staged SMC campaign scripts (`submit_exp*.sh`, `smc_exp*.sbatch`, `aggregate_exp*.py`) and their auto-generated result tables (`exp*_table.md`). |
 | `docs/`, `literature/` | **Reference trees** — track sources and reference artifacts (PDFs, figures, `*.bbl`); ignore only transient LaTeX job output (D17). |
 | `docs/note_1.pdf`, `docs/note_2.pdf`, `docs/note_4/` | Theory and comparison notes; `literature/` is third-party papers + survey. |
 
@@ -310,6 +310,22 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   tempering improves reconstruction. This is protocol/tuning alignment, not a shared target.
 - **Doob / V_τ + Hutchinson deprioritized.** The Hessian-trace term is small and noisy and costs
   `O(probes)` per particle step; Girsanov (Hessian-free) is the active route.
+- **Campaign headline numbers (exp1–exp3, `slurm/logs{1,2,3}/exp*_table.md`).** The ODE baseline
+  sits at rel-L2 ≈ 0.052 throughout. Within exp1–exp3, SMC's best reconstruction is exp2
+  (observation-only likelihood: `beta = 10⁴`, `omega = 0`, PDE term off) at rel-L2 ≈ 0.103; adding
+  the PDE residual (ratio > 0) raises it to ≥ 0.14. The exp3 method suite at the exp2-best scale
+  ranks PBS below Girsanov (≈ 0.85 vs ≈ 1.16), with unweighted (`rho_temp = 0`) between them.
+  Per §2/`note_4`, rel-L2 is a reconstruction metric, so these numbers rank reconstruction, not
+  posterior quality, and SMC reconstruction remains well above the deterministic baseline.
+- **Second-order (Heun) proposal cuts the step count, not the gap (exp4,
+  `slurm/logs4/exp4_table.md`).** In the exp4 proposal×K sweep (`beta = 10⁴`, `omega = 0`, N=8), EM
+  needs `K ≈ 2000` to settle at rel-L2 ≈ 0.10 for every weight variant (PBS/Girs/unweighted),
+  whereas the Heun drift integrator (D18) reaches comparable quality by `K ≈ 125–1000`; its best run
+  (PBS, `K = 1000`) is rel-L2 ≈ 0.064, the closest SMC has come to the ODE K-sweep optimum
+  (≈ 0.046 at `K = 1000`). So second-order drift integration buys a large step-count/cost reduction
+  at fixed quality but does not close the SMC-vs-ODE reconstruction gap — consistent with D18's
+  rationale that the limiter is transport/target degeneracy, not the integrator. Heun diverges for
+  Girs at `K = 125` (rel-L2 ≈ 4.7), echoing D18's coarse-step stiffness caveat.
 
 ---
 
@@ -323,14 +339,19 @@ Ordered roughly:
 4. ~~Finalize the `smc:` config fields~~ **(done; provisional, D6).**
 5. ~~Validation tier: GEM↔TDS identity check~~ **(done, D8).**
 6. **Sweep design** — one spec expanded at runtime; currently expressed as per-cell sbatch loops in
-   the `slurm/logs2` / `slurm/logs3` campaigns.
+   four staged campaigns: `slurm/logs1` (exp1: method suite), `slurm/logs2` (exp2: `beta ×`
+   likelihood-ratio grid), `slurm/logs3` (exp3: method suite re-run at the exp2-best scale),
+   `slurm/logs4` (exp4: `{em,heun} × {pbs,girs,unw} × K`). Each is `submit_exp*.sh` →
+   `smc_exp*.sbatch` → `aggregate_exp*.py`, and the aggregator writes `exp*_table.md`.
 7. **Modeling/algorithm follow-ups** — likelihood settled to Millard's squared analytic raw form
-   (D16); weight/`beta` calibration in progress (`slurm/logs2`). Heun-SDE proposal implemented with
-   the EM weight held fixed (D18); proposal x K campaign in `slurm/logs4`. Open: cross-PDE weight
-   transferability, flat-guidance kernel ratio or removal, terminal correction, SOSaG proposal,
-   tempering sweeps.
+   (D16); weight/`beta` calibration progressed through `slurm/logs2` (best reconstruction at
+   `beta = 10⁴`, `omega = 0`, PDE term off) and `slurm/logs3` (PBS best of the SMC variants at that
+   scale). Heun-SDE proposal implemented with the EM weight held fixed (D18); the exp4 proposal×K
+   campaign shows Heun reaches EM's settled reconstruction at ~2–16× fewer steps but does not close
+   the SMC-vs-ODE gap (see §6). Open: cross-PDE weight transferability, flat-guidance kernel ratio or
+   removal, terminal correction, SOSaG proposal, tempering sweeps.
 8. **New SMC slurm script** (`slurm/run_smc*.sbatch`) — partially met by the campaign sbatch files
-   under `slurm/logs1..3`; a config-parameterized runner is still open.
+   under `slurm/logs1..4`; a config-parameterized runner is still open.
 9. ~~Stale docs~~ **(done): `slurm/README.md` removed; `README.md` SMC section refreshed; `AGENTS.md`
    points here; this doc pruned.**
 
