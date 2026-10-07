@@ -1,0 +1,34 @@
+data:
+  name: 'Darcy'
+  datapath: 'data/testing/darcy.mat'
+  offset: 1001
+  sensors: 500
+  sensor_seed_a: 1
+  sensor_seed_u: 0
+
+test:
+  pre-trained: 'pretrained-models/pretrained-darcy.pkl'
+
+generate:
+  seed: 0
+  device: 'auto'
+  sigma_min: 0.002
+  sigma_max: 80
+  rho: 7
+
+smc:
+  n_particles: 4
+  num_steps: 2000
+  proposal: 'em'
+  rho_temp: 1.0
+  rho_temp_init: 1.0
+  lambda_girs: 1.0
+  resample_threshold: 0.5
+  likelihood:
+    # Guidance weights on Millard's squared raw-units losses (l_obs_a, l_obs_u, l_res).
+    # They absorb all units/discretization/physics scaling and are tuned per problem
+    # (no invariance claim). u is O(1e-2) raw, so l_obs_u is ~1e-4 and needs a large weight;
+    # the physical Darcy residual is ~1e7-scaled, so pde_weight must be tiny (or 0, as here).
+    obs_weight_a: 1.0
+    obs_weight_u: 10000.0
+    pde_weight: 0.0
