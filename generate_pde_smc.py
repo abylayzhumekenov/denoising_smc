@@ -6,7 +6,9 @@ Usage:
 
 Optional overrides: ``--n-particles``, ``--num-steps``, ``--run-id``, ``--out-dir`` apply to the
 ``smc`` block; ``--obs-weight`` / ``--obs-weight-a`` / ``--obs-weight-u`` / ``--pde-weight`` apply
-to ``smc.likelihood``; ``--rho-temp``, ``--rho-temp-init`` and ``--lambda-girs`` apply to ``smc``.
+to ``smc.likelihood``; ``--rho-temp``, ``--rho-temp-init``, ``--lambda-girs`` and ``--proposal``
+apply to ``smc``; ``--offset`` / ``--sensor-seed`` / ``--sensor-seed-a`` / ``--sensor-seed-u``
+apply to ``data``; ``--seed`` applies to ``generate``.
 """
 
 import argparse
@@ -19,11 +21,17 @@ from smc import burgers, darcy
 def main(config, overrides):
     smc = config.setdefault('smc', {})
     likelihood = smc.setdefault('likelihood', {})
+    data = config.setdefault('data', {})
+    gen = config.setdefault('generate', {})
     for key, value in overrides.items():
         if value is None:
             continue
         if key in ('obs_weight', 'obs_weight_a', 'obs_weight_u', 'pde_weight'):
             likelihood[key] = value
+        elif key in ('offset', 'sensors', 'sensor_seed', 'sensor_seed_a', 'sensor_seed_u'):
+            data[key] = value
+        elif key == 'seed':
+            gen[key] = value
         else:
             smc[key] = value
 
@@ -49,6 +57,11 @@ if __name__ == '__main__':
     parser.add_argument('--rho-temp', type=float, default=None)
     parser.add_argument('--rho-temp-init', type=float, default=None)
     parser.add_argument('--lambda-girs', type=float, default=None)
+    parser.add_argument('--offset', type=int, default=None)
+    parser.add_argument('--seed', type=int, default=None)
+    parser.add_argument('--sensor-seed', type=int, default=None)
+    parser.add_argument('--sensor-seed-a', type=int, default=None)
+    parser.add_argument('--sensor-seed-u', type=int, default=None)
     parser.add_argument('--proposal', type=str, default=None, choices=['em', 'heun'],
                         help="SMC proposal integrator: 'em' (Euler--Maruyama) or 'heun' (2nd order).")
     args = parser.parse_args()
@@ -61,4 +74,7 @@ if __name__ == '__main__':
                    obs_weight=args.obs_weight, obs_weight_a=args.obs_weight_a,
                    obs_weight_u=args.obs_weight_u, pde_weight=args.pde_weight,
                    rho_temp=args.rho_temp, rho_temp_init=args.rho_temp_init,
-                   lambda_girs=args.lambda_girs, proposal=args.proposal))
+                   lambda_girs=args.lambda_girs, proposal=args.proposal,
+                   offset=args.offset, seed=args.seed,
+                   sensor_seed=args.sensor_seed, sensor_seed_a=args.sensor_seed_a,
+                   sensor_seed_u=args.sensor_seed_u))
