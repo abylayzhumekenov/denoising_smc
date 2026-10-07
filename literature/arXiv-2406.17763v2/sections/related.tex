@@ -1,0 +1,42 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% RELATED WORKS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Related Works}
+Our work builds on the extensive literature of three areas: forward PDE solvers, inverse PDE solvers, and diffusion models.
+Please see relevant surveys for more information \cite{evans2022partial, omori2007overview, po2023state,strauss2007partial, yang2023diffusion}.
+
+\vspace{-1.5em}\noindent
+\paragraph{Forward PDE Solvers.} 
+PDE solvers take the specification of a physics system and predict its state in unseen space and time by solving an equation involving partial derivatives.
+Since Most PDEs are very challenging to solve analytically, people resolve to numerical techniques, such as Finite Element Method \cite{quarteroni2008numerical,solin2005partial} and Boundary Element Method~\cite{aliabadi2020boundary,idelsohn2003meshless}.
+While these techniques show strong performance and versatility in some problems, they can be computationally expensive or difficult to set up for complex physics systems.
+Recently, advancements in deep-learning methods have inspired a new set of PDE solvers.
+Raissi et al. \cite{raissi2017physics, raissi2019physics} introduce Physics-Informed Neural Networks (PINNs), which optimize a neural network using PDE constraints as self-supervised losses to output the PDE solutions. 
+PINNs have been extended to solving specific fluid \cite{cai2021physicsfluid, mao2020physics}, Reynolds-averaged Navier–Stokes equations \cite{eivazi2022physics}, heat equations \cite{cai2021physicsheat}, and dynamic power systems \cite{misyris2020physics}.
+While PINNs can tackle a wide range of complex PDE problems, they are difficult to scale due to the need for network optimization.
+An alternative approach, neural operators~\cite{li2020fourier,lu2021learning}, directly learn the mapping from PDE parameters (\eg initial and boundary condition) to the solution function.
+Once trained, this method avoids expensive network optimization and can instantly output the solution result.
+This idea has been extended to solve PDE in 3D~\cite{li2024geometry,serrano2024operator} , multiphase flow \cite{wen2022u}, seismic wave \cite{lehmann2023fourier,li2023solving}, 3D turbulence \cite{li2022fourier, peng2023linear}, and spherical dynamics \cite{bonev2023spherical}. 
+People have also explored using neural networks as part of the PDE solver, such as compressing the physics state~\cite{chen2022crom,li2023neural,muller2021real,nam2024solving}.
+These solvers usually assume known PDE parameters, and applying them to solve the inverse problem can be challenging.
+
+\vspace{-1.5em}\noindent
+\paragraph{PDE inverse problem.}
+The inverse problem refers to finding the coefficients of a PDE that can induce certain observations, mapping from the solution of a PDE solver to its input parameters.
+People have tried to extend traditional numerical methods to this inverse problem~\cite{cho2017first,fox2001statistical,harrach2021introduction, kumar2023accelerating,van2015penalty}, but these extensions are non-trivial to implement efficiently.
+There are similar attempts to inverse deep-learning PDE solvers.
+For example, one can inverse PINNs by optimizing the network parameters such that their outputs satisfy both the observed data and the governing equations.
+iFNO \cite{long2024invertible} and NIO \cite{molinaro2023neural} tries to extend FNO~\cite{li2020fourier}. 
+Other methods \cite{de2022deep,pakravan2021solving} directly learn the operator functions for the inverse problem. 
+PINO \cite{li2021physics} further combines neural operators with physics constraints to improve the performance of both forward and inverse problems.
+These methods assume full observations are available.
+To address the inverse problem with partial observations, people have tried to leverage generative priors with Graph neural networks~\cite{iakovlev2020learning, zhao2022learning}.
+These works have not demonstrated the ability to solve high-resolution PDEs, possibly limited by the power of generative prior. 
+We want to leverage the state-of-the-art generative model, diffusion models, to develop a better inverse PDE solver.
+
+\vspace{-1.5em}\noindent
+\paragraph{Diffusion models.}
+Diffusion models have shown great promise in learning the prior with higher resolutions by progressively estimating and removing noise. 
+Models like DDIM \cite{song2020denoising}, DDPM \cite{ho2020denoising}, and EDM \cite{Karras2022edm} offer expressive generative capabilities but face challenges when sampling with specific constraints. 
+Guided diffusion models \cite{chung2022diffusion,chung2022improving,dhariwal2021diffusion,xu2023inversion} enhance generation processes with constraints such as image inpainting, providing more stable and accurate solutions. 
+Prior works on diffusion models for PDEs highlight the potential of diffusion approaches by generating PDE datasets such as 3D turbulence \cite{jacobsen2023cocogen,lienen2023zero} and Navier-Stokes equations \cite{yang2023denoising} with diffusion models. Diffusion models can also be used to model frequency spectrum and denoise the solution space \cite{lippe2024pde}, and conditional diffusion models are applied to solve 2D flows with sparse observation \cite{shu2023physics}. However, the application of diffusion models to solve inverse problems under partial observation remains underexplored. In this work, we aim to take the initial steps towards addressing this gap.

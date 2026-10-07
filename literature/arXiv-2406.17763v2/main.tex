@@ -1,0 +1,86 @@
+\documentclass[square]{article}
+\PassOptionsToPackage{numbers, compress}{natbib}
+
+\usepackage[final]{neurips_2024}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+% \usepackage{hyperref}       % hyperlinks
+\usepackage[colorlinks=true,citecolor=black,breaklinks=true,bookmarks=false,linkcolor=black]{hyperref} % hyperlinks for preprint
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{mwe}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{amsmath}
+\usepackage{algorithmicx}
+\newcommand{\mycomment}[1]{\hfill $\triangleright$ #1}
+\usepackage{amssymb}
+% \usepackage{subfigure}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{graphicx}
+\usepackage{multirow}
+
+
+% MACRO
+\input{macro}
+
+% TITLE
+\title{DiffusionPDE: Generative PDE-Solving \\Under Partial Observation}
+
+% AUTHORS
+\author{%
+  Jiahe Huang$^1$\quad Guandao Yang$^2$\quad Zichen Wang$^1$\quad Jeong Joon Park$^1$\\
+  $^1$University of Michigan\\
+  $^2$Stanford University\\
+  \texttt{\{chloehjh, zzzichen, jjparkcv\}@umich.edu} \\
+  \texttt{guandao@stanford.edu}
+}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+We introduce a general framework for solving partial differential equations (PDEs) using generative diffusion models. In particular, we focus on the scenarios where we do not have the full knowledge of the scene necessary to apply classical solvers. Most existing forward or inverse PDE approaches perform poorly when the observations on the data or the underlying coefficients are incomplete, which is a common assumption for real-world measurements. In this work, we propose {\em DiffusionPDE} that can simultaneously fill in the missing information and solve a PDE by modeling the joint distribution of the solution and coefficient spaces. We show that the learned generative priors lead to a versatile framework for accurately solving a wide range of PDEs under partial observation, significantly outperforming the state-of-the-art methods for both forward and inverse directions. 
+See our project page for results: \href{https://jhhuangchloe.github.io/Diffusion-PDE/}{jhhuangchloe.github.io/Diffusion-PDE/}.
+\end{abstract}
+\input{sections/intro}
+\input{sections/related}
+\input{sections/method}
+\input{sections/results}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CONCLUSION
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Conclusion and Future Work}\label{sec:conclusion_future_work}
+
+
+In this work, we develop DiffusionPDE, a diffusion-based PDE solver that addresses the challenge of solving PDEs from partial observations by filling in missing information using generative priors. We formulate a diffusion model that learns the joint distribution of the coefficient (or initial state) space and the solution (or final state) space. During the sampling process, DiffusionPDE can flexibly generate plausible data by guiding its denoising with sparse measurements and PDE constraints. Our new approach leads to significant improvements over existing state-of-the-art methods, advancing toward a general PDE-solving framework that leverages the power of generative models.
+
+
+
+Several promising directions for future research have emerged from this work. Currently, DiffusionPDE is limited to solving slices of 2D dynamic PDEs; extending its capabilities to cover full time intervals of these equations presents a significant opportunity. Moreover, the model’s struggle with accuracy in spaces that lack constraints is another critical area for exploration. DiffusionPDE also suffers from a slow sampling procedure, and a faster solution might be desired.
+
+
+% REFERENCES
+\newpage
+% \section*{References}
+% {
+% \bibliographystyle{unsrt}
+% \bibliography{reference}
+% }
+\input{reference.bbl}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDIX
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newpage
+\input{sections/appendix}
+
+\end{document}

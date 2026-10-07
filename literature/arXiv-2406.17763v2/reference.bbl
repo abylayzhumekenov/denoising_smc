@@ -1,0 +1,303 @@
+\begin{thebibliography}{10}
+
+\bibitem{aliabadi2020boundary}
+Ferri~MH Aliabadi.
+\newblock Boundary element methods.
+\newblock In {\em Encyclopedia of continuum mechanics}, pages 182--193. Springer, 2020.
+
+\bibitem{solin2005partial}
+Pavel {\^S}ol{\'\i}n.
+\newblock {\em Partial differential equations and the finite element method}.
+\newblock John Wiley \& Sons, 2005.
+
+\bibitem{li2020fourier}
+Zongyi Li, Nikola Kovachki, Kamyar Azizzadenesheli, Burigede Liu, Kaushik Bhattacharya, Andrew Stuart, and Anima Anandkumar.
+\newblock Fourier neural operator for parametric partial differential equations.
+\newblock {\em arXiv preprint arXiv:2010.08895}, 2020.
+
+\bibitem{li2021physics}
+Zongyi Li, Hongkai Zheng, Nikola Kovachki, David Jin, Haoxuan Chen, Burigede Liu, Kamyar Azizzadenesheli, and Anima Anandkumar.
+\newblock Physics-informed neural operator for learning partial differential equations.
+\newblock {\em ACM/JMS Journal of Data Science}, 2021.
+
+\bibitem{lu2021learning}
+Lu~Lu, Pengzhan Jin, Guofei Pang, Zhongqiang Zhang, and George~Em Karniadakis.
+\newblock Learning nonlinear operators via deeponet based on the universal approximation theorem of operators.
+\newblock {\em Nature machine intelligence}, 3(3):218--229, 2021.
+
+\bibitem{raissi2019physics}
+Maziar Raissi, Paris Perdikaris, and George~E Karniadakis.
+\newblock Physics-informed neural networks: A deep learning framework for solving forward and inverse problems involving nonlinear partial differential equations.
+\newblock {\em Journal of Computational physics}, 378:686--707, 2019.
+
+\bibitem{ho2020denoising}
+Jonathan Ho, Ajay Jain, and Pieter Abbeel.
+\newblock Denoising diffusion probabilistic models.
+\newblock {\em Advances in neural information processing systems}, 33:6840--6851, 2020.
+
+\bibitem{zhao2022learning}
+Qingqing Zhao, David~B Lindell, and Gordon Wetzstein.
+\newblock Learning to solve pde-constrained inverse problems with graph networks.
+\newblock {\em arXiv preprint arXiv:2206.00711}, 2022.
+
+\bibitem{evans2022partial}
+Lawrence~C Evans.
+\newblock {\em Partial differential equations}, volume~19.
+\newblock American Mathematical Society, 2022.
+
+\bibitem{omori2007overview}
+Kenji Omori and Jun Kotera.
+\newblock Overview of pdes and their regulation.
+\newblock {\em Circulation research}, 100(3):309--327, 2007.
+
+\bibitem{po2023state}
+Ryan Po, Wang Yifan, Vladislav Golyanik, Kfir Aberman, Jonathan~T Barron, Amit~H Bermano, Eric~Ryan Chan, Tali Dekel, Aleksander Holynski, Angjoo Kanazawa, et~al.
+\newblock State of the art on diffusion models for visual computing.
+\newblock {\em arXiv preprint arXiv:2310.07204}, 2023.
+
+\bibitem{strauss2007partial}
+Walter~A Strauss.
+\newblock {\em Partial differential equations: An introduction}.
+\newblock John Wiley \& Sons, 2007.
+
+\bibitem{yang2023diffusion}
+Ling Yang, Zhilong Zhang, Yang Song, Shenda Hong, Runsheng Xu, Yue Zhao, Wentao Zhang, Bin Cui, and Ming-Hsuan Yang.
+\newblock Diffusion models: A comprehensive survey of methods and applications.
+\newblock {\em ACM Computing Surveys}, 56(4):1--39, 2023.
+
+\bibitem{quarteroni2008numerical}
+Alfio Quarteroni and Alberto Valli.
+\newblock {\em Numerical approximation of partial differential equations}, volume~23.
+\newblock Springer Science \& Business Media, 2008.
+
+\bibitem{idelsohn2003meshless}
+Sergio~R Idelsohn, Eugenio Onate, Nestor Calvo, and Facundo Del~Pin.
+\newblock The meshless finite element method.
+\newblock {\em International Journal for Numerical Methods in Engineering}, 58(6):893--912, 2003.
+
+\bibitem{raissi2017physics}
+Maziar Raissi, Paris Perdikaris, and George~Em Karniadakis.
+\newblock Physics informed deep learning (part i): Data-driven solutions of nonlinear partial differential equations.
+\newblock {\em arXiv preprint arXiv:1711.10561}, 2017.
+
+\bibitem{cai2021physicsfluid}
+Shengze Cai, Zhiping Mao, Zhicheng Wang, Minglang Yin, and George~Em Karniadakis.
+\newblock Physics-informed neural networks (pinns) for fluid mechanics: A review.
+\newblock {\em Acta Mechanica Sinica}, 37(12):1727--1738, 2021.
+
+\bibitem{mao2020physics}
+Zhiping Mao, Ameya~D Jagtap, and George~Em Karniadakis.
+\newblock Physics-informed neural networks for high-speed flows.
+\newblock {\em Computer Methods in Applied Mechanics and Engineering}, 360:112789, 2020.
+
+\bibitem{eivazi2022physics}
+Hamidreza Eivazi, Mojtaba Tahani, Philipp Schlatter, and Ricardo Vinuesa.
+\newblock Physics-informed neural networks for solving reynolds-averaged navier--stokes equations.
+\newblock {\em Physics of Fluids}, 34(7), 2022.
+
+\bibitem{cai2021physicsheat}
+Shengze Cai, Zhicheng Wang, Sifan Wang, Paris Perdikaris, and George~Em Karniadakis.
+\newblock Physics-informed neural networks for heat transfer problems.
+\newblock {\em Journal of Heat Transfer}, 143(6):060801, 2021.
+
+\bibitem{misyris2020physics}
+George~S Misyris, Andreas Venzke, and Spyros Chatzivasileiadis.
+\newblock Physics-informed neural networks for power systems.
+\newblock In {\em 2020 IEEE power \& energy society general meeting (PESGM)}, pages 1--5. IEEE, 2020.
+
+\bibitem{li2024geometry}
+Zongyi Li, Nikola Kovachki, Chris Choy, Boyi Li, Jean Kossaifi, Shourya Otta, Mohammad~Amin Nabian, Maximilian Stadler, Christian Hundt, Kamyar Azizzadenesheli, et~al.
+\newblock Geometry-informed neural operator for large-scale 3d pdes.
+\newblock {\em Advances in Neural Information Processing Systems}, 36, 2024.
+
+\bibitem{serrano2024operator}
+Louis Serrano, Lise Le~Boudec, Armand Kassa{\"\i}~Koupa{\"\i}, Thomas~X Wang, Yuan Yin, Jean-No{\"e}l Vittaut, and Patrick Gallinari.
+\newblock Operator learning with neural fields: Tackling pdes on general geometries.
+\newblock {\em Advances in Neural Information Processing Systems}, 36, 2024.
+
+\bibitem{wen2022u}
+Gege Wen, Zongyi Li, Kamyar Azizzadenesheli, Anima Anandkumar, and Sally~M Benson.
+\newblock U-fno—an enhanced fourier neural operator-based deep-learning model for multiphase flow.
+\newblock {\em Advances in Water Resources}, 163:104180, 2022.
+
+\bibitem{lehmann2023fourier}
+Fanny Lehmann, Filippo Gatti, Micha{\"e}l Bertin, and Didier Clouteau.
+\newblock Fourier neural operator surrogate model to predict 3d seismic waves propagation.
+\newblock {\em arXiv preprint arXiv:2304.10242}, 2023.
+
+\bibitem{li2023solving}
+Bian Li, Hanchen Wang, Shihang Feng, Xiu Yang, and Youzuo Lin.
+\newblock Solving seismic wave equations on variable velocity models with fourier neural operator.
+\newblock {\em IEEE Transactions on Geoscience and Remote Sensing}, 61:1--18, 2023.
+
+\bibitem{li2022fourier}
+Zhijie Li, Wenhui Peng, Zelong Yuan, and Jianchun Wang.
+\newblock Fourier neural operator approach to large eddy simulation of three-dimensional turbulence.
+\newblock {\em Theoretical and Applied Mechanics Letters}, 12(6):100389, 2022.
+
+\bibitem{peng2023linear}
+Wenhui Peng, Zelong Yuan, Zhijie Li, and Jianchun Wang.
+\newblock Linear attention coupled fourier neural operator for simulation of three-dimensional turbulence.
+\newblock {\em Physics of Fluids}, 35(1), 2023.
+
+\bibitem{bonev2023spherical}
+Boris Bonev, Thorsten Kurth, Christian Hundt, Jaideep Pathak, Maximilian Baust, Karthik Kashinath, and Anima Anandkumar.
+\newblock Spherical fourier neural operators: Learning stable dynamics on the sphere.
+\newblock In {\em International conference on machine learning}, pages 2806--2823. PMLR, 2023.
+
+\bibitem{chen2022crom}
+Peter~Yichen Chen, Jinxu Xiang, Dong~Heon Cho, Yue Chang, GA~Pershing, Henrique~Teles Maia, Maurizio~M Chiaramonte, Kevin Carlberg, and Eitan Grinspun.
+\newblock Crom: Continuous reduced-order modeling of pdes using implicit neural representations.
+\newblock {\em arXiv preprint arXiv:2206.02607}, 2022.
+
+\bibitem{li2023neural}
+Zilu Li, Guandao Yang, Xi~Deng, Christopher De~Sa, Bharath Hariharan, and Steve Marschner.
+\newblock Neural caches for monte carlo partial differential equation solvers.
+\newblock In {\em SIGGRAPH Asia 2023 Conference Papers}, pages 1--10, 2023.
+
+\bibitem{muller2021real}
+Thomas M{\"u}ller, Fabrice Rousselle, Jan Nov{\'a}k, and Alexander Keller.
+\newblock Real-time neural radiance caching for path tracing.
+\newblock {\em arXiv preprint arXiv:2106.12372}, 2021.
+
+\bibitem{nam2024solving}
+Hong~Chul Nam, Julius Berner, and Anima Anandkumar.
+\newblock Solving poisson equations using neural walk-on-spheres.
+\newblock In {\em ICLR 2024 Workshop on AI4DifferentialEquations In Science}, 2024.
+
+\bibitem{cho2017first}
+M~Cho, B~Jadamba, R~Kahler, AA~Khan, and M~Sama.
+\newblock First-order and second-order adjoint methods for the inverse problem of identifying non-linear parameters in pdes.
+\newblock {\em Industrial Mathematics and Complex Systems: Emerging Mathematical Models, Methods and Algorithms}, pages 147--163, 2017.
+
+\bibitem{fox2001statistical}
+Colin Fox and Geoff Nicholls.
+\newblock Statistical estimation of the parameters of a pde.
+\newblock {\em Can. appl. Math. Quater}, 10:277--810, 2001.
+
+\bibitem{harrach2021introduction}
+Bastian Harrach.
+\newblock An introduction to finite element methods for inverse coefficient problems in elliptic pdes.
+\newblock {\em Jahresbericht der Deutschen Mathematiker-Vereinigung}, 123(3):183--210, 2021.
+
+\bibitem{kumar2023accelerating}
+Krishna Kumar and Yonjin Choi.
+\newblock Accelerating particle and fluid simulations with differentiable graph networks for solving forward and inverse problems.
+\newblock In {\em Proceedings of the SC'23 Workshops of The International Conference on High Performance Computing, Network, Storage, and Analysis}, pages 60--65, 2023.
+
+\bibitem{van2015penalty}
+Tristan van Leeuwen and Felix~J Herrmann.
+\newblock A penalty method for pde-constrained optimization in inverse problems.
+\newblock {\em Inverse Problems}, 32(1):015007, 2015.
+
+\bibitem{long2024invertible}
+Da~Long and Shandian Zhe.
+\newblock Invertible fourier neural operators for tackling both forward and inverse problems.
+\newblock {\em arXiv preprint arXiv:2402.11722}, 2024.
+
+\bibitem{molinaro2023neural}
+Roberto Molinaro, Yunan Yang, Bj{\"o}rn Engquist, and Siddhartha Mishra.
+\newblock Neural inverse operators for solving pde inverse problems.
+\newblock {\em arXiv preprint arXiv:2301.11167}, 2023.
+
+\bibitem{de2022deep}
+Maarten~V de~Hoop, Matti Lassas, and Christopher~A Wong.
+\newblock Deep learning architectures for nonlinear operator functions and nonlinear inverse problems.
+\newblock {\em Mathematical Statistics and Learning}, 4(1):1--86, 2022.
+
+\bibitem{pakravan2021solving}
+Samira Pakravan, Pouria~A Mistani, Miguel~A Aragon-Calvo, and Frederic Gibou.
+\newblock Solving inverse-pde problems with physics-aware neural networks.
+\newblock {\em Journal of Computational Physics}, 440:110414, 2021.
+
+\bibitem{iakovlev2020learning}
+Valerii Iakovlev, Markus Heinonen, and Harri L{\"a}hdesm{\"a}ki.
+\newblock Learning continuous-time pdes from sparse data with graph neural networks.
+\newblock {\em arXiv preprint arXiv:2006.08956}, 2020.
+
+\bibitem{song2020denoising}
+Jiaming Song, Chenlin Meng, and Stefano Ermon.
+\newblock Denoising diffusion implicit models.
+\newblock {\em arXiv preprint arXiv:2010.02502}, 2020.
+
+\bibitem{Karras2022edm}
+Tero Karras, Miika Aittala, Timo Aila, and Samuli Laine.
+\newblock Elucidating the design space of diffusion-based generative models.
+\newblock In {\em Proc. NeurIPS}, 2022.
+
+\bibitem{chung2022diffusion}
+Hyungjin Chung, Jeongsol Kim, Michael~T Mccann, Marc~L Klasky, and Jong~Chul Ye.
+\newblock Diffusion posterior sampling for general noisy inverse problems.
+\newblock {\em arXiv preprint arXiv:2209.14687}, 2022.
+
+\bibitem{chung2022improving}
+Hyungjin Chung, Byeongsu Sim, Dohoon Ryu, and Jong~Chul Ye.
+\newblock Improving diffusion models for inverse problems using manifold constraints.
+\newblock {\em Advances in Neural Information Processing Systems}, 35:25683--25696, 2022.
+
+\bibitem{dhariwal2021diffusion}
+Prafulla Dhariwal and Alexander Nichol.
+\newblock Diffusion models beat gans on image synthesis.
+\newblock {\em Advances in neural information processing systems}, 34:8780--8794, 2021.
+
+\bibitem{xu2023inversion}
+Sihan Xu, Yidong Huang, Jiayi Pan, Ziqiao Ma, and Joyce Chai.
+\newblock Inversion-free image editing with natural language.
+\newblock {\em arXiv preprint arXiv:2312.04965}, 2023.
+
+\bibitem{jacobsen2023cocogen}
+Christian Jacobsen, Yilin Zhuang, and Karthik Duraisamy.
+\newblock Cocogen: Physically-consistent and conditioned score-based generative models for forward and inverse problems.
+\newblock {\em arXiv preprint arXiv:2312.10527}, 2023.
+
+\bibitem{lienen2023zero}
+Marten Lienen, David L{\"u}dke, Jan Hansen-Palmus, and Stephan G{\"u}nnemann.
+\newblock From zero to turbulence: Generative modeling for 3d flow simulation.
+\newblock In {\em The Twelfth International Conference on Learning Representations}, 2023.
+
+\bibitem{yang2023denoising}
+Gefan Yang and Stefan Sommer.
+\newblock A denoising diffusion model for fluid field prediction.
+\newblock {\em arXiv preprint arXiv:2301.11661}, 2023.
+
+\bibitem{lippe2024pde}
+Phillip Lippe, Bas Veeling, Paris Perdikaris, Richard Turner, and Johannes Brandstetter.
+\newblock Pde-refiner: Achieving accurate long rollouts with neural pde solvers.
+\newblock {\em Advances in Neural Information Processing Systems}, 36, 2024.
+
+\bibitem{shu2023physics}
+Dule Shu, Zijie Li, and Amir~Barati Farimani.
+\newblock A physics-informed diffusion model for high-fidelity flow field reconstruction.
+\newblock {\em Journal of Computational Physics}, 478:111972, 2023.
+
+\bibitem{song2021scorebased}
+Yang Song, Jascha Sohl-Dickstein, Diederik~P Kingma, Abhishek Kumar, Stefano Ermon, and Ben Poole.
+\newblock Score-based generative modeling through stochastic differential equations.
+\newblock In {\em International Conference on Learning Representations}, 2021.
+
+\bibitem{hyvarinen2005estimation}
+Aapo Hyv{\"a}rinen and Peter Dayan.
+\newblock Estimation of non-normalized statistical models by score matching.
+\newblock {\em Journal of Machine Learning Research}, 6(4), 2005.
+
+\bibitem{hu2019difftaichi}
+Yuanming Hu, Luke Anderson, Tzu-Mao Li, Qi~Sun, Nathan Carr, Jonathan Ragan-Kelley, and Fr{\'e}do Durand.
+\newblock Difftaichi: Differentiable programming for physical simulation.
+\newblock {\em arXiv preprint arXiv:1910.00935}, 2019.
+
+\bibitem{ho2022classifier}
+Jonathan Ho and Tim Salimans.
+\newblock Classifier-free diffusion guidance.
+\newblock {\em arXiv preprint arXiv:2207.12598}, 2022.
+
+\bibitem{li2022transformer}
+Zijie Li, Kazem Meidani, and Amir~Barati Farimani.
+\newblock Transformer for partial differential equations' operator learning.
+\newblock {\em arXiv preprint arXiv:2205.13671}, 2022.
+
+\bibitem{bollig2012solution}
+Evan~F Bollig, Natasha Flyer, and Gordon Erlebacher.
+\newblock Solution to pdes using radial basis function finite-differences (rbf-fd) on multiple gpus.
+\newblock {\em Journal of Computational Physics}, 231(21):7133--7151, 2012.
+
+\end{thebibliography}

@@ -1,0 +1,64 @@
+
+\begin{table}[t!]
+    \caption{Relative errors of solutions (or final states) and coefficients (or initial states) when solving forward and inverse problems respectively with sparse observations. Error rates are used for the inverse problem of Darcy Flow.}
+    \label{table:merged_results}
+    \centering
+    \begin{tabular}{p{2cm}lccccc}
+        \toprule
+        & & DiffusionPDE & PINO & DeepONet & PINNs & FNO \\
+        \midrule
+        \multirow{2}{*}{Darcy Flow} & Forward & \textbf{2.5\%} & 35.2\% & 38.3\% & 48.8\% & 28.2\% \\
+        & Inverse & \textbf{3.2\%} & 49.2\% & 41.1\% & 59.7\% & 49.3\% \\
+        \midrule
+        \multirow{2}{*}{Poisson} & Forward & \textbf{4.5\%} & 107.1\% & 155.5\% & 128.1\% & 100.9\% \\
+        & Inverse & \textbf{20.0\%} & 231.9\% & 105.8\% & 130.0\% & 232.7\% \\
+        \midrule
+        \multirow{2}{*}{Helmholtz} & Forward & \textbf{8.8\%} & 106.5\% & 123.1\% & 142.3\% & 98.2\% \\
+        & Inverse & \textbf{22.6\%} & 216.9\% & 132.8\% & 160.0\% & 218.2\% \\
+        \midrule
+        \multirow{2}{2cm}{Non-bounded Navier-Stokes} & Forward & \textbf{6.9\%} & 101.4\% & 103.2\% & 142.7\% & 101.4\% \\
+        & Inverse & \textbf{10.4\%} & 96.0\% & 97.2\% & 146.8\% & 96.0\% \\
+        \midrule
+        \multirow{2}{2cm}{Bounded Navier-Stokes} & Forward & \textbf{3.9\%} & 81.1\% & 97.7\% & 100.1\% & 82.8\% \\
+        & Inverse & \textbf{2.7\%} & 69.5\% & 91.9\% & 105.5\% & 69.6\% \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+% \begin{table}
+%   \caption{Forward and inverse model results with sparse observation on initial and final states respectively}
+%   \label{table:error_all}
+%   \centering
+%   \begin{tabular}{llll}
+%     \toprule
+%     &Burgers' Equation &\multicolumn{2}{c}{Navier-Stokes}                  \\
+%     \cmidrule(r){2-4}
+%     Method     & total error   & initial state error & final state error \\
+%     \midrule
+%     DiffusionPDE & 2.68\% & 8.4\% & 6.5\%   \\
+%     PINO &  85.7\% & - & 99.5\%  \\
+%     DeepONet & - & - & 103.2\% \\
+%     PINNs & 92.7\% & - & 183.5\% \\
+%     FNO & 90.0\% & - & 99.5\% \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
+
+% \begin{table}
+%   \caption{Solve static PDEs}
+%   \label{table:error_all_static}
+%   \centering
+%   \begin{tabular}{lllllll}
+%     \toprule
+%     &\multicolumn{2}{c}{Darcy Flow} &\multicolumn{2}{c}{Poisson} &\multicolumn{2}{c}{Helmholtz}                  \\
+%     \cmidrule(r){2-7}
+%     Method     & $a$ accuracy   & $u$ error & $a$ error & $u$ error & $a$ error & $u$ error \\
+%     \midrule
+%     DiffusionPDE & 90.8\%  & 5.6\% & 20.0\% & 4.5\% & 22.6\% & 8.8\%   \\
+%     PINO & 47.5\% & 44.9\% & 98.5\% & 107.1\%  & 98.5\% & 106.5\%      \\
+%     DeepONet & - & 38.1\% & - & 155.5\% & - & 123.1\% \\
+%     PINNs & - & 162.3\% & - & 173.6\% & - & 153.2\% \\
+%     FNO & - & 25.5\% & - & 100.9\% & - & 98.2\% \\
+%     \bottomrule
+%   \end{tabular}
+% \end{table}
