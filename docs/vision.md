@@ -289,6 +289,24 @@ Each entry: decision — rationale — consequences. (Dated as adopted.)
   diverges), so the sweep starts at `K=125` (~16x smaller per-step `sigma` change), where
   `correction_rel` is O(0.05).
 
+- **D19 (2026-10-07) — Darcy SMC monolith; residuals kept faithful to the papers.**
+  Added `smc/darcy.py` (port of `smc/burgers.py`): joint `(a,u)` reconstruction with Millard's
+  squared-mean likelihood (`l_obs_a`, `l_obs_u`, `l_res = mean f^2`), explicit per-channel
+  `to_network`/`to_raw` affine maps (`v_a = 0.2a - 1.5`, `v_u = 115u - 0.9`), scattered
+  `random_index` masks (`a` seed 1, `u` seed 0), metrics `relative_error_u` + `error_rate_a`; same
+  EM/Heun proposal, Girsanov `C_k`, resampling and diagnostics as Burgers. `configs/smc/darcy.yaml`
+  takes Millard's published Darcy weights (`tab:weights`) at face value: `obs_weight_a = 5`,
+  `obs_weight_u = 5000`, `pde_weight = 100`. *Residual convention (extends D16):* the SMC residuals
+  stay the **faithful/physical** forms the papers' formulas specify -- Darcy
+  `f = d_x(a d_x u) + d_y(a d_y u) + s(c)` with `s(c) = 1`; Burgers `d_t u + d_x(u^2/2) - nu u_xx`.
+  The released baselines' `get_*_loss` stencils (index-unit / non-conservative, i.e. an *unscaled*
+  `+1` on an index-unit divergence) are deliberately *not* used: they do not match the papers'
+  formulas and, for Darcy, do not vanish on the ground truth. *Verified numerically:* the faithful
+  Darcy/Burgers residuals vanish on the test ground truth (interior mean ~0); the index-unit Darcy
+  form sits at ~1. *Open:* Millard's `omega = 100` with the faithful residual diverges in a single
+  `K=10` smoke. `K=10` is a very coarse step (guidance is `delta`-scaled, `delta ~ O(1/K)`), so this
+  is **not** evidence about realistic `K`; the transferability of their `omega` is untested.
+
 ---
 
 ## 6. Findings that inform the design
@@ -335,7 +353,7 @@ Ordered roughly:
 
 1. ~~Create `common/` with the shared results writer.~~ **(done)**
 2. ~~Route the six ODE scripts' outputs into `results/ode/<pde>/<run_id>/`.~~ **(done, D13)**
-3. ~~Implement the Burgers SMC in `smc/`~~ **(done).**
+3. ~~Implement the Burgers SMC in `smc/`~~ **(done); Darcy monolith added (D19).**
 4. ~~Finalize the `smc:` config fields~~ **(done; provisional, D6).**
 5. ~~Validation tier: GEM↔TDS identity check~~ **(done, D8).**
 6. **Sweep design** — one spec expanded at runtime; currently expressed as per-cell sbatch loops in
