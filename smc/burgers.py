@@ -86,27 +86,24 @@ def random_sensor(k, grid_size, seed=0, device=None):
 
 
 def burger_residual(u):
-    """Conservative Burgers residual in *raw* units, ``u`` of shape ``[N, 1, N_t, N_x]``.
+    """Burgers residual in *training (index) units*, ``u`` of shape ``[N, 1, N_t, N_x]``.
 
-    ``f = u_t + d_x(u^2/2) - nu*u_xx`` with physical derivatives (divided by the grid spacing):
-    periodic in space, replicated in time.  This is the analytic raw Burgers residual; the
-    discretization/scale is absorbed by ``pde_weight`` (see docs/vision.md), so it deliberately
-    does *not* mirror the released baseline's index-unit/zero-padded form.  Returns
-    ``[N, N_t, N_x]``.
+    Mirrors the released baseline / Millard convention (``scripts/generate_burgers.get_burger_loss``):
+    ``f = u_t + u*u_x - nu*u_xx`` with central differences in *index* units (divided by 2 only --
+    no ``/dt``, ``/dx``) and zero padding, i.e. the baseline's non-conservative form rather than the
+    physical/periodic form this module used before.  This keeps the residual on the same scale as
+    Millard's published likelihood weights; the discretization/scale is absorbed by ``pde_weight``.
+    Returns ``[N, N_t, N_x]``.
     """
-    n_t, n_x = u.shape[-2], u.shape[-1]
-    dt = TIME_SPAN / (n_t - 1)
-    dx = DOMAIN_LENGTH / n_x
     kernel_t = torch.tensor([[-1.0], [0.0], [1.0]], dtype=torch.float64, device=u.device)
-    kernel_t = kernel_t.view(1, 1, 3, 1) / (2 * dt)
+    kernel_t = kernel_t.view(1, 1, 3, 1) / 2.0
     kernel_x = torch.tensor([[-1.0, 0.0, 1.0]], dtype=torch.float64, device=u.device)
-    kernel_x = kernel_x.view(1, 1, 1, 3) / (2 * dx)
+    kernel_x = kernel_x.view(1, 1, 1, 3) / 2.0
 
-    u_t = F.conv2d(F.pad(u, (0, 0, 1, 1), mode='replicate'), kernel_t)
-    flux_x = F.conv2d(F.pad(0.5 * u ** 2, (1, 1, 0, 0), mode='circular'), kernel_x)
-    u_xx = F.conv2d(F.pad(F.conv2d(F.pad(u, (1, 1, 0, 0), mode='circular'), kernel_x),
-                          (1, 1, 0, 0), mode='circular'), kernel_x)
-    return (u_t + flux_x - VISCOSITY * u_xx).squeeze(1)
+    u_t = F.conv2d(u, kernel_t, padding=(1, 0))
+    u_x = F.conv2d(u, kernel_x, padding=(0, 1))
+    u_xx = F.conv2d(u_x, kernel_x, padding=(0, 1))
+    return (u_t + u * u_x - VISCOSITY * u_xx).squeeze(1)
 
 
 def term_losses(u, u_gt, mask):

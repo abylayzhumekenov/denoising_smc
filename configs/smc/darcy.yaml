@@ -25,10 +25,10 @@ smc:
   lambda_girs: 1.0
   resample_threshold: 0.5
   likelihood:
-    # Guidance weights on Millard's squared raw-units losses (l_obs_a, l_obs_u, l_res).
-    # They absorb all units/discretization/physics scaling and are tuned per problem
-    # (no invariance claim). u is O(1e-2) raw, so l_obs_u is ~1e-4 and needs a large weight;
-    # the physical Darcy residual is ~1e7-scaled, so pde_weight must be tiny (or 0, as here).
-    obs_weight_a: 1.0
-    obs_weight_u: 10000.0
-    pde_weight: 0.0
+    # Millard's Darcy weights (Appendix tab:weights): gamma=5 (obs a), beta=5000 (obs u),
+    # omega=100 (PDE residual).  These pair with the index-unit (baseline/Millard) residual
+    # convention used by darcy_residual; the weights absorb any remaining discretization scale
+    # and are tuned per problem (no invariance claim).
+    obs_weight_a: 5.0
+    obs_weight_u: 5000.0
+    pde_weight: 100.0

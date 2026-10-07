@@ -111,22 +111,20 @@ def random_index(k, grid_size, seed=0, device=None):
 
 
 def darcy_residual(a, u):
-    """Analytic Darcy residual in *raw* units, ``a, u`` of shape ``[N, H, W]``.
+    """Darcy residual in *training (index) units*, ``a, u`` of shape ``[N, H, W]``.
 
-    ``f = d_x(a*d_x u) + d_y(a*d_y u) + 1`` with physical derivatives (central differences divided
-    by the grid spacing), zero-padded (Dirichlet-consistent).  This is the analytic raw Darcy
-    residual; the discretization/scale is absorbed by ``pde_weight`` (see docs/vision.md), so it
-    deliberately does *not* mirror the released baseline's index-unit form.  Returns ``[N, H, W]``.
+    ``f = d_x(a*d_x u) + d_y(a*d_y u) + 1`` with central differences in *index* units (divided by 2
+    only -- no ``/dx``, ``/dy``) and zero padding, mirroring the released baseline / Millard
+    convention (``scripts/generate_darcy.get_darcy_loss``).  This keeps the residual on the same
+    scale as Millard's published likelihood weights; the discretization/scale is absorbed by
+    ``pde_weight``.  Returns ``[N, H, W]``.
     """
-    h, w = u.shape[-2], u.shape[-1]
-    dx = DOMAIN_LENGTH / w
-    dy = DOMAIN_LENGTH / h
     a = a.unsqueeze(1)
     u = u.unsqueeze(1)
     kernel_x = torch.tensor([[-1.0, 0.0, 1.0]], dtype=torch.float64, device=u.device)
-    kernel_x = kernel_x.view(1, 1, 1, 3) / (2 * dx)
+    kernel_x = kernel_x.view(1, 1, 1, 3) / 2.0
     kernel_y = torch.tensor([[-1.0], [0.0], [1.0]], dtype=torch.float64, device=u.device)
-    kernel_y = kernel_y.view(1, 1, 3, 1) / (2 * dy)
+    kernel_y = kernel_y.view(1, 1, 3, 1) / 2.0
 
     grad_x = F.conv2d(u, kernel_x, padding=(0, 1))
     grad_y = F.conv2d(u, kernel_y, padding=(1, 0))
